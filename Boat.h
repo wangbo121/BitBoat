@@ -25,6 +25,8 @@
 #include <cmath>
 
 #include "global.h"
+#include "scheduler.h"
+#include "utility.h"
 
 
 
@@ -86,7 +88,9 @@ public:
     control_mode            = STABILIZE;
     }
 
-
+    // main loop scheduler
+    AP_Scheduler scheduler;
+    static const AP_Scheduler::Task scheduler_tasks[];
 
     void setup();
     void loop();
@@ -95,6 +99,16 @@ public:
 
     private:
     uint8_t control_mode;
+
+    uint32_t loop_cnt;
+
+    // Global parameters are all contained within the 'g' class.
+    //Parameters g;
+
+
+    private:
+    void loop_fast();
+    void loop_slow();
 
 };
 

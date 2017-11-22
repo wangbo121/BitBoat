@@ -14,7 +14,4 @@ void Boat::setup( void )
 
 }
 
-void Boat::loop( void )
-{
 
-}
