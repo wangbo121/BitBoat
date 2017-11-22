@@ -109,6 +109,7 @@ public:
     private:
     void loop_fast();
     void loop_slow();
+    void loop_super_slow();
 
 };
 
