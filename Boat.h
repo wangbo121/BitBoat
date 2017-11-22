@@ -28,6 +28,12 @@
 #include "scheduler.h"
 #include "utility.h"
 
+#include "boatlink.h"
+#include "navigation.h"
+#include "control.h"
+#include "radio.h"
+#include "save_data.h"
+
 
 
 //#include "maintask.h"
@@ -102,6 +108,12 @@ public:
 
     uint32_t loop_cnt;
 
+    int fd_boatpilot_log;
+    int fd_waypoint;
+    int fd_config;
+    //static int fd_bd;
+
+
     // Global parameters are all contained within the 'g' class.
     //Parameters g;
 
@@ -110,6 +122,17 @@ public:
     void loop_fast();
     void loop_slow();
     void loop_super_slow();
+
+
+    void send_ap2gcs_cmd_boatlink();
+    void send_ap2gcs_wp_boatlink();
+    void send_ap2gcs_realtime_data_boatlink();
+
+    void record_config();//记录配置文件
+    void record_wp();//记录航点文件
+    void record_log();//记录日志
+
+    void get_timedata_now();//获取当前的时间，包含年月日时分秒的
 
 };
 

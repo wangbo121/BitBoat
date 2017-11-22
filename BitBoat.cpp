@@ -20,6 +20,7 @@
  */
 #define SCHED_TASK(func) (void (*)())&Boat::func
 const AP_Scheduler::Task Boat::scheduler_tasks[] = {
+
 //    { update_GPS,            2,     900 },
 //    { update_navigation,     10,    500 },
 //    { medium_loop,           2,     700 },
@@ -36,6 +37,7 @@ const AP_Scheduler::Task Boat::scheduler_tasks[] = {
 //    { super_slow_loop,     100,    1100 },
 //    { perf_update,        1000,     500 }
 //      { (void (*)())&Boat::loop_slow,     100,    1100 },
+      //{ SCHED_TASK(send_ap2gcs_realtime_data_boatlink),     1,    1000 },
       { SCHED_TASK(loop_slow),     100,    1100 },
       { SCHED_TASK(loop_super_slow),     1000,    1100 }
 //      { test,     1000,    1100 }
@@ -46,8 +48,20 @@ int seconds=0;
 int micro_seconds=MAINTASK_TICK_TIME_MS*(1e3);/*每个tick为20毫秒，也就是20000微秒*/
 struct timeval maintask_tick;
 
+struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
+
 int main(int argc,char * const argv[])
 {
+    /*
+     * 测试保存的二进制文件是否成功，把二进制文件再读回来然后保存为字符串
+     * 一定不要删除!!!!!!!!!!!!!!!!!!!!!!!!!!!!! wangbo20170119
+     */
+    //decode_binary_data();
+    //printf("sizeof(short)=%d\n",sizeof(short));//测试为2字节20170508
+    //printf("sizeof(int)=%d\n",sizeof(int));//测试为4字节20170508
+    //printf("sizeof(float)=%d\n",sizeof(float));//测试为4字节20170508
+
+
     DEBUG_PRINTF("Welcome to BitPilot\n");
 
     // initialise the main loop scheduler
@@ -112,6 +126,20 @@ void Boat::loop( void )
 void Boat::loop_fast()
 {
     //printf("hello loop_fast\n");
+
+    /*1. decode_gcs2ap_radio*/
+    decode_gcs2ap_radio();
+
+    /*2. navigation*/
+    //navigation_loop(&auto_navigation,wp_data,&gps_data);
+
+    /*3 control*/
+    control_loop();
+    /*
+     * execute_ctrloutput是把control_loop的计算结果，实际映射到某个通道，比如rudder对应两个电机啥的
+     * 而实际的输出放在
+     */
+    execute_ctrloutput(&ctrloutput);
 }
 
 void Boat::loop_slow()
