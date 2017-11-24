@@ -370,3 +370,20 @@ all_external_device_input.rc_raw_in_8 = 1500;
 * 我需要的是下面的从all_external_device_input获取数据
 */
 }
+
+void Boat::set_rc_out()
+{
+    float rc_raw_out_0;
+    float rc_raw_out_1;
+    float rc_raw_out_2;
+    float rc_raw_out_3;
+    float rc_raw_out_4;
+    float rc_raw_out_5;
+    float rc_raw_out_6;
+    float rc_raw_out_7;
+    float rc_raw_out_8;
+
+    rc_raw_out_0 = all_external_device_output.rc_raw_out_0;
+
+    //然后把rc_raw_out_0输出给舵机或者电机，频率是50hz
+}

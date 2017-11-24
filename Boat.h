@@ -132,9 +132,11 @@ public:
     void record_wp();//记录航点文件
     void record_log();//记录日志
 
-    void set_gpio();//设置gpio，这给用来设置舵机和电机所使用的pwm波，频率是50hz
+    void set_rc_out();//这给用来设置舵机和电机所使用的pwm波，频率是50hz
+    void set_gpio();//设置gpio，
     void set_analogs();//设置模拟量
     void set_relays();//设置继电器开关量
+
 
     void get_timedata_now();//获取当前的时间，包含年月日时分秒的
 

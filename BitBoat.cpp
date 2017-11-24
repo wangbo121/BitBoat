@@ -37,6 +37,7 @@ const AP_Scheduler::Task Boat::scheduler_tasks[] = {
 //    { super_slow_loop,     100,    1100 },
 //    { perf_update,        1000,     500 }
 //      { (void (*)())&Boat::loop_slow,     100,    1100 },
+      { SCHED_TASK(set_rc_out),                               2,     100 },
       { SCHED_TASK(send_ap2gcs_realtime_data_boatlink),     100,    1000 },
       { SCHED_TASK(record_log),                             100,    1100 },
       { SCHED_TASK(get_timedata_now),                       100,    1100 },
