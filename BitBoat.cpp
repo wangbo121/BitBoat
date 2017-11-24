@@ -37,10 +37,11 @@ const AP_Scheduler::Task Boat::scheduler_tasks[] = {
 //    { super_slow_loop,     100,    1100 },
 //    { perf_update,        1000,     500 }
 //      { (void (*)())&Boat::loop_slow,     100,    1100 },
-      //{ SCHED_TASK(send_ap2gcs_realtime_data_boatlink),     1,    1000 },
-      { SCHED_TASK(loop_slow),     100,    1100 },
-      { SCHED_TASK(loop_super_slow),     1000,    1100 }
-//      { test,     1000,    1100 }
+      { SCHED_TASK(send_ap2gcs_realtime_data_boatlink),     100,    1000 },
+      { SCHED_TASK(record_log),                             100,    1100 },
+      { SCHED_TASK(get_timedata_now),                       100,    1100 },
+      { SCHED_TASK(loop_slow),                              100,    1100 },
+      { SCHED_TASK(end_of_task),                           1000,    1100 }
 };
 
 #define MAINTASK_TICK_TIME_MS 10//这个设置为10ms，对应每个循环100hz
@@ -52,16 +53,6 @@ struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
 
 int main(int argc,char * const argv[])
 {
-    /*
-     * 测试保存的二进制文件是否成功，把二进制文件再读回来然后保存为字符串
-     * 一定不要删除!!!!!!!!!!!!!!!!!!!!!!!!!!!!! wangbo20170119
-     */
-    //decode_binary_data();
-    //printf("sizeof(short)=%d\n",sizeof(short));//测试为2字节20170508
-    //printf("sizeof(int)=%d\n",sizeof(int));//测试为4字节20170508
-    //printf("sizeof(float)=%d\n",sizeof(float));//测试为4字节20170508
-
-
     DEBUG_PRINTF("Welcome to BitPilot\n");
 
     // initialise the main loop scheduler
@@ -90,21 +81,12 @@ int main(int argc,char * const argv[])
 
 void Boat::loop( void )
 {
-    loop_cnt++;
-    if(loop_cnt % 100 == 0)
-    {
-        printf("loop_cnt = %d \n",loop_cnt);//1秒钟显示一次循环计数
-    }
+    uint32_t timer = gettimeofday_us();//当前系统运行时间精确到微秒
 
-    uint32_t timer = gettimeofday_us();
-
-    // Execute the fast loop
-    loop_fast();
+    loop_fast();//在无人机中是姿态控制内环，在无人船中是导航控制环
 
     // tell the scheduler one tick has passed
-    scheduler.tick();
-
-    //fast_loop_finish_timer = gettimeofday_us();
+    scheduler.tick();//告诉调度器scheduler一个tick已经过去了，目前1个tick指的是10毫秒
 
     /*
      * loop_us这个应该是一个tick循环所指定的时间，比如我这里目前定义的是10ms，
@@ -112,12 +94,7 @@ void Boat::loop( void )
      * 这样就会导致scheduler_tasks数组中指定的频率失去原本的意义，所以必须有select定时器或者
      * 如果在单片机中，则使用某一个定时器来触发这个loop这个函数
      */
-    //uint16_t dt = timer - fast_loop_finish_timer;
-    //uint16_t dt = fast_loop_finish_timer - timer;
-    //uint32_t loop_us = 10000;//10ms
-    uint32_t loop_us = 9000;//10ms
-    loop_us = micro_seconds;
-    //uint32_t time_available= timer + loop_us - gettimeofday_us();
+    uint32_t loop_us = micro_seconds;
     uint32_t time_available = loop_us - ( gettimeofday_us() - timer );
 
     scheduler.run(time_available > loop_us ? 0u : time_available);
@@ -125,13 +102,23 @@ void Boat::loop( void )
 
 void Boat::loop_fast()
 {
-    //printf("hello loop_fast\n");
+    /*
+     * 这个loop_fast如果针对于飞机来说就是控制姿态的内环控制，无人机的导航控制环节在scheduler数组的执行中
+     * 如果对于无人船来说，暂时作为导航和控制环
+     */
+
+    /*
+     * 如果全部传感器都是硬件在环的，那么这里就不需要这个update_all_external_device_input
+     * 如果传感器都硬件在环，那么就在数据有更新的时候，把数据填在这个结构中
+     * 相当于在传感器和控制循环中间又添加了一层
+     */
+    update_all_external_device_input();
 
     /*1. decode_gcs2ap_radio*/
     decode_gcs2ap_radio();
 
     /*2. navigation*/
-    //navigation_loop(&auto_navigation,wp_data,&gps_data);
+    navigation_loop(&auto_navigation,wp_data,&gps_data);
 
     /*3 control*/
     control_loop();
@@ -148,7 +135,8 @@ void Boat::loop_slow()
 
 }
 
-void Boat::loop_super_slow()
+void Boat::end_of_task()
 {
-    printf("hello loop_super_slow\n");
+
 }
+

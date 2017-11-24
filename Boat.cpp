@@ -322,4 +322,51 @@ void Boat::get_timedata_now()
     datetime_now.minute = (unsigned char)gbl_time_val->tm_min;
     datetime_now.second = (unsigned char)gbl_time_val->tm_sec;
 
+    DEBUG_PRINTF("当前系统时间是:%d年%d月%d日%d时%d分%d秒\n",datetime_now.year,datetime_now.month,datetime_now.day,datetime_now.hour,datetime_now.minute,datetime_now.second);
+
+}
+
+void Boat::update_all_external_device_input( void )
+{
+//如果跟王正阳的硬件驱动一起调试，则这个函数是不需要的，硬件驱动把数据赋值给all_external_device_input即可
+#ifdef LINUX_OS
+/*
+* gps数据 gps数据更新最多也就是10hz，所以这里只是赋值，到底gps的值在哪里用呢，是在medium_loop中调用的
+*/
+all_external_device_input.latitude = (39 *RAD_TO_DEG)*1e7;
+all_external_device_input.longitude = (116 *RAD_TO_DEG)*1e7;
+all_external_device_input.altitude = (10 )*1e2;
+all_external_device_input.v_north = 10;
+all_external_device_input.v_east = 10;
+all_external_device_input.v_down = 10;
+/*
+* imu的数据
+*/
+//all_external_device_input._accel_x = fdm_feed_back.A_X_pilot;
+//all_external_device_input._accel_y = fdm_feed_back.A_Y_pilot;
+//all_external_device_input._accel_z = fdm_feed_back.A_Z_pilot;
+//all_external_device_input._gyro_x = fdm_feed_back.phidot;
+//all_external_device_input._gyro_y = fdm_feed_back.thetadot;
+//all_external_device_input._gyro_z = fdm_feed_back.psidot;
+#endif
+/*
+* 这里应该是获取遥控器的信号
+*/
+all_external_device_input.rc_raw_in_0 = 1500;
+all_external_device_input.rc_raw_in_1 = 1500;
+all_external_device_input.rc_raw_in_2 = 1500;
+all_external_device_input.rc_raw_in_3 = 1500;
+all_external_device_input.rc_raw_in_4 = 1990;//绕航点飞行模式
+all_external_device_input.rc_raw_in_5 = 1500;
+all_external_device_input.rc_raw_in_6 = 1500;
+all_external_device_input.rc_raw_in_7 = 1500;
+all_external_device_input.rc_raw_in_8 = 1500;
+/*
+* 上面的all_external_device_input其实应该是由外部设备有数据更新后把数据
+* 赋值给all_external_device_input，而我的飞控只是从这里获取数据，不用管数据是否更新
+* 而且我只是从这里读取数据，应该不会出现同时写某一个变量的情况
+* 上面的这些赋值应该是由王正阳从设备驱动那里获取数据值
+* 实际使用时，上面的需要删除掉我这里并不需要
+* 我需要的是下面的从all_external_device_input获取数据
+*/
 }

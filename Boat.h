@@ -34,6 +34,7 @@
 #include "radio.h"
 #include "save_data.h"
 
+#include "all_external_device.h"
 
 
 //#include "maintask.h"
@@ -121,8 +122,7 @@ public:
     private:
     void loop_fast();
     void loop_slow();
-    void loop_super_slow();
-
+    void end_of_task();
 
     void send_ap2gcs_cmd_boatlink();
     void send_ap2gcs_wp_boatlink();
@@ -132,7 +132,13 @@ public:
     void record_wp();//记录航点文件
     void record_log();//记录日志
 
+    void set_gpio();//设置gpio，这给用来设置舵机和电机所使用的pwm波，频率是50hz
+    void set_analogs();//设置模拟量
+    void set_relays();//设置继电器开关量
+
     void get_timedata_now();//获取当前的时间，包含年月日时分秒的
+
+    void update_all_external_device_input( void );
 
 };
 
