@@ -78,7 +78,7 @@ void Boat::setup( void )
 #endif
 
 #ifdef __GPS_
-    gps_uart_init();
+    //gps_uart_init();
 #endif
 
 #ifdef __MODBUS_
@@ -120,7 +120,7 @@ void Boat::setup( void )
      * 这些参数都是unsigned char 8位无符号
      */
     gcs2ap_radio_all.rud_p=20;//rud_p单位是[0.1]所以一开始要赋值大一些
-    gcs2ap_radio_all.arrive_radius=10;//初始到达半径设置为100米
+    gcs2ap_radio_all.arrive_radius=10;//单位是[10米]，初始到达半径设置为100米
     gcs2ap_radio_all.mmotor_off_pos=0;
     gcs2ap_radio_all.mmotor_on_pos=255;
     gcs2ap_radio_all.rudder_left_pos=0;
@@ -167,8 +167,6 @@ void Boat::send_ap2gcs_cmd_boatlink()
             global_bool_boatpilot.send_ap2gcs_cmd_req=FALSE;
         }
     }
-
-
 }
 
 void Boat::send_ap2gcs_wp_boatlink()

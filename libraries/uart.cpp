@@ -398,7 +398,7 @@ int create_uart_pthread(struct T_UART_DEVICE *ptr_uart)
     int ret=0;
     int uart_no;
 
-    struct T_UART_DEVICE temp_device;
+    static struct T_UART_DEVICE temp_device;//20171124这个temp_device必须是静态的或者在程序永久存在的，因为pthread_create函数会循环调用这参数
 
     memcpy(&temp_device,ptr_uart,sizeof(struct T_UART_DEVICE));
 

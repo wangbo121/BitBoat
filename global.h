@@ -37,7 +37,8 @@
 #define XW_GPFPD_GPS
 //#define NMEA_GPS
 
-#define UART_RADIO         "/dev/ttyO3"
+//#define UART_RADIO         "/dev/ttyO3"
+#define UART_RADIO         "/dev/ttyUSB0"
 #define UART_GPS           "/dev/ttyO2"
 #define UART_MODBUS        "/dev/ttyO1"
 #define UART_MODBUS_ROTARY "/dev/ttyO5"
