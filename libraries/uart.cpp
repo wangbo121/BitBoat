@@ -405,14 +405,6 @@ int create_uart_pthread(struct T_UART_DEVICE *ptr_uart)
     uart_no=ptr_uart->uart_num;
     printf("线程uart_no=%d,ptr_uart->uart_num=%d\n",uart_no,ptr_uart->uart_num);
 
-//    ret = pthread_create (&uart_pthrd[uart_no],            //线程标识符指针
-//                          NULL,                            //默认属性
-//                          (void *)uart_recvbuf_and_process,//运行函数
-//                          (void *)ptr_uart);                 //运行函数的参数
-
-    /*
-     * cpp不允许随意强制转换为void类型，所以需要修改
-     */
     ret = pthread_create (&uart_pthrd[uart_no],            //线程标识符指针
                               NULL,                            //默认属性
                               uart_recvbuf_and_process,//运行函数
