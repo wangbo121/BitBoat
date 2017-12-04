@@ -36,6 +36,7 @@
 
 #include "all_external_device.h"
 
+#include "SIM_Watercraft.h"
 
 //#include "maintask.h"
 //#include "loopfast.h"
