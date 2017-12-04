@@ -207,7 +207,7 @@ void Boat::send_ap2gcs_realtime_data_boatlink()
     if(global_bool_boatpilot.ap2gcs_real_cnt_previous!=global_bool_boatpilot.ap2gcs_real_cnt)
     {
         //发送实时数据
-    	DEBUG_PRINTF("发送实时数据\n");
+    	//DEBUG_PRINTF("发送实时数据\n");
         send_ap2gcs_real();
 
         global_bool_boatpilot.ap2gcs_real_cnt_previous=global_bool_boatpilot.ap2gcs_real_cnt;

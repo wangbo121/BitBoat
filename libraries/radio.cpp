@@ -118,8 +118,8 @@ int read_radio_data(unsigned char *buf, unsigned int len)
 	}
 
 	memcpy(_buffer, buf, len);
-	printf("radio data len = %d\n",len);
-#if 1
+	//printf("radio data len = %d\n",len);
+#if 0
 	printf("radio data buf=\n");
 	for(i=0;i<len;i++)
 	{
@@ -223,7 +223,7 @@ int read_radio_data(unsigned char *buf, unsigned int len)
 			    global_bool_boatpilot.radio_recv_packet_cnt = _pack_recv_cnt;
 			    if(global_bool_boatpilot.radio_recv_packet_cnt_previous!=global_bool_boatpilot.radio_recv_packet_cnt)
 			    {
-			    	printf("wangbo2 _pack_recv_type = %d, _pack_recv_len = %d\n",_pack_recv_type,_pack_recv_len);
+			    	//printf("wangbo2 _pack_recv_type = %d, _pack_recv_len = %d\n",_pack_recv_type,_pack_recv_len);
 			        switch (_pack_recv_type)
                     {
                     case COMMAND_GCS2AP_WAYPOINT:

@@ -114,7 +114,7 @@ void Boat::loop( void )
     	/*
     	 * //20171204 为什么time_available=0了呢 貌似是因为gettimeofday_us返回值是float型的，前面必须加
     	 */
-		printf("loop_cnt = 100, time_available =%d \n",time_available);//20171204 为什么time_available=0了呢(uint32_t)
+		//printf("loop_cnt = 100, time_available =%d \n",time_available);//20171204 为什么time_available=0了呢(uint32_t)
 		loop_cnt = 0;
 	}
 
@@ -149,13 +149,12 @@ void Boat::loop_fast()
      */
     //execute_ctrloutput(&ctrloutput);
 
-    servos_set_out[0] = (uint16_t)ctrloutput.rudder_pwm;
-    servos_set_out[1] = (uint16_t)ctrloutput.mmotor_onoff_pwm;
+    servos_set_out[0] = (uint16_t)(ctrloutput.rudder_pwm);
+    servos_set_out[1] = (uint16_t)(ctrloutput.mmotor_onoff_pwm);
 
     //DEBUG_PRINTF("servos_set_out[0] = %d\n",servos_set_out[0]);
 
     memcpy(input.servos,servos_set_out,sizeof(servos_set_out));
-    //DEBUG_PRINTF("input.servos[0] = %d\n",input.servos[0]);
 
     /*
      * 20171204为什么sim_water_craft.update这个不能运行呢，一加上就停止运行
@@ -166,7 +165,7 @@ void Boat::loop_fast()
 
 void Boat::loop_slow()
 {
-    printf("hello loop_slow\n");
+    //printf("hello loop_slow\n");
 
 }
 
