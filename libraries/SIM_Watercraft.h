@@ -8,6 +8,10 @@
 #ifndef SIM_WATERCRAFT_H_
 #define SIM_WATERCRAFT_H_
 
+#include <stdint.h>
+#include <math.h>
+#include <stdlib.h>
+
 #ifndef RADIUS_EARTH
 // scaling factor from 1e-7 degrees to meters at equater
 // == 1.0e-7 * DEG_TO_RAD * RADIUS_OF_EARTH //这个表示1*10^(-7)角度对应的距离（单位：米）
@@ -90,73 +94,20 @@ struct Location {
     int32_t lng;                                        ///< param 4 - Longitude * 10**7
 };
 
-float constrain_value(const float amt, const float low, const float high)
-{
-    // the check for NaN as a float prevents propagation of floating point
-    // errors through any function that uses constrain_value(). The normal
-    // float semantics already handle -Inf and +Inf
-    if (isnan(amt)) {
-        return (low + high) / 2;
-    }
+float constrain_value(const float amt, const float low, const float high);
 
-    if (amt < low) {
-        return low;
-    }
+float constrain_float(const float amt, const float low, const float high);
 
-    if (amt > high) {
-        return high;
-    }
+float longitude_scale(const struct Location &loc);
 
-    return amt;
-}
-
-float constrain_float(const float amt, const float low, const float high)
-{
-    return constrain_value(amt, low, high);
-}
-
-float longitude_scale(const struct Location &loc)
-{
-    float scale = cosf(loc.lat * 1.0e-7f * DEG_TO_RAD);
-    return constrain_float(scale, 0.01f, 1.0f);
-}
-
-unsigned char is_zero(float x)
-{
-	if(x==0.0)
-	{
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
-
-}
+unsigned char is_zero(float x);
 
 /*
  *  extrapolate latitude/longitude given distances north and east
  *   extrapolate : （由已知资料对未知事实或价值）推算，推断
  */
-void location_offset(struct Location &loc, float ofs_north, float ofs_east)
-{
-    if (!is_zero(ofs_north) || !is_zero(ofs_east))
-    {
-        int32_t dlat = ofs_north * LOCATION_SCALING_FACTOR_INV;
-        int32_t dlng = (ofs_east * LOCATION_SCALING_FACTOR_INV) / longitude_scale(loc);
-        loc.lat += dlat;
-        loc.lng += dlng;
-    }
-}
-
-void location_update(struct Location &loc, float bearing, float distance)
-{
-    float ofs_north = cosf(DEG_TO_RAD * (bearing)) * distance;
-    float ofs_east  = sinf(DEG_TO_RAD * (bearing)) * distance;
-    location_offset(loc, ofs_north, ofs_east);
-}
-
-
+void location_offset(struct Location &loc, float ofs_north, float ofs_east);
+void location_update(struct Location &loc, float bearing, float distance);
 
 
 /*
@@ -242,8 +193,8 @@ protected:
 
     float ground_level;
     float frame_height;
-    float math_heading;
-    float math_omega_z;//偏航角的角速度
+    float math_heading;//弧度radian
+    float math_omega_z;//偏航角的角速度 rad/s
 //    Matrix3f dcm;  // rotation matrix, APM conventions, from body to earth//20170818 这个dcm是cbn也就是从机体坐标系转到参考坐标系的矩阵
 //    Vector3f gyro; // rad/s
 //    Vector3f velocity_ef; // m/s, earth frame
@@ -262,8 +213,8 @@ protected:
 
     uint64_t time_now_us;
 
-    const float gyro_noise;
-    const float accel_noise;
+   // const float gyro_noise;
+    //const float accel_noise;
     float rate_hz;
     float achieved_rate_hz;
     float target_speedup;
@@ -307,12 +258,12 @@ protected:
     /* return normal distribution random numbers */
     double rand_normal(double mean, double stddev);
 
-    void fill_fdm(struct sitl_fdm &fdm) const;
+    //void fill_fdm(struct sitl_fdm &fdm) const;
 
 private:
     uint64_t last_time_us = 0;
     uint32_t frame_counter = 0;
-    const uint32_t min_sleep_time;
+   // const uint32_t min_sleep_time;
 
     const Frame *frame;
 };

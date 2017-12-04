@@ -19,6 +19,7 @@ typedef struct tagAll_EXTERNAL_DEVICE_INPUT
 	float v_north;//米每秒
 	float v_east;//米每秒
 	float v_down;//米每秒
+	float heading;//度
 
 	//imu
 	float _gyro_x;//弧度每秒
@@ -38,6 +39,11 @@ typedef struct tagAll_EXTERNAL_DEVICE_INPUT
 	float rc_raw_in_6;
 	float rc_raw_in_7;
 	float rc_raw_in_8;
+
+	//姿态角
+	float phi;
+	float theta;
+	float psi;;
 }T_ALL_EXTERNAL_DEVICE_INPUT;
 
 typedef struct tagAll_EXTERNAL_DEVICE_OUTPUT

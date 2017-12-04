@@ -123,7 +123,7 @@ int read_radio_data(unsigned char *buf, unsigned int len)
 	}
 
 	memcpy(_buffer, buf, len);
-#if 0
+#if 1
 	printf("radio data buf=\n");
 	for(i=0;i<len;i++)
 	{

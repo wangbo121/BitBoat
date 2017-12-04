@@ -11,9 +11,14 @@
 #include <stdio.h>
 #include <stdlib.h> //#define	RAND_MAX	2147483647
 #include <iostream>
+#include <string.h>
 
 #include <math.h>
 
+#ifndef DEG_TO_RAD
+#define DEG_TO_RAD      (M_PI / 180.0f)
+#define RAD_TO_DEG      (180.0f / M_PI)
+#endif
 
 Watercraft::Watercraft(const char *home_str, const char *frame_str)
 {
@@ -70,7 +75,8 @@ void Watercraft::update(const struct sitl_input &input)
 	psi = r * delta_time + psi;
 	r = ( K_usv * delta - r ) / T_usv * delta_time + r;
 
-	psi = psi % (2 * M_PI);
+	//psi = psi % (2 * M_PI);
+	psi = fmod( (2 * M_PI), psi );
 
 	if( psi > M_PI)
 	{
@@ -125,14 +131,104 @@ void Watercraft::update_position(void)
 */
 void Watercraft::fill_fdm( struct sitl_fdm &fdm) const
 {
+	/*
+	 * fdm其实相当于整个飞控的外部设备，比如让正阳从别的设备读过来的
+	 */
 
-	fdm.latitude = location.lat;
-	fdm.longitude = location.lng;//正常度数*1*10^7
-	fdm.heading = math_heading;//弧度
+
+	fdm.latitude = (float)location.lat * 1e-7;
+	fdm.longitude = (float)location.lng * 1e-7;//正常度数*1*10^7
+
+	fdm.heading = math_heading * RAD_TO_DEG ;
+
 	fdm.speedN = velocity_x;//m/s
 	fdm.speedE = velocity_y;//m/s
 
 
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+float constrain_value(const float amt, const float low, const float high)
+{
+    // the check for NaN as a float prevents propagation of floating point
+    // errors through any function that uses constrain_value(). The normal
+    // float semantics already handle -Inf and +Inf
+    if (isnan(amt)) {
+        return (low + high) / 2;
+    }
+
+    if (amt < low) {
+        return low;
+    }
+
+    if (amt > high) {
+        return high;
+    }
+
+    return amt;
+}
+
+float constrain_float(const float amt, const float low, const float high)
+{
+    return constrain_value(amt, low, high);
+}
+
+float longitude_scale(const struct Location &loc)
+{
+    float scale = cosf(loc.lat * 1.0e-7f * DEG_TO_RAD);
+    return constrain_float(scale, 0.01f, 1.0f);
+}
+
+unsigned char is_zero(float x)
+{
+	if(x==0.0)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+
+}
+
+/*
+ *  extrapolate latitude/longitude given distances north and east
+ *   extrapolate : （由已知资料对未知事实或价值）推算，推断
+ */
+void location_offset(struct Location &loc, float ofs_north, float ofs_east)
+{
+    if (!is_zero(ofs_north) || !is_zero(ofs_east))
+    {
+        int32_t dlat = ofs_north * LOCATION_SCALING_FACTOR_INV;
+        int32_t dlng = (ofs_east * LOCATION_SCALING_FACTOR_INV) / longitude_scale(loc);
+        loc.lat += dlat;
+        loc.lng += dlng;
+    }
+}
+
+void location_update(struct Location &loc, float bearing, float distance)
+{
+    float ofs_north = cosf(DEG_TO_RAD * (bearing)) * distance;
+    float ofs_east  = sinf(DEG_TO_RAD * (bearing)) * distance;
+    location_offset(loc, ofs_north, ofs_east);
+}
+
+
+
+
+
 

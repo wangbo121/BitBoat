@@ -44,7 +44,7 @@ void AP_Scheduler::run(uint16_t time_available)
         //uint16_t interval_ticks = (&_tasks[i].interval_ticks);
         memcpy(&interval_ticks,&_tasks[i].interval_ticks,sizeof(uint16_t));
 
-//        printf("hello run %d\n",interval_ticks);
+       //printf("hello run %d\n",interval_ticks);
 //
 //             return ;
 
@@ -76,7 +76,7 @@ void AP_Scheduler::run(uint16_t time_available)
 //
 //                                                        return ;
 
-                _task_time_started = gettimeofday_us();
+                _task_time_started = (uint32_t)gettimeofday_us();
 //                task_fn_t func = (task_fn_t)(&_tasks[i].function);
 //                func();
                 _tasks[i].function();
@@ -89,7 +89,7 @@ void AP_Scheduler::run(uint16_t time_available)
                 _last_run[i] = _tick_counter;
 
                 // work out how long the event actually took
-                uint32_t time_taken = gettimeofday_us() - _task_time_started;
+                uint32_t time_taken = (uint32_t)gettimeofday_us() - _task_time_started;
 
                 if (time_taken > _task_time_allowed) {
                     printf("Scheduler overrun task[%u]\n",(unsigned)i);

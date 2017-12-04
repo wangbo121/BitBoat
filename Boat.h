@@ -143,6 +143,14 @@ public:
 
     void update_all_external_device_input( void );
 
+    void update_GPS();
+
+
+
+    Watercraft::sitl_input input;//这个是4个电机的输入，然后用于multi_copter.update(input)更新出飞机的飞行状态
+    Watercraft::sitl_fdm fdm;
+    uint16_t servos_set_out[4];//这是驾驶仪计算的到的motor_out中的四个电机的转速，给电调的信号，1000～2000
+
 };
 
 extern Boat boat;

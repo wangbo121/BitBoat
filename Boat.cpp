@@ -9,10 +9,12 @@
 
 Boat boat;
 
-Watercraft sim_water_craft("39.6136,116.357,10,0","+");//+型机架，起始高度为10，yaw是0
-Watercraft::sitl_input input;//这个是4个电机的输入，然后用于multi_copter.update(input)更新出飞机的飞行状态
-Watercraft::sitl_fdm fdm;
-uint16_t servos_set_out[4];//这是驾驶仪计算的到的motor_out中的四个电机的转速，给电调的信号，1000～2000
+//Watercraft sim_water_craft("39.6136,116.357,10,0","+");//+型机架，起始高度为10，yaw是0
+//Watercraft::sitl_input input;//这个是4个电机的输入，然后用于multi_copter.update(input)更新出飞机的飞行状态
+//Watercraft::sitl_fdm fdm;
+//uint16_t servos_set_out[4];//这是驾驶仪计算的到的motor_out中的四个电机的转速，给电调的信号，1000～2000
+
+
 
 void Boat::setup( void )
 {
@@ -333,6 +335,12 @@ void Boat::get_timedata_now()
 
 void Boat::update_all_external_device_input( void )
 {
+	/*
+	 * 飞控本身假设所有的外部设备的信息都已经获取 并且存在了all_external_device_input中
+	 * 但是我们还是要假设去更新外部设备数据，比如用update_GPS来从all_external_device_input中获取数据
+	 * 之所以增加all_external_device_input这一层，是为了增加模块化，不用考虑外部的数据
+	 */
+
 	//如果跟王正阳的硬件驱动一起调试，则这个函数是不需要的，硬件驱动把数据赋值给all_external_device_input即可
 	#ifdef LINUX_OS
 	/*
@@ -374,6 +382,23 @@ void Boat::update_all_external_device_input( void )
 	* 实际使用时，上面的需要删除掉我这里并不需要
 	* 我需要的是下面的从all_external_device_input获取数据
 	*/
+
+
+
+	/*
+	 * 这里使用仿真sim_water_craft的数据
+	 */
+
+
+	all_external_device_input.latitude = fdm.latitude;
+	all_external_device_input.longitude = fdm.longitude;
+	all_external_device_input.altitude = 10 ;
+	all_external_device_input.v_north = fdm.speedN;
+	all_external_device_input.v_east = fdm.speedE;
+	all_external_device_input.v_down = fdm.speedD;
+	all_external_device_input.heading = fdm.heading;
+
+
 }
 
 void Boat::set_rc_out()
@@ -391,4 +416,18 @@ void Boat::set_rc_out()
     rc_raw_out_0 = all_external_device_output.rc_raw_out_0;
 
     //然后把rc_raw_out_0输出给舵机或者电机，频率是50hz
+}
+
+void Boat::update_GPS()
+{
+	gps_data.latitude =(int)( all_external_device_input.latitude * 1e5);
+	gps_data.longitude = (int)(all_external_device_input.longitude * 1e5);
+
+	gps_data.course = all_external_device_input.heading * DEG_TO_RAD;
+	gps_data.yaw = (int)(all_external_device_input.heading * 1e2);
+
+	gps_data.velocity_north = (int)(all_external_device_input.v_north *1e3);
+	gps_data.velocity_east = (int)(all_external_device_input.v_east * 1e3);
+
+
 }

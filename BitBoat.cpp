@@ -7,6 +7,7 @@
 
 #include "Boat.h"
 
+Watercraft sim_water_craft("39.6136,116.357,10,0","+");//+型机架，起始高度为10，yaw是0
 /*
   scheduler table - all regular tasks apart from the fast_loop()
   should be listed here, along with how often they should be called
@@ -15,12 +16,14 @@
   1 = 100hz
   2 = 50hz
   4 = 25hz
+  10 = 10hz
   100 = 1hz
   中间的数字是执行频率，也就是经过多少个tick(目前我写的是10ms一个tick)执行一次这个任务
  */
 #define SCHED_TASK(func) (void (*)())&Boat::func
-const AP_Scheduler::Task Boat::scheduler_tasks[] = {
 
+const AP_Scheduler::Task Boat::scheduler_tasks[] = {
+       { SCHED_TASK(update_GPS),            10,     900 },
 //    { update_GPS,            2,     900 },
 //    { update_navigation,     10,    500 },
 //    { medium_loop,           2,     700 },
@@ -37,7 +40,9 @@ const AP_Scheduler::Task Boat::scheduler_tasks[] = {
 //    { super_slow_loop,     100,    1100 },
 //    { perf_update,        1000,     500 }
 //      { (void (*)())&Boat::loop_slow,     100,    1100 },
-      { SCHED_TASK(set_rc_out),                               2,     100 },
+
+
+      { SCHED_TASK(set_rc_out),                               100,     100 },
       { SCHED_TASK(send_ap2gcs_realtime_data_boatlink),     100,    1000 },
       { SCHED_TASK(record_log),                             100,    1100 },
       { SCHED_TASK(get_timedata_now),                       100,    1100 },
@@ -82,7 +87,13 @@ int main(int argc,char * const argv[])
 
 void Boat::loop( void )
 {
-    uint32_t timer = gettimeofday_us();//当前系统运行时间精确到微秒
+	static uint8_t loop_cnt;
+
+	loop_cnt++;
+
+
+
+    uint32_t timer = (uint32_t)gettimeofday_us();//当前系统运行时间精确到微秒
 
     loop_fast();//在无人机中是姿态控制内环，在无人船中是导航控制环
 
@@ -96,7 +107,16 @@ void Boat::loop( void )
      * 如果在单片机中，则使用某一个定时器来触发这个loop这个函数
      */
     uint32_t loop_us = micro_seconds;
-    uint32_t time_available = loop_us - ( gettimeofday_us() - timer );
+    uint32_t time_available = loop_us - ( (uint32_t)gettimeofday_us() - timer );
+
+    if(loop_cnt > 100)
+	{
+    	/*
+    	 * //20171204 为什么time_available=0了呢 貌似是因为gettimeofday_us返回值是float型的，前面必须加
+    	 */
+		printf("loop_cnt = 100, time_available =%d \n",time_available);//20171204 为什么time_available=0了呢(uint32_t)
+		loop_cnt = 0;
+	}
 
     scheduler.run(time_available > loop_us ? 0u : time_available);
 }
@@ -127,14 +147,14 @@ void Boat::loop_fast()
      * execute_ctrloutput是把control_loop的计算结果，实际映射到某个通道，比如rudder对应两个电机啥的
      * 而实际的输出放在
      */
-    execute_ctrloutput(&ctrloutput);
+    //execute_ctrloutput(&ctrloutput);
 
     servos_set_out[0] = ctrloutput.rudder_pwm;
     servos_set_out[0] = ctrloutput.mmotor_onoff_pwm;
 
-    memcpy(input.servos,servos_set_out,sizeof(servos_set_out));
-    sim_water_craft.update(input);//利用input更新，copter四旋翼的位置，速度，线加速度，角度，角速度，角加速度是没有的，所以一共3*5=15个数据
-    sim_water_craft.fill_fdm(fdm);//现在的fdm中的数值就是四旋翼飞行动力模型的各个飞行状态15个数据
+    //memcpy(input.servos,servos_set_out,sizeof(servos_set_out));
+    //sim_water_craft.update(input);//利用input更新，copter四旋翼的位置，速度，线加速度，角度，角速度，角加速度是没有的，所以一共3*5=15个数据
+    //sim_water_craft.fill_fdm(fdm);//现在的fdm中的数值就是四旋翼飞行动力模型的各个飞行状态15个数据
 }
 
 void Boat::loop_slow()
