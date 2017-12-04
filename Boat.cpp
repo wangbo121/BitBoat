@@ -207,6 +207,7 @@ void Boat::send_ap2gcs_realtime_data_boatlink()
     if(global_bool_boatpilot.ap2gcs_real_cnt_previous!=global_bool_boatpilot.ap2gcs_real_cnt)
     {
         //发送实时数据
+    	DEBUG_PRINTF("发送实时数据\n");
         send_ap2gcs_real();
 
         global_bool_boatpilot.ap2gcs_real_cnt_previous=global_bool_boatpilot.ap2gcs_real_cnt;
@@ -420,7 +421,8 @@ void Boat::set_rc_out()
 
 void Boat::update_GPS()
 {
-	gps_data.latitude =(int)( all_external_device_input.latitude * 1e5);
+	//gps_data.latitude =(int)( all_external_device_input.latitude * 1e5);
+	gps_data.latitude =3900000;
 	gps_data.longitude = (int)(all_external_device_input.longitude * 1e5);
 
 	gps_data.course = all_external_device_input.heading * DEG_TO_RAD;

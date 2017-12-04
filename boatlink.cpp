@@ -15,11 +15,11 @@
 #include <unistd.h>
 
 #include <fcntl.h>//创建文件
-//#include <radio.h>
+#include <radio.h>
 #include <sys/stat.h>
 
 #include "global.h"
-//#include "uart.h"
+#include "uart.h"
 #include "control.h"
 #include "navigation.h"
 #include "gps.h"
@@ -67,8 +67,8 @@ struct T_BOATPILOT_LOG boatpilot_log;
 
 static int decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GCS2AP_CMD *ptr_gcs2ap_cmd);
 static int decode_gcs2ap_waypoint(struct WAY_POINT *ptr_wp_data, struct GCS_AP_WP *ptr_gcs2ap_wp);
-static int bd_decode_gcs2ap_waypoint(struct WAY_POINT *ptr_wp_data, struct GCS_AP_WP *ptr_gcs2ap_wp);
-static int bd_decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GCS2AP_CMD *ptr_gcs2ap_cmd);
+//static int bd_decode_gcs2ap_waypoint(struct WAY_POINT *ptr_wp_data, struct GCS_AP_WP *ptr_gcs2ap_wp);
+//static int bd_decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GCS2AP_CMD *ptr_gcs2ap_cmd);
 
 int decode_gcs2ap_radio()
 {
@@ -80,7 +80,6 @@ int decode_gcs2ap_radio()
 
         global_bool_boatpilot.bool_get_gcs2ap_cmd = FALSE;
     }
-
     /*2 decode gcs2ap_waypoint*/
     if (global_bool_boatpilot.bool_get_gcs2ap_waypoint)
     {
@@ -92,11 +91,12 @@ int decode_gcs2ap_radio()
 }
 
 /*
- * 发送指定从wp_start起始的wp_num个航点
+ * 发送指定从wp_start起始的wp_num个航点，待修改20170413
+ * 已修改20170420
  */
 int send_ap2gcs_waypoint_num(unsigned char wp_start,unsigned char wp_num)
 {
-    unsigned char buf_data[256];
+    unsigned char buf_temp[256];
     unsigned char buf_packet[256];
 
     unsigned int ret;
@@ -104,21 +104,14 @@ int send_ap2gcs_waypoint_num(unsigned char wp_start,unsigned char wp_num)
     printf("最终发送给地面站的航点个数=%d\n",wp_num);
     memset(&ap2gcs_wp.way_point0,0,5*sizeof(struct WAY_POINT));
     memcpy(&ap2gcs_wp.way_point0,&wp_data[wp_start],wp_num*sizeof(struct WAY_POINT));
+    memcpy(buf_temp,&ap2gcs_wp,sizeof(struct GCS_AP_WP));
 
-    //20170728把帧头帧尾加入到数据结构中
-    static unsigned char frame_len=76;
-    static unsigned char frame_head_len=8;
-    static unsigned char frame_checksum_len=2;
-    static unsigned char frame_data_len;
-    frame_data_len=frame_len-frame_head_len-frame_checksum_len;
-    memcpy(buf_data,&ap2gcs_wp.pack_func_flag,frame_data_len);//20170729注意这里一定是ap2gcs_wp，上次因为写成gcs_ap_wp一直没有查处原因，之所以犯这样的错误，是因为是复制过来的，没仔细看
-
-    ret=generate_packet(buf_packet, buf_data, frame_data_len,\
+    ret=generate_packet(buf_packet, buf_temp, sizeof(struct GCS_AP_WP),\
                         global_bool_boatpilot.ap2gcs_wp_cnt, COMMAND_AP2GCS_WP,\
                         0,1);
+    send_radio_data(buf_packet, ret);
 
-//    send_radio_data(buf_packet, ret);
-
+#if 1
     int i=0;
     for(i=0;i<wp_num;i++)
     {
@@ -128,38 +121,68 @@ int send_ap2gcs_waypoint_num(unsigned char wp_start,unsigned char wp_num)
         printf("驾驶仪-->地面站航点包的第%d个航点的高度=%d\n",wp_start+i,wp_data[wp_start+i].alt);
         printf("驾驶仪-->地面站航点包的第%d个航点的速度=%d\n",wp_start+i,wp_data[wp_start+i].spd);
     }
+#else
+    int i=0;
+    for(i=0;i<3;i++)
+    {
+        printf("驾驶仪-->地面站航点包的第%d个航点的编号=%d\n",wp_start+i,wp_data[wp_start+i].no);
+        printf("驾驶仪-->地面站航点包的第%d个航点的经度=%d\n",wp_start+i,wp_data[wp_start+i].lng);
+        printf("驾驶仪-->地面站航点包的第%d个航点的纬度=%d\n",wp_start+i,wp_data[wp_start+i].lat);
+        printf("驾驶仪-->地面站航点包的第%d个航点的高度=%d\n",wp_start+i,wp_data[wp_start+i].alt);
+        printf("驾驶仪-->地面站航点包的第%d个航点的速度=%d\n",wp_start+i,wp_data[wp_start+i].spd);
+    }
+#endif
 
     return 0;
 }
+
+int send_ap2gcs_waypoint()
+{
+    unsigned char wp[256];
+    unsigned char buf_packet[256];
+
+    /*
+     * 这个ret 之前粗心写成了unsigned char ret 导致后面发送数据出现了严重错误，
+     * 所以，切记函数的类型一定要一致
+     */
+    unsigned int ret;
+
+    memcpy(wp,&gcs_ap_wp,sizeof(struct GCS_AP_WP));
+    printf("gcs_ap_wp=%d\n",gcs_ap_wp.pack_func_info3);
+
+    ret=generate_packet(buf_packet, wp, sizeof(struct GCS_AP_WP),\
+                        global_bool_boatpilot.ap2gcs_wp_cnt, COMMAND_AP2GCS_WP,\
+                        0,1);
+    send_radio_data(buf_packet, ret);
+
+    return 0;
+}
+
 
 
 int send_ap2gcs_cmd()
 {
-    unsigned char buf_data[256];////要发送的数据，没有加帧头帧尾的，即需要打包的数据
-    unsigned char buf_packet[256];//把数据加上帧头帧尾打包后，存放在这里，再发出去
+    unsigned char cmd[256];
+    unsigned char buf_packet[256];
     int ret;
 
-    //20170728把帧头帧尾加入到数据结构中
-    static unsigned char frame_len=76;
-    static unsigned char frame_head_len=8;
-    static unsigned char frame_checksum_len=2;
-    static unsigned char frame_data_len;
-    frame_data_len=frame_len-frame_head_len-frame_checksum_len;
-    memcpy(buf_data,&gcs2ap_radio_all.pack_func_flag,frame_data_len);
+    memcpy(&gcs2ap_cmd_return,&gcs2ap_radio_all,sizeof(struct GCS2AP_CMD));
+    memcpy(cmd,&gcs2ap_cmd_return,sizeof(struct GCS2AP_CMD));
+    //printf("sizeof(struct GCS2AP_CMD)=%d\n",sizeof(struct GCS2AP_CMD));//已测试20170413
 
-    ret=generate_packet(buf_packet, buf_data, frame_data_len,\
+    ret=generate_packet(buf_packet, cmd, sizeof(struct GCS2AP_CMD),\
                         global_bool_boatpilot.ap2gcs_cmd_cnt, COMMAND_AP2GCS_CMD,\
                         0,1);
-
-//    send_radio_data(buf_packet, ret);
+    send_radio_data(buf_packet, ret);
 
     return 0;
 }
 
+
 int send_ap2gcs_real()
 {
-    unsigned char buf_data[256];////要发送的数据，没有加帧头帧尾的，即需要打包的数据
-    unsigned char buf_packet[256];//把数据加上帧头帧尾打包后，存放在这里，再发出去
+    unsigned char real[256];
+    unsigned char buf_packet[256];
     int ret;
 
     ap2gcs_real.pack_func_flag=0;
@@ -195,7 +218,7 @@ int send_ap2gcs_real()
 //    ap2gcs_real.current_bat1=data_s2m.current[0]/50;
 //    ap2gcs_real.current_bat2=data_s2m.current[1]/50;
     //ap2gcs_real.current_bat2=50;//20170413已测试，地面站可以收到显示
-
+//
 //    if(data_s2m.switcher.workstate[0]==0x55)
 //    {
 //        //切换器通道是1
@@ -242,6 +265,17 @@ int send_ap2gcs_real()
 //    {
 //        ap2gcs_real.toggle_state=(ap2gcs_real.toggle_state & 0xfc);
 //    }
+
+#if 0
+    //切换器2通道
+    if(global_bool_boatpilot.bat0_is_discharing)
+    {
+        //切换器通道是2
+        ap2gcs_real.toggle_state=(ap2gcs_real.toggle_state & 0xfc) | 0x02;
+
+
+    }
+#endif
 //
 //    //充电机通道
 //    if(data_s2m.charger.channel==1)
@@ -278,16 +312,16 @@ int send_ap2gcs_real()
 //        //开机状态
 //        ap2gcs_real.charge_state=(ap2gcs_real.charge_state & 0xfb);
 //    }
-//
-//    //发电机
-//    if(global_bool_boatpilot.bool_generator_on)
-//    {
-//        ap2gcs_real.charge_state=(ap2gcs_real.charge_state & 0x7f) | 0x80;
-//    }
-//    else
-//    {
-//        ap2gcs_real.charge_state=(ap2gcs_real.charge_state & 0x7f);
-//    }
+
+    //发电机
+    if(global_bool_boatpilot.bool_generator_on)
+    {
+        ap2gcs_real.charge_state=(ap2gcs_real.charge_state & 0x7f) | 0x80;
+    }
+    else
+    {
+        ap2gcs_real.charge_state=(ap2gcs_real.charge_state & 0x7f);
+    }
 //
 //    //气象站数据
 //    ap2gcs_real.temp=data_s2m.aws.temp;
@@ -298,103 +332,33 @@ int send_ap2gcs_real()
 //    ap2gcs_real.seasault=data_s2m.aws.seasault;
 //    ap2gcs_real.elec_cond=data_s2m.aws.elec_cond;
 //    ap2gcs_real.seatemp1=data_s2m.aws.seatemp1;
-    //ap2gcs_real.seatemp2=data_s2m.aws.seatemp2;//待修改
-    //ap2gcs_real.seatemp3=data_s2m.aws.seatemp3;//待修改
-    //ap2gcs_real.alt=35;//待修改
-    //ap2gcs_real.radiation=36;//待修改
-
-    //火箭数据
+//    //ap2gcs_real.seatemp2=data_s2m.aws.seatemp2;//待修改
+//    //ap2gcs_real.seatemp3=data_s2m.aws.seatemp3;//待修改
+//    //ap2gcs_real.alt=35;//待修改
+//    //ap2gcs_real.radiation=36;//待修改
+//
+//    //火箭数据
 //    ap2gcs_real.launch_req_ack=data_s2m.rkt.launch_req_ack;
 //    ap2gcs_real.rocket_state=data_s2m.rkt.state;
 //    ap2gcs_real.rktnumber=data_s2m.rkt.rktnumber;
 //    ap2gcs_real.rkt_alt=data_s2m.rkt.alt;
     ap2gcs_real.work_mode=gcs2ap_radio_all.workmode;
 
+    //ap2gcs_real.wp_next=auto_navigation.current_target_wp_cnt;
     ap2gcs_real.wp_next=global_bool_boatpilot.wp_next;
-    ap2gcs_real.master_state=global_bool_boatpilot.master_state;
-    ap2gcs_real.slave_state=global_bool_boatpilot.slave_state;
 
-    //20170728把帧头帧尾加入到数据结构中
-    static unsigned char frame_len=76;
-    static unsigned char frame_head_len=8;
-    static unsigned char frame_checksum_len=2;
-    static unsigned char frame_data_len;
-    frame_data_len=frame_len-frame_head_len-frame_checksum_len;
-
-    memcpy(buf_data, &ap2gcs_real.pack_func_flag, frame_data_len);
-    ret=generate_packet(buf_packet, buf_data, frame_data_len,\
+    //printf("ap2gcs_real.toggle_state=%x\n",ap2gcs_real.toggle_state);//已测试20170413
+    memcpy(real, &ap2gcs_real, sizeof (struct AP2GCS_REAL));
+    ret=generate_packet(buf_packet, real, sizeof (struct AP2GCS_REAL),\
                         global_bool_boatpilot.ap2gcs_real_cnt, COMMAND_AP2GCS_REAL,\
                         0,1);
-
-//    send_radio_data(buf_packet, ret);
+    send_radio_data(buf_packet, ret);
 
     return 0;
 }
 
 
 static int decode_gcs2ap_waypoint(struct WAY_POINT *ptr_wp_data, struct GCS_AP_WP *ptr_gcs2ap_wp)
-{
-    int write_len=0;
-
-    unsigned char wp_total;//航点总数
-    unsigned char wp_num_need_to_send;//要发送的航点数
-    unsigned char wp_num_in_pack;//本航点包所含有的航点数
-    unsigned char wp_packet_cnt;//本航点包的编号，记录已经保存了多少个航点,需要返回给实时数据用于确认航点
-    static unsigned char wp_cnt;
-
-    unsigned char wp_start_no;//本航点包的第一个航点的编号
-
-    wp_total=ptr_gcs2ap_wp->pack_func_flag;
-    wp_num_need_to_send=ptr_gcs2ap_wp->pack_func_info1;
-    wp_num_in_pack=ptr_gcs2ap_wp->pack_func_info2;
-    wp_packet_cnt=ptr_gcs2ap_wp->pack_func_info3;
-
-    wp_start_no=ptr_gcs2ap_wp->way_point0.no;
-
-    if(wp_num_need_to_send>wp_total)
-    {
-        printf("要发送的航点数大于总航点数，请重新发送\n");
-        return -1;
-    }
-    else
-    {
-        //printf("wp_start_no=%d\n",wp_start_no);//20170410已经测试
-        //printf("wp_num_in_pack=%d\n",wp_num_in_pack);//20170410已经测试
-        memcpy(&(ptr_wp_data[wp_start_no]),&(ptr_gcs2ap_wp->way_point0),sizeof(struct WAY_POINT)*wp_num_in_pack);
-
-        wp_cnt+=wp_num_in_pack;
-
-        if(wp_cnt>=wp_num_need_to_send)
-        {
-            printf("航点接收完全\n");
-
-            wp_cnt=0;
-
-            /*保存航点到航点文件*/
-//            write_len=write(fd_waypoint,(char *)ptr_wp_data,sizeof(struct WAY_POINT)*MAX_WAYPOINT_NUM);
-            printf("write_len 写入了%d个字节的航点\n",write_len);
-        }
-
-        global_bool_boatpilot.wp_total_num = wp_total;//这个global_bool_boatpilot.wp_total_num必须留着，因为gcs2ap_radio_all中的wp_total可能为0，来说明航点无效
-        //printf("航点总数=%d\n",global_bool_boatpilot.wp_total_num);//已测试20170413
-        global_bool_boatpilot.wp_packet_cnt=wp_packet_cnt;//包的计数通过实时数据返回给地面站，地面站确认后，再继续发航点包
-
-        printf("wp_num_in_pack=%d\n",wp_num_in_pack);
-        int i=0;
-        for(i=0;i<wp_num_in_pack;i++)
-        {
-            printf("GCS-->boatpilot传输航点包的第%d个航点的编号=%d\n",wp_start_no+i,ptr_wp_data[wp_start_no+i].no);
-            printf("GCS-->boatpilot传输航点包的第%d个航点的经度=%d\n",wp_start_no+i,ptr_wp_data[wp_start_no+i].lng);
-            printf("GCS-->boatpilot传输航点包的第%d个航点的纬度=%d\n",wp_start_no+i,ptr_wp_data[wp_start_no+i].lat);
-            printf("GCS-->boatpilot传输航点包的第%d个航点的高度=%d\n",wp_start_no+i,ptr_wp_data[wp_start_no+i].alt);
-            printf("GCS-->boatpilot传输航点包的第%d个航点的速度=%d\n",wp_start_no+i,ptr_wp_data[wp_start_no+i].spd);
-        }
-    }
-
-    return 0;
-}
-
-static int bd_decode_gcs2ap_waypoint(struct WAY_POINT *ptr_wp_data, struct GCS_AP_WP *ptr_gcs2ap_wp)
 {
     int write_len=0;
 
@@ -422,6 +386,8 @@ static int bd_decode_gcs2ap_waypoint(struct WAY_POINT *ptr_wp_data, struct GCS_A
     }
     else
     {
+        //printf("wp_start_no=%d\n",wp_start_no);//20170410已经测试
+        //printf("wp_num_in_pack=%d\n",wp_num_in_pack);//20170410已经测试
         memcpy(&(ptr_wp_data[wp_start_no]),&(ptr_gcs2ap_wp->way_point0),sizeof(struct WAY_POINT)*wp_num_in_pack);
 
         wp_cnt+=wp_num_in_pack;
@@ -433,21 +399,24 @@ static int bd_decode_gcs2ap_waypoint(struct WAY_POINT *ptr_wp_data, struct GCS_A
             wp_cnt=0;
 
             /*保存航点到航点文件*/
-//            write_len=write(fd_waypoint,(char *)ptr_wp_data,sizeof(struct WAY_POINT)*MAX_WAYPOINT_NUM);
+            //write_len=write(fd_waypoint,(char *)ptr_wp_data,sizeof(struct WAY_POINT)*MAX_WAYPOINT_NUM);
             printf("write_len 写入了%d个字节的航点\n",write_len);
         }
 
-        global_bool_boatpilot.wp_total_num = wp_total;
-        global_bool_boatpilot.wp_packet_cnt=wp_packet_cnt;
+        global_bool_boatpilot.wp_total_num = wp_total;//这个global_bool_boatpilot.wp_total_num必须留着，因为gcs2ap_radio_all中的wp_total可能为0，来说明航点无效
+        global_bool_boatpilot.wp_packet_cnt=wp_packet_cnt;//包的计数通过实时数据返回给地面站，地面站确认后，再继续发航点包
 
+        //printf("航点总数=%d\n",global_bool_boatpilot.wp_total_num);//已测试20170413
+
+        printf("wp_num_in_pack=%d\n",wp_num_in_pack);
         int i=0;
         for(i=0;i<wp_num_in_pack;i++)
         {
-            printf("北斗--GCS-->boatpilot传输航点包的第%d个航点的编号=%d\n",wp_start_no+i,ptr_wp_data[wp_start_no+i].no);
-            printf("北斗--GCS-->boatpilot传输航点包的第%d个航点的经度=%d\n",wp_start_no+i,ptr_wp_data[wp_start_no+i].lng);
-            printf("北斗--GCS-->boatpilot传输航点包的第%d个航点的纬度=%d\n",wp_start_no+i,ptr_wp_data[wp_start_no+i].lat);
-            printf("北斗--GCS-->boatpilot传输航点包的第%d个航点的高度=%d\n",wp_start_no+i,ptr_wp_data[wp_start_no+i].alt);
-            printf("北斗--GCS-->boatpilot传输航点包的第%d个航点的速度=%d\n",wp_start_no+i,ptr_wp_data[wp_start_no+i].spd);
+            printf("GCS-->boatpilot传输航点包的第%d个航点的编号=%d\n",wp_start_no+i,ptr_wp_data[wp_start_no+i].no);
+            printf("GCS-->boatpilot传输航点包的第%d个航点的经度=%d\n",wp_start_no+i,ptr_wp_data[wp_start_no+i].lng);
+            printf("GCS-->boatpilot传输航点包的第%d个航点的纬度=%d\n",wp_start_no+i,ptr_wp_data[wp_start_no+i].lat);
+            printf("GCS-->boatpilot传输航点包的第%d个航点的高度=%d\n",wp_start_no+i,ptr_wp_data[wp_start_no+i].alt);
+            printf("GCS-->boatpilot传输航点包的第%d个航点的速度=%d\n",wp_start_no+i,ptr_wp_data[wp_start_no+i].spd);
         }
     }
 
@@ -463,7 +432,6 @@ static int decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GCS2A
 
     if((ptr_gcs2ap_radio->pack_func_flag & 0x01)==0)
     {
-        /* pack_func_flag最低位等于0:请求同步，等于1:正常命令包 */
         /*
          * 命令包优先，如果pack_func_flag的从右往左第二位也等于1--请求航点回传，
          * 则忽视，优先回传命令包
@@ -491,10 +459,6 @@ static int decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GCS2A
                 if(ptr_gcs2ap_radio->pack_func_info1==255)
                 {
                     printf("地面站要求回传全部航点\n");
-
-                    //printf("ptr_gcs2ap_radio->pack_func_info3=%d\n",ptr_gcs2ap_radio->pack_func_info3);//20170729已测试通过
-                    //printf("global_bool_boatpilot.ap2gcs_wp_cnt=%d\n",global_bool_boatpilot.ap2gcs_wp_cnt);//20170729已测试通过
-
                     global_bool_boatpilot.bool_is_sending_wp_ap2gcs=TRUE;//正在发送航点
                     global_bool_boatpilot.send_ap2gcs_specific_wp_req=FALSE;//不是发送指定的某些航点，把这个标志量归零
 
@@ -544,7 +508,7 @@ static int decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GCS2A
                             global_bool_boatpilot.send_ap2gcs_wp_end_num=global_bool_boatpilot.send_ap2gcs_wp_start_num+((global_bool_boatpilot.wp_total_num-1)-global_bool_boatpilot.send_ap2gcs_wp_start_num);
                         }
                         ap2gcs_wp.pack_func_info1=global_bool_boatpilot.send_ap2gcs_wp_end_num-global_bool_boatpilot.send_ap2gcs_wp_start_num+1;
-                        printf("wp_total_num=%d,info1=%d,info2=%d\n",global_bool_boatpilot.wp_total_num,ap2gcs_wp.pack_func_info1,ptr_gcs2ap_radio->pack_func_info2);//20170508已测试
+                        //printf("wp_total_num=%d,info1=%d,info2=%d\n",global_bool_boatpilot.wp_total_num,ap2gcs_wp.pack_func_info1,ptr_gcs2ap_radio->pack_func_info2);//20170508已测试
                     }
                 }
 
@@ -579,13 +543,10 @@ static int decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GCS2A
                 }
                 else
                 {
-                    //在不是回传指定航点的情况下，判断回传全部航点是否结束，如果没有结束，继续回传
+                    //在不是回传特点航点的情况下，判断回传全部航点是否结束，如果没有结束，继续回传
                     if(global_bool_boatpilot.send_ap2gcs_wp_end_num==(global_bool_boatpilot.wp_total_num-1))
                     {
-                        if(global_bool_boatpilot.bool_is_sending_wp_ap2gcs)
-                        {
-                            printf("已经回传结束全部航点\n");
-                        }
+                        //printf("已经回传结束全部航点\n");//20170426已测试
                         global_bool_boatpilot.bool_is_sending_wp_ap2gcs=FALSE;
                     }
                     else if(global_bool_boatpilot.bool_is_sending_wp_ap2gcs)
@@ -616,7 +577,7 @@ static int decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GCS2A
             else
             {
                 //总的航点数小于1，所以什么也不做
-                printf("虽然地面站请求回传航点，但是驾驶仪中保存的航点数小于1，无法回传\n");
+                //printf("虽然地面站请求回传航点，但是驾驶仪中保存的航点数小于1，无法回传\n");
             }
         }
 
@@ -815,7 +776,7 @@ static int decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GCS2A
     {
         stop_third_small_motor();
     }
-
+//
 //    //火箭舱盖
 //    if(ptr_gcs2ap_radio->rocket_hat)
 //    {
@@ -826,7 +787,7 @@ static int decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GCS2A
 //    {
 //        data_m2s.rkt.open_rocket_hatch=FALSE;
 //    }
-
+//
 //    //火箭发射
 //    if(global_bool_boatpilot.launch_req_ack_cnt_previous!=data_s2m.rkt.launch_req_ack)
 //    {
@@ -854,598 +815,51 @@ static int decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GCS2A
         global_bool_boatpilot.turn_mode=TURN_MODE_DIFFSPD;//默认差速控制
     }
 
-    if((ptr_gcs2ap_radio->rudder_calib>>7 & 0x01)==1)
-    {
-        //进入标定状态
-        global_bool_boatpilot.bool_is_calib_rudder=TRUE;
-        printf("进入方向舵标定状态\n");
-
-        //static float left_detla_fabs;
-        //static float right_detla_fabs;
-        static short left_detla_fabs;
-        static short right_detla_fabs;
-        static short min_delta_fabs=10;//10对应5度(左右各5度)
-        static short max_delta_fabs=90;//90对应45度(左右各45度)
-        if(global_bool_boatpilot.rudder_calib_cnt_previous!=ptr_gcs2ap_radio->rudder_calib_cnt)
-        {
-            global_bool_boatpilot.bool_rudder_calib_success=FALSE;
-            printf("地面站-->标定方向舵\n");
-            if((ptr_gcs2ap_radio->rudder_calib & 0x01)==1)
-            {
-                //舵标定，到达左舵限位
-                ptr_gcs2ap_radio->rudder_left_pos=ptr_gcs2ap_radio->rc_rudder;
-//                global_bool_boatpilot.rudder_left_limit_position=read_encoder.postion;
-                printf("global_bool_boatpilot.rudder_left_limit_position=%d\n",global_bool_boatpilot.rudder_left_limit_position);
-                left_detla_fabs=fabs(global_bool_boatpilot.rudder_middle_position-global_bool_boatpilot.rudder_left_limit_position);
-            }
-            if(((ptr_gcs2ap_radio->rudder_calib >> 1) & 0x01)==1)
-            {
-                //舵标定，到达右舵限位
-                ptr_gcs2ap_radio->rudder_right_pos=ptr_gcs2ap_radio->rc_rudder;
-//                global_bool_boatpilot.rudder_right_limit_position=read_encoder.postion;
-                printf("global_bool_boatpilot.rudder_right_limit_position=%d\n",global_bool_boatpilot.rudder_right_limit_position);
-                right_detla_fabs=fabs(global_bool_boatpilot.rudder_right_limit_position-global_bool_boatpilot.rudder_middle_position);
-            }
-            if(((ptr_gcs2ap_radio->rudder_calib >> 2) & 0x01)==1)
-            {
-                //舵标定，到达中间位置
-                ptr_gcs2ap_radio->rudder_mid_pos=ptr_gcs2ap_radio->rc_rudder;
-//                global_bool_boatpilot.rudder_middle_position=read_encoder.postion;
-                printf("global_bool_boatpilot.rudder_middle_position=%d\n",global_bool_boatpilot.rudder_middle_position);
-
-                left_detla_fabs=fabs(global_bool_boatpilot.rudder_middle_position-global_bool_boatpilot.rudder_left_limit_position);
-                right_detla_fabs=fabs(global_bool_boatpilot.rudder_right_limit_position-global_bool_boatpilot.rudder_middle_position);
-            }
-
-            if(right_detla_fabs>min_delta_fabs && left_detla_fabs>min_delta_fabs)
-            {
-                if(right_detla_fabs>left_detla_fabs)
-                {
-                    global_bool_boatpilot.rudder_delta_fabs=left_detla_fabs;
-                }
-                else
-                {
-                    global_bool_boatpilot.rudder_delta_fabs=right_detla_fabs;
-                }
-
-                if(global_bool_boatpilot.rudder_delta_fabs>min_delta_fabs && global_bool_boatpilot.rudder_delta_fabs<max_delta_fabs)
-                {
-                    global_bool_boatpilot.bool_rudder_calib_success=TRUE;
-                }
-                else
-                {
-                    global_bool_boatpilot.bool_rudder_calib_success=FALSE;
-                }
-            }
-            else
-            {
-                global_bool_boatpilot.bool_rudder_calib_success=FALSE;
-            }
-
-            global_bool_boatpilot.rudder_calib_cnt_previous=ptr_gcs2ap_radio->rudder_calib_cnt;
-        }
-
-    }
-    else
-    {
-        global_bool_boatpilot.bool_is_calib_rudder=FALSE;
-    }
-
-//    if(global_bool_boatpilot.set_switch_channel_previous!=ptr_gcs2ap_radio->set_switch_channel)
-//    {
-//        if(ptr_gcs2ap_radio->set_switch_channel==SWITCH_AUTO)
-//        {
-//            data_m2s.switcher.auto_req=TRUE;
-//            data_m2s.switcher.disable_req=FALSE;
-//            data_m2s.switcher.ch0_on_req=FALSE;
-//            data_m2s.switcher.ch1_on_req=FALSE;
-//        }
-//        if(ptr_gcs2ap_radio->set_switch_channel==SWITCH_STOP)
-//        {
-//            data_m2s.switcher.auto_req=FALSE;
-//            data_m2s.switcher.disable_req=TRUE;
-//            data_m2s.switcher.ch0_on_req=FALSE;
-//            data_m2s.switcher.ch1_on_req=FALSE;
-//        }
-//        if(ptr_gcs2ap_radio->set_switch_channel==SWITCH_CHANNEL_0)
-//        {
-//            data_m2s.switcher.auto_req=FALSE;
-//            data_m2s.switcher.disable_req=FALSE;
-//            data_m2s.switcher.ch0_on_req=TRUE;
-//            data_m2s.switcher.ch1_on_req=FALSE;
-//        }
-//        if(ptr_gcs2ap_radio->set_switch_channel==SWITCH_CHANNEL_1)
-//        {
-//            data_m2s.switcher.auto_req=FALSE;
-//            data_m2s.switcher.disable_req=FALSE;
-//            data_m2s.switcher.ch0_on_req=FALSE;
-//            data_m2s.switcher.ch1_on_req=TRUE;
-//        }
-//        global_bool_boatpilot.set_switch_channel_previous=ptr_gcs2ap_radio->set_switch_channel;
-//    }
-//
-//    if(global_bool_boatpilot.voltage_llim_previous!=ptr_gcs2ap_radio->set_switch_low_limit)
-//    {
-//        data_m2s.switcher.llim_req=TRUE;
-//        data_m2s.switcher.voltage_llim=ptr_gcs2ap_radio->set_switch_low_limit ;
-//
-//        global_bool_boatpilot.voltage_llim_previous=ptr_gcs2ap_radio->set_switch_low_limit;
-//    }
-//
-//    if(global_bool_boatpilot.voltage_hlim_previous!=ptr_gcs2ap_radio->set_switch_high_limit)
-//    {
-//        data_m2s.switcher.hlim_req=TRUE;
-//        data_m2s.switcher.voltage_hlim=ptr_gcs2ap_radio->set_switch_high_limit ;
-//
-//        global_bool_boatpilot.voltage_hlim_previous=ptr_gcs2ap_radio->set_switch_high_limit ;
-//    }
-//
-//    if(global_bool_boatpilot.charge_start_previous!=ptr_gcs2ap_radio->charge_start)
-//    {
-//        data_m2s.charger.turn_on_req=ptr_gcs2ap_radio->charge_start;
-//        if(data_m2s.charger.turn_on_req)
-//        {
-//            data_m2s.charger.turn_off_req=FALSE;
-//        }
-//        else
-//        {
-//            data_m2s.charger.turn_off_req=TRUE;
-//        }
-//
-//        global_bool_boatpilot.charge_start_previous=ptr_gcs2ap_radio->charge_start;
-//    }
-//
-//    if(global_bool_boatpilot.charger_set_channel_previous!=ptr_gcs2ap_radio->set_charge_channel)
-//    {
-//        data_m2s.charger.set_channel_req=TRUE;
-//        data_m2s.charger.set_channel=ptr_gcs2ap_radio->set_charge_channel;
-//
-//        global_bool_boatpilot.charger_set_channel_previous=ptr_gcs2ap_radio->set_charge_channel;
-//    }
-//
-//    if(global_bool_boatpilot.charger_set_voltage_previous!=ptr_gcs2ap_radio->set_charge_voltage )
-//    {
-//        data_m2s.charger.set_voltage_req=TRUE;
-//        data_m2s.charger.set_voltage=ptr_gcs2ap_radio->set_charge_voltage ;
-//
-//        global_bool_boatpilot.charger_set_voltage_previous=ptr_gcs2ap_radio->set_charge_voltage;
-//    }
-//
-//    if(global_bool_boatpilot.charger_set_current_previous!=ptr_gcs2ap_radio->set_charge_current)
-//    {
-//        data_m2s.charger.set_current_req=TRUE;
-//        data_m2s.charger.set_current=ptr_gcs2ap_radio->set_charge_current;
-//
-//        global_bool_boatpilot.charger_set_current_previous=ptr_gcs2ap_radio->set_charge_current;
-//    }
-
-    if(ptr_gcs2ap_radio->rudder_dead_zone_angle_degree<=1)
-    {
-        ptr_gcs2ap_radio->rudder_dead_zone_angle_degree=1;
-    }
-    else if(ptr_gcs2ap_radio->rudder_dead_zone_angle_degree>=10)
-    {
-        ptr_gcs2ap_radio->rudder_dead_zone_angle_degree=10;
-    }
-
-//    if(global_bool_boatpilot.slave_config_previous!=ptr_gcs2ap_radio->slave_config)
-//    {
-//        printf("电流读取使能发生了变化\n");
-//        if(ptr_gcs2ap_radio->slave_config & (0x01<<2))
-//        {
-//            data_m2s.rs485_read_current_ena[0]=TRUE;
-//        }
-//        else
-//        {
-//            data_m2s.rs485_read_current_ena[0]=FALSE;
-//        }
-//
-//        if(ptr_gcs2ap_radio->slave_config & (0x01<<3))
-//        {
-//            data_m2s.rs485_read_current_ena[1]=TRUE;
-//        }
-//        else
-//        {
-//            data_m2s.rs485_read_current_ena[1]=FALSE;
-//        }
-//
-//        global_bool_boatpilot.slave_config_previous=ptr_gcs2ap_radio->slave_config;
-//    }
-
-    if(ptr_gcs2ap_radio->wp_flag==0)
-    {
-        //命令包中的航点无效，不给航点数组赋值，命令包中只有在wp_flag不等于0 255 254 253时才有效
-
-        ptr_gcs2ap_radio->auto_work_mode=AUTO_MISSION_MODE;//auto自动模式下，始终是mission模式，除非wp_flag始终有特殊值
-    }
-    else if(ptr_gcs2ap_radio->wp_flag==255)
-    {
-        //自动模式下的引导工作模式，设置当前目标航点的计数
-        printf("设置引导航点，航点标号=%d\n",ptr_gcs2ap_radio->wp_next);
-        ptr_gcs2ap_radio->auto_work_mode=AUTO_GUIDE_MODE;
-        ptr_gcs2ap_radio->wp_guide_no=ptr_gcs2ap_radio->wp_next;
-    }
-    else if(ptr_gcs2ap_radio->wp_flag==254)
-    {
-        //自动模式下的逗留工作模式
-
-        //20170413进入逗留无法跳出了
-        /*
-        printf("设置逗留航点，航点标号=%d，到达该航点后，逗留执行任务\n",ptr_gcs2ap_radio->wp_next);
-        ptr_gcs2ap_radio->workmode=LOITER_MODE;
-        global_bool_boatpilot.bool_loiter_mode=TRUE;
-        global_bool_boatpilot.wp_loiter_no=ptr_gcs2ap_radio->wp_next;
-        */
-        //要不给出个标志，要不直接把work mode改为loiter，如果修改work_mode 需要在导航和控制都增加case
-    }
-    else if(ptr_gcs2ap_radio->wp_flag==253)
-    {
-        global_bool_boatpilot.bool_loiter_mode=FALSE;
-    }
-    else
-    {
-        int wp_cnt;
-        wp_cnt=ptr_gcs2ap_radio->wp_next;
-        wp_data[wp_cnt].spd=ptr_gcs2ap_radio->spd;
-        wp_data[wp_cnt].alt=ptr_gcs2ap_radio->alt;
-        wp_data[wp_cnt].lng=ptr_gcs2ap_radio->lng;
-        wp_data[wp_cnt].lat=ptr_gcs2ap_radio->lat;
-        printf("修改第%d航点的经纬度\n",wp_cnt);
-        printf("wp_data[%d].spd=%d\n",wp_cnt,wp_data[wp_cnt].spd);
-        printf("wp_data[%d].spd=%d\n",wp_cnt,wp_data[wp_cnt].spd);
-        printf("wp_data[%d].spd=%d\n",wp_cnt,wp_data[wp_cnt].spd);
-        printf("wp_data[%d].spd=%d\n",wp_cnt,wp_data[wp_cnt].spd);
-    }
-
-    return 0;
-}
-
-static int bd_decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GCS2AP_CMD *ptr_gcs2ap_cmd)
-{
-    ptr_gcs2ap_radio->pack_func_flag=ptr_gcs2ap_cmd->pack_func_flag;
-    ptr_gcs2ap_radio->pack_func_info1=ptr_gcs2ap_cmd->pack_func_info1;
-    ptr_gcs2ap_radio->pack_func_info2=ptr_gcs2ap_cmd->pack_func_info2;
-    ptr_gcs2ap_radio->pack_func_info3=ptr_gcs2ap_cmd->pack_func_info3;
-
-    if((ptr_gcs2ap_radio->pack_func_flag & 0x01)==0)
-    {
-        /*
-         * 命令包优先，如果pack_func_flag的从右往左第二位也等于1--请求航点回传，
-         * 则忽视，优先回传命令包
-         * 不是回传命令包时，我们会判断是否回传航点包，并同时更新地面站传到驾驶仪的命令
-         */
-        global_bool_boatpilot.bd_send_ap2gcs_cmd_req=TRUE;
-        printf("北斗--地面站请求同步，回传gcs2ap_radio中保存的关于cmd命令包的数据\n");
-    }
-    else
-    {
-        /*
-         * 不是回传命令时，则需要获取cmd的值到gcs2ap_radio中
-         * 也就是说进入这个判断则意味着地面站在发送正常命令包
-         * 需要把一些标志为如回传命令，发送特定航点标志清零
-         */
-        global_bool_boatpilot.bd_send_ap2gcs_cmd_req=FALSE;
-        global_bool_boatpilot.send_ap2gcs_specific_wp_req=FALSE;
-
-        if(((ptr_gcs2ap_radio->pack_func_flag >> 1) & 0x01))
-        {
-            printf("北斗--地面站请求回传航点\n");
-
-            if(global_bool_boatpilot.wp_total_num>=1)
-            {
-                if(ptr_gcs2ap_radio->pack_func_info1==255)
-                {
-                    printf("北斗--地面站要求回传全部航点，但是我们拒绝北斗回传全部航点\n");
-                }
-                else
-                {
-                    printf("北斗--地面站请求回传特定航点，起始航点是%d，航点数是%d\n",ptr_gcs2ap_radio->pack_func_info1,ptr_gcs2ap_radio->pack_func_info2);
-                    if(ptr_gcs2ap_radio->pack_func_info2>5)
-                    {
-                        global_bool_boatpilot.send_ap2gcs_specific_wp_req=TRUE;
-                        global_bool_boatpilot.send_ap2gcs_wp_start_num=0;
-                        global_bool_boatpilot.send_ap2gcs_wp_end_num=0;
-
-                        ap2gcs_wp.pack_func_info1=global_bool_boatpilot.send_ap2gcs_wp_end_num-global_bool_boatpilot.send_ap2gcs_wp_start_num+1;
-
-                        /*
-                         * 地面站请求回传特定航点时，所请求回传的航点数大于5了，
-                         * 但是驾驶仪目前在回传特定航点时最多只能回传5个，拒绝回传
-                         * 只回传0航点
-                         */
-                        printf("地面站请求回传特定航点时，所请求回传的航点数大于5了，只回传0航点\n");
-                    }
-                    else
-                    {
-                        global_bool_boatpilot.send_ap2gcs_specific_wp_req=TRUE;
-
-                        if(global_bool_boatpilot.wp_total_num/(ptr_gcs2ap_radio->pack_func_info1+ptr_gcs2ap_radio->pack_func_info2))
-                        {
-                            //wp_data数组中有足够多的航点，能够回传所请求的航点数
-                            global_bool_boatpilot.send_ap2gcs_wp_start_num=ptr_gcs2ap_radio->pack_func_info1;
-                            global_bool_boatpilot.send_ap2gcs_wp_end_num=global_bool_boatpilot.send_ap2gcs_wp_start_num+ptr_gcs2ap_radio->pack_func_info2-1;
-                        }
-                        else if(global_bool_boatpilot.wp_total_num%(ptr_gcs2ap_radio->pack_func_info1+ptr_gcs2ap_radio->pack_func_info2))
-                        {
-                            global_bool_boatpilot.send_ap2gcs_wp_start_num=ptr_gcs2ap_radio->pack_func_info1;
-                            global_bool_boatpilot.send_ap2gcs_wp_end_num=global_bool_boatpilot.send_ap2gcs_wp_start_num+((global_bool_boatpilot.wp_total_num-1)-global_bool_boatpilot.send_ap2gcs_wp_start_num);
-                        }
-                        ap2gcs_wp.pack_func_info1=global_bool_boatpilot.send_ap2gcs_wp_end_num-global_bool_boatpilot.send_ap2gcs_wp_start_num+1;
-                        printf("wp_total_num=%d,info1=%d,info2=%d\n",global_bool_boatpilot.wp_total_num,ap2gcs_wp.pack_func_info1,ptr_gcs2ap_radio->pack_func_info2);//20170508已测试
-                    }
-                }
-
-                /*
-                 * 到了这一级判断，则
-                 * 1.地面站请求回传航点了
-                 * 2.并且航点数>=1了
-                 * 所以总是要回传一个航点包的
-                 */
-                ap2gcs_wp.pack_func_flag=global_bool_boatpilot.wp_total_num;
-                ap2gcs_wp.pack_func_info2=global_bool_boatpilot.send_ap2gcs_wp_end_num-global_bool_boatpilot.send_ap2gcs_wp_start_num+1;
-                global_bool_boatpilot.bd_send_ap2gcs_wp_req=TRUE;
-            }
-            else
-            {
-                //总的航点数小于1，所以什么也不做
-                //printf("北斗--虽然地面站请求回传航点，但是驾驶仪中保存的航点数小于1，无法回传\n");
-            }
-        }
-        else if((global_bool_boatpilot.ap2gcs_wp_cnt==ptr_gcs2ap_radio->pack_func_info3))
-        {
-            if(global_bool_boatpilot.wp_total_num>=1)
-            {
-                if(global_bool_boatpilot.send_ap2gcs_specific_wp_req)
-                {
-                    /*
-                     * 如果是请求发送指定航点，怎么判断结束呢
-                     * 因为请求发送指定航点时，数目肯定是小于等于5个的，所以不需要判断是否回传结束
-                     * 直接回传发送一次就好
-                     */
-                    global_bool_boatpilot.send_ap2gcs_specific_wp_req=FALSE;
-                }
-                else
-                {
-                    //这里本来是判断回传所有航点是否完成的，但是北斗不需要，什么也不做
-                }
-            }
-            else
-            {
-                //总的航点数小于1，所以什么也不做
-                //printf("北斗--虽然地面站请求回传航点，但是驾驶仪中保存的航点数小于1，无法回传\n");
-            }
-        }
-
-        ptr_gcs2ap_radio->workmode=ptr_gcs2ap_cmd->workmode;
-        ptr_gcs2ap_radio->rc_thruster=ptr_gcs2ap_cmd->rc_thruster;
-        ptr_gcs2ap_radio->rc_rudder=ptr_gcs2ap_cmd->rc_rudder;
-        ptr_gcs2ap_radio->rud_p=ptr_gcs2ap_cmd->rud_p;
-        ptr_gcs2ap_radio->rud_i=ptr_gcs2ap_cmd->rud_i;
-        ptr_gcs2ap_radio->rud_d=ptr_gcs2ap_cmd->rud_d;
-        ptr_gcs2ap_radio->cte_p=ptr_gcs2ap_cmd->cte_p;
-        ptr_gcs2ap_radio->cte_i=ptr_gcs2ap_cmd->cte_i;
-        ptr_gcs2ap_radio->cte_d=ptr_gcs2ap_cmd->cte_d;
-        ptr_gcs2ap_radio->rudder_setup_reverse=ptr_gcs2ap_cmd->rudder_setup_reverse;
-        ptr_gcs2ap_radio->thruster_setup_reverse=ptr_gcs2ap_cmd->thruster_setup_reverse;
-        ptr_gcs2ap_radio->generator_on=ptr_gcs2ap_cmd->generator_on;
-        ptr_gcs2ap_radio->thruster_backward=ptr_gcs2ap_cmd->thruster_backward;
-        ptr_gcs2ap_radio->motor_lock=ptr_gcs2ap_cmd->motor_lock;
-        ptr_gcs2ap_radio->middle_motor_on=ptr_gcs2ap_cmd->middle_motor_on;
-        ptr_gcs2ap_radio->navigation_mode=ptr_gcs2ap_cmd->navigation_mode;
-        ptr_gcs2ap_radio->charge_start=ptr_gcs2ap_cmd->charge_start;
-        ptr_gcs2ap_radio->rocket_hat=ptr_gcs2ap_cmd->rocket_hat;
-        ptr_gcs2ap_radio->rocket_launch=ptr_gcs2ap_cmd->rocket_launch;
-        ptr_gcs2ap_radio->turn_mode=ptr_gcs2ap_cmd->turn_mode;
-        ptr_gcs2ap_radio->diffspd_coef=ptr_gcs2ap_cmd->diffspd_coef;
-        ptr_gcs2ap_radio->diffspd_lim=ptr_gcs2ap_cmd->diffspd_lim;
-        ptr_gcs2ap_radio->cruise_throttle_percent=ptr_gcs2ap_cmd->cruise_throttle_percent;
-        ptr_gcs2ap_radio->throttle_change_time=ptr_gcs2ap_cmd->throttle_change_time;
-        ptr_gcs2ap_radio->arrive_radius=ptr_gcs2ap_cmd->arrive_radius;
-        ptr_gcs2ap_radio->cte_max_degree=ptr_gcs2ap_cmd->cte_max_degree;
-        ptr_gcs2ap_radio->rudder_calib=ptr_gcs2ap_cmd->rudder_calib;
-        ptr_gcs2ap_radio->rudder_calib_cnt=ptr_gcs2ap_cmd->rudder_calib_cnt;
-        ptr_gcs2ap_radio->set_switch_channel=ptr_gcs2ap_cmd->set_switch_channel;
-        ptr_gcs2ap_radio->set_switch_low_limit=ptr_gcs2ap_cmd->set_switch_low_limit;
-        ptr_gcs2ap_radio->set_switch_high_limit=ptr_gcs2ap_cmd->set_switch_high_limit;
-        ptr_gcs2ap_radio->set_charge_channel=ptr_gcs2ap_cmd->set_charge_channel;
-        ptr_gcs2ap_radio->set_charge_voltage=ptr_gcs2ap_cmd->set_charge_voltage;
-        ptr_gcs2ap_radio->set_charge_current=ptr_gcs2ap_cmd->set_charge_current;
-        ptr_gcs2ap_radio->rudder_dead_zone_angle_degree=ptr_gcs2ap_cmd->rudder_dead_zone_angle_degree;
-        ptr_gcs2ap_radio->slave_config=ptr_gcs2ap_cmd->slave_config;
-
-        ptr_gcs2ap_radio->wp_flag=ptr_gcs2ap_cmd->wp_flag;
-        ptr_gcs2ap_radio->wp_next=ptr_gcs2ap_cmd->wp_next;
-        ptr_gcs2ap_radio->spd=ptr_gcs2ap_cmd->spd;
-        ptr_gcs2ap_radio->alt=ptr_gcs2ap_cmd->alt;
-        ptr_gcs2ap_radio->lng=ptr_gcs2ap_cmd->lat;
-        ptr_gcs2ap_radio->lat=ptr_gcs2ap_cmd->lat;
-    }//不是回传命令时，是回传航点包或者正常命令包的判断结束
-
-    if(ptr_gcs2ap_radio->pack_func_flag==0xac)
-    {
-        switch(ptr_gcs2ap_radio->pack_func_info1)
-        {
-        case 0x55:
-            //主控副控都重启
-            global_bool_boatpilot.bool_shutdown_master=TRUE;
-            global_bool_boatpilot.bool_shutdown_slave=TRUE;
-            break;
-        case 0x05:
-            //主控重启
-            global_bool_boatpilot.bool_shutdown_master=TRUE;
-            global_bool_boatpilot.bool_shutdown_slave=FALSE;
-            break;
-        case 0x50:
-            //副控重启
-            global_bool_boatpilot.bool_shutdown_master=FALSE;
-            global_bool_boatpilot.bool_shutdown_slave=TRUE;
-            break;
-        default:
-            global_bool_boatpilot.bool_shutdown_master=FALSE;
-            global_bool_boatpilot.bool_shutdown_slave=FALSE;
-            break;
-        }
-    }
-
-    switch(ptr_gcs2ap_radio->generator_on)
-    {
-    case GENERATOR_STOP:
-        //停止
-//        close_generator();
-        global_bool_boatpilot.bool_generator_on=FALSE;
-        break;
-    case GENERATOR_START:
-        //工作
-//        open_generator();
-        global_bool_boatpilot.bool_generator_on=TRUE;
-        break;
-    case GENERATOR_AUTO:
-        //自动
-        /*
-         * 副控请求主控开启发电机指令
-         * 有变化时才进行继电器操作
-         * 就是因为这一段，导致20170119 浪费一晚上查找推进器无缘无故失效了的原因
-         */
-//        if(global_bool_boatpilot.s2m_generator_onoff_req_previous!=data_s2m.generator_onoff_req)
-//        {
-//            if(data_s2m.generator_onoff_req==TRUE)
-//            {
-//                open_generator();
-//                global_bool_boatpilot.bool_generator_on=TRUE;
-//            }
-//            else
-//            {
-//                close_generator();
-//                global_bool_boatpilot.bool_generator_on=FALSE;
-//            }
-//            global_bool_boatpilot.s2m_generator_onoff_req_previous=data_s2m.generator_onoff_req;
-//        }
-//        data_m2s.generator_state=global_bool_boatpilot.bool_generator_on;
-        break;
-    default:
-        break;
-    }
-
-    if(ptr_gcs2ap_radio->thruster_backward==MOTOR_FORWARD)
-    {
-        //电机正转，前进
-        set_left_motor_forward();
-        set_right_motor_forward();
-    }
-    else
-    {
-        //电机反转，后退
-        set_left_motor_backward();
-        set_right_motor_backward();
-    }
-
-    if(ptr_gcs2ap_radio->motor_lock & 0x01)
-    {
-        //右电机解锁
-        set_right_motor_on();
-    }
-    else
-    {
-        set_right_motor_off();
-    }
-
-    if((ptr_gcs2ap_radio->motor_lock >> 1) & 0x01)
-    {
-        //左电机解锁
-        //printf("左电机解锁\n");
-        set_left_motor_on();
-    }
-    else
-    {
-        set_left_motor_off();
-    }
-
-    if(ptr_gcs2ap_radio->middle_motor_on)
-    {
-        start_third_small_motor();
-    }
-    else
-    {
-        stop_third_small_motor();
-    }
-
-//    //火箭舱盖
-//    if(ptr_gcs2ap_radio->rocket_hat)
-//    {
-//        //打开舱盖
-//        data_m2s.rkt.open_rocket_hatch=TRUE;
-//    }
-//    else
-//    {
-//        data_m2s.rkt.open_rocket_hatch=FALSE;
-//    }
-
-    //火箭发射
-//    if(global_bool_boatpilot.launch_req_ack_cnt_previous!=data_s2m.rkt.launch_req_ack)
-//    {
-//        printf("发射火箭\n");
-////        data_m2s.rkt.launch_req=TRUE;
-//        global_bool_boatpilot.launch_req_ack_cnt_previous=data_s2m.rkt.launch_req_ack;
-//    }
-
-    //转弯模式
-    if((ptr_gcs2ap_radio->turn_mode & 0x01) && ((ptr_gcs2ap_radio->turn_mode >> 1) & 0x01))
-    {
-        global_bool_boatpilot.turn_mode=TURN_MODE_MIX;
-    }
-    else if(ptr_gcs2ap_radio->turn_mode & 0x01)
-    {
-        global_bool_boatpilot.turn_mode=TURN_MODE_RUDDER;
-    }
-    else if((ptr_gcs2ap_radio->turn_mode >> 1) & 0x01)
-    {
-        global_bool_boatpilot.turn_mode=TURN_MODE_DIFFSPD;
-    }
-    else
-    {
-        global_bool_boatpilot.turn_mode=TURN_MODE_RUDDER;
-    }
-
 //    if((ptr_gcs2ap_radio->rudder_calib>>7 & 0x01)==1)
 //    {
 //        //进入标定状态
 //        global_bool_boatpilot.bool_is_calib_rudder=TRUE;
 //        printf("进入方向舵标定状态\n");
 //
-//        static float left_detla_fabs;
-//        static float right_detla_fabs;
+//        //static float left_detla_fabs;
+//        //static float right_detla_fabs;
+//        static short left_detla_fabs;
+//        static short right_detla_fabs;
+//        static short min_delta_fabs=10;//10对应5度(左右各5度)
+//        static short max_delta_fabs=90;//90对应45度(左右各45度)
 //        if(global_bool_boatpilot.rudder_calib_cnt_previous!=ptr_gcs2ap_radio->rudder_calib_cnt)
 //        {
 //            global_bool_boatpilot.bool_rudder_calib_success=FALSE;
+//            printf("地面站-->标定方向舵\n");
 //            if((ptr_gcs2ap_radio->rudder_calib & 0x01)==1)
 //            {
 //                //舵标定，到达左舵限位
-//                printf("舵标定，到达左舵限位\n");
 //                ptr_gcs2ap_radio->rudder_left_pos=ptr_gcs2ap_radio->rc_rudder;
 //                global_bool_boatpilot.rudder_left_limit_position=read_encoder.postion;
-//                left_detla_fabs=fabs(global_bool_boatpilot.rudder_middle_position*0.5-global_bool_boatpilot.rudder_left_limit_position);
+//                printf("global_bool_boatpilot.rudder_left_limit_position=%d\n",global_bool_boatpilot.rudder_left_limit_position);
+//                left_detla_fabs=fabs(global_bool_boatpilot.rudder_middle_position-global_bool_boatpilot.rudder_left_limit_position);
 //            }
 //            if(((ptr_gcs2ap_radio->rudder_calib >> 1) & 0x01)==1)
 //            {
 //                //舵标定，到达右舵限位
-//                printf("舵标定，到达右舵限位\n");
 //                ptr_gcs2ap_radio->rudder_right_pos=ptr_gcs2ap_radio->rc_rudder;
 //                global_bool_boatpilot.rudder_right_limit_position=read_encoder.postion;
-//                right_detla_fabs=fabs(global_bool_boatpilot.rudder_right_limit_position-global_bool_boatpilot.rudder_middle_position*0.5);
+//                printf("global_bool_boatpilot.rudder_right_limit_position=%d\n",global_bool_boatpilot.rudder_right_limit_position);
+//                right_detla_fabs=fabs(global_bool_boatpilot.rudder_right_limit_position-global_bool_boatpilot.rudder_middle_position);
 //            }
 //            if(((ptr_gcs2ap_radio->rudder_calib >> 2) & 0x01)==1)
 //            {
 //                //舵标定，到达中间位置
-//                printf("舵标定，到达中间限位\n");
 //                ptr_gcs2ap_radio->rudder_mid_pos=ptr_gcs2ap_radio->rc_rudder;
-//                global_bool_boatpilot.rudder_middle_position=read_encoder.postion*2;
+//                global_bool_boatpilot.rudder_middle_position=read_encoder.postion;
 //                printf("global_bool_boatpilot.rudder_middle_position=%d\n",global_bool_boatpilot.rudder_middle_position);
 //
-//                left_detla_fabs=fabs(global_bool_boatpilot.rudder_middle_position*0.5-global_bool_boatpilot.rudder_left_limit_position);
-//                right_detla_fabs=fabs(global_bool_boatpilot.rudder_right_limit_position-global_bool_boatpilot.rudder_middle_position*0.5);
+//                left_detla_fabs=fabs(global_bool_boatpilot.rudder_middle_position-global_bool_boatpilot.rudder_left_limit_position);
+//                right_detla_fabs=fabs(global_bool_boatpilot.rudder_right_limit_position-global_bool_boatpilot.rudder_middle_position);
 //            }
 //
-//            if(right_detla_fabs>5 && left_detla_fabs>5)
+//            //10对应的是5度
+//            if(right_detla_fabs>min_delta_fabs && left_detla_fabs>min_delta_fabs)
 //            {
 //                if(right_detla_fabs>left_detla_fabs)
 //                {
@@ -1456,7 +870,7 @@ static int bd_decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GC
 //                    global_bool_boatpilot.rudder_delta_fabs=right_detla_fabs;
 //                }
 //
-//                if(global_bool_boatpilot.rudder_delta_fabs>5 && global_bool_boatpilot.rudder_delta_fabs<45)
+//                if(global_bool_boatpilot.rudder_delta_fabs>min_delta_fabs && global_bool_boatpilot.rudder_delta_fabs<max_delta_fabs)
 //                {
 //                    global_bool_boatpilot.bool_rudder_calib_success=TRUE;
 //                }
@@ -1472,6 +886,7 @@ static int bd_decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GC
 //
 //            global_bool_boatpilot.rudder_calib_cnt_previous=ptr_gcs2ap_radio->rudder_calib_cnt;
 //        }
+//
 //    }
 //    else
 //    {
@@ -1510,7 +925,7 @@ static int bd_decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GC
 //        }
 //        global_bool_boatpilot.set_switch_channel_previous=ptr_gcs2ap_radio->set_switch_channel;
 //    }
-
+//
 //    if(global_bool_boatpilot.voltage_llim_previous!=ptr_gcs2ap_radio->set_switch_low_limit)
 //    {
 //        data_m2s.switcher.llim_req=TRUE;
@@ -1612,20 +1027,10 @@ static int bd_decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GC
         printf("设置引导航点，航点标号=%d\n",ptr_gcs2ap_radio->wp_next);
         ptr_gcs2ap_radio->auto_work_mode=AUTO_GUIDE_MODE;
         ptr_gcs2ap_radio->wp_guide_no=ptr_gcs2ap_radio->wp_next;
-        //global_bool_boatpilot.wp_next=ptr_gcs2ap_radio->wp_next;
     }
     else if(ptr_gcs2ap_radio->wp_flag==254)
     {
         //自动模式下的逗留工作模式
-
-        //20170413进入逗留无法跳出了
-        /*
-        printf("设置逗留航点，航点标号=%d，到达该航点后，逗留执行任务\n",ptr_gcs2ap_radio->wp_next);
-        ptr_gcs2ap_radio->workmode=LOITER_MODE;
-        global_bool_boatpilot.bool_loiter_mode=TRUE;
-        global_bool_boatpilot.wp_loiter_no=ptr_gcs2ap_radio->wp_next;
-        */
-        //要不给出个标志，要不直接把work mode改为loiter，如果修改work_mode 需要在导航和控制都增加case
     }
     else if(ptr_gcs2ap_radio->wp_flag==253)
     {
@@ -1639,7 +1044,11 @@ static int bd_decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GC
         wp_data[wp_cnt].alt=ptr_gcs2ap_radio->alt;
         wp_data[wp_cnt].lng=ptr_gcs2ap_radio->lng;
         wp_data[wp_cnt].lat=ptr_gcs2ap_radio->lat;
-        printf("修改%d航点的速度高度经度纬度\n",wp_cnt);
+        printf("修改第%d航点的经纬度\n",wp_cnt);
+        printf("wp_data[%d].spd=%d\n",wp_cnt,wp_data[wp_cnt].spd);
+        printf("wp_data[%d].spd=%d\n",wp_cnt,wp_data[wp_cnt].spd);
+        printf("wp_data[%d].spd=%d\n",wp_cnt,wp_data[wp_cnt].spd);
+        printf("wp_data[%d].spd=%d\n",wp_cnt,wp_data[wp_cnt].spd);
     }
 
     return 0;
@@ -1650,7 +1059,7 @@ int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char 
                     unsigned char commu_method, unsigned char ack_req)
 {
     static unsigned char frame_head_len=8;
-    static unsigned char frame_end_len=2;
+    static unsigned char frame_end_len=4;
     unsigned char packet[128];
     unsigned char checksum = 0;
 
@@ -1659,7 +1068,8 @@ int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char 
 
     packet[0] = 0xaa;
     packet[1] = 0x55;
-    packet[2] = 76;//20170728统一定义为76字节，包含帧头帧尾
+    //packet[2] = len;
+    packet[2] = 80;//统一定义为80字节，包含帧头帧尾
     packet_data_len = len;
 
     packet[3] = packet_cnt;
@@ -1681,14 +1091,24 @@ int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char 
     }
 
     i = len + frame_head_len;
-
-    //20170728把数据包长度统一减少2个字节，为76个字节
+#if 1
+    //20170503根据实时数据包的需求，利用了本来是帧尾的2个字节
+    packet[i]=global_bool_boatpilot.master_state;
+    packet[i+1]=global_bool_boatpilot.slave_state;
+    packet[i+2]=0;
+    checksum=checksum+packet[i]+packet[i+1]+packet[i+2];
+    packet[i+3] = (checksum & 0xFF);
+#else
+    //20170503根据实时数据包的需求，利用了本来是帧尾的2个字节
     packet[i]=0;
-    checksum=checksum+packet[i];
-    packet[i+1] = (checksum & 0xFF);
+    packet[i+1]=0;
+    packet[i+2]=0;
+    packet[i+3] = (checksum & 0xFF);
+#endif
+
+    i += 1;
 
     memcpy(dst_buf, packet, packet_data_len + frame_head_len + frame_end_len);
-    //printf("打包后返回的字节长度=%d\n",packet_data_len + frame_head_len + frame_end_len);//20170729已测试
 
     /*返回总的发送字节数*/
     return packet_data_len + frame_head_len + frame_end_len;
@@ -1702,7 +1122,7 @@ int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char 
 
 int decode_binary_data()
 {
-#if 0
+#if 1
     struct stat f_stat;
 
     int fd_boatpilot_log_txt=0;
@@ -1782,7 +1202,7 @@ int decode_binary_data()
                         boatpilot_log.ap2gcs_real.boat_temp1,boatpilot_log.ap2gcs_real.boat_temp1,boatpilot_log.ap2gcs_real.humi,boatpilot_log.ap2gcs_real.voltage_bat1,boatpilot_log.ap2gcs_real.voltage_bat2,boatpilot_log.ap2gcs_real.current_bat1,boatpilot_log.ap2gcs_real.current_bat2,boatpilot_log.ap2gcs_real.toggle_state,\
                         boatpilot_log.ap2gcs_real.charge_state,boatpilot_log.ap2gcs_real.temp,boatpilot_log.ap2gcs_real.humi,boatpilot_log.ap2gcs_real.windspeed,boatpilot_log.ap2gcs_real.winddir,boatpilot_log.ap2gcs_real.airpress,boatpilot_log.ap2gcs_real.seasault,boatpilot_log.ap2gcs_real.elec_cond,\
                         boatpilot_log.ap2gcs_real.seatemp1,boatpilot_log.ap2gcs_real.seatemp2,boatpilot_log.ap2gcs_real.seatemp3,boatpilot_log.ap2gcs_real.alt,boatpilot_log.ap2gcs_real.radiation,boatpilot_log.ap2gcs_real.launch_req_ack,boatpilot_log.ap2gcs_real.rocket_state,boatpilot_log.ap2gcs_real.rktnumber,\
-                        boatpilot_log.ap2gcs_real.rkt_alt,boatpilot_log.ap2gcs_real.work_mode,boatpilot_log.ap2gcs_real.charger_voltage,boatpilot_log.ap2gcs_real.charger_current,boatpilot_log.ap2gcs_real.spare3,boatpilot_log.ap2gcs_real.wp_next,boatpilot_log.ap2gcs_real.master_state,boatpilot_log.ap2gcs_real.slave_state,\
+                        boatpilot_log.ap2gcs_real.rkt_alt,boatpilot_log.ap2gcs_real.work_mode,boatpilot_log.ap2gcs_real.charger_voltage,boatpilot_log.ap2gcs_real.charger_current,boatpilot_log.ap2gcs_real.spare3,boatpilot_log.ap2gcs_real.spare4,boatpilot_log.ap2gcs_real.spare5,boatpilot_log.ap2gcs_real.wp_next,\
                         boatpilot_log.global.bool_get_gcs2ap_cmd,boatpilot_log.global.bool_get_gcs2ap_waypoint,boatpilot_log.global.bool_gcs2ap_beidou,boatpilot_log.global.bool_generator_on,boatpilot_log.global.bool_is_sending_wp_ap2gcs,boatpilot_log.global.bool_beidou_get_gcs2ap_cmd,boatpilot_log.global.bool_beidou_get_gcs2ap_waypoint,boatpilot_log.global.bool_loiter_mode,\
                         boatpilot_log.global.bool_shutdown_master,boatpilot_log.global.bool_shutdown_slave,boatpilot_log.global.bool_rudder_calib_success,boatpilot_log.global.bool_is_calib_rudder,boatpilot_log.global.turn_mode,boatpilot_log.global.s2m_generator_onoff_req_previous,boatpilot_log.global.radio_recv_packet_cnt,boatpilot_log.global.radio_recv_packet_cnt_previous,\
                         boatpilot_log.global.udp_recv_packet_cnt,boatpilot_log.global.wp_total_num,boatpilot_log.global.send_ap2gcs_wp_req,boatpilot_log.global.ap2gcs_wp_cnt_previous,boatpilot_log.global.ap2gcs_wp_cnt,boatpilot_log.global.send_ap2gcs_real_req,boatpilot_log.global.ap2gcs_real_cnt_previous,boatpilot_log.global.ap2gcs_real_cnt,\

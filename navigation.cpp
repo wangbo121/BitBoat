@@ -19,6 +19,28 @@
 #include "utility.h"
 #include "pid.h"
 
+
+
+/*
+ * navigation.c
+ *
+ *  Created on: 2016年5月10日
+ *      Author: wangbo
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include "radio.h"
+#include "global.h"
+#include "navigation.h"
+#include "boatlink.h"
+#include "gps.h"
+#include "control.h"
+#include "location.h"
+#include "utility.h"
+#include "pid.h"
+
 struct T_NAVIGATION auto_navigation;
 
 static unsigned int get_next_wp_num(struct WAY_POINT *ptr_wp_data,\

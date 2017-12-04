@@ -149,11 +149,18 @@ void Boat::loop_fast()
      */
     //execute_ctrloutput(&ctrloutput);
 
-    servos_set_out[0] = ctrloutput.rudder_pwm;
-    servos_set_out[0] = ctrloutput.mmotor_onoff_pwm;
+    servos_set_out[0] = (uint16_t)ctrloutput.rudder_pwm;
+    servos_set_out[1] = (uint16_t)ctrloutput.mmotor_onoff_pwm;
 
-    //memcpy(input.servos,servos_set_out,sizeof(servos_set_out));
-    //sim_water_craft.update(input);//利用input更新，copter四旋翼的位置，速度，线加速度，角度，角速度，角加速度是没有的，所以一共3*5=15个数据
+    //DEBUG_PRINTF("servos_set_out[0] = %d\n",servos_set_out[0]);
+
+    memcpy(input.servos,servos_set_out,sizeof(servos_set_out));
+    //DEBUG_PRINTF("input.servos[0] = %d\n",input.servos[0]);
+
+    /*
+     * 20171204为什么sim_water_craft.update这个不能运行呢，一加上就停止运行
+     */
+    sim_water_craft.update(input);//利用input更新，copter四旋翼的位置，速度，线加速度，角度，角速度，角加速度是没有的，所以一共3*5=15个数据
     //sim_water_craft.fill_fdm(fdm);//现在的fdm中的数值就是四旋翼飞行动力模型的各个飞行状态15个数据
 }
 

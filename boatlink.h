@@ -33,43 +33,25 @@ struct WAY_POINT
 
 struct GCS_AP_WP
 {
-    unsigned char head1;
-    unsigned char head2;
-    unsigned char len;
-    unsigned char cnt;
-    unsigned char sysid;
-    unsigned char type;
-    unsigned char commu_method;
-    unsigned char ack_req;//8字节
-
     unsigned char pack_func_flag;//航点总数，可能大于一个包,即wp_total
     unsigned char pack_func_info1;//本包起始航点号,即wp_start_no
     unsigned char pack_func_info2;//本包中包含的航点数,即wp_num
     unsigned char pack_func_info3;//本航点包的编号,1…n,即wppack_no.在向AP下发航点时,APGCS方收到此编号与已发送的编号相同后再发下一个航点包
 
-    struct WAY_POINT way_point0;//每个航点12个
+    struct WAY_POINT way_point0;
     struct WAY_POINT way_point1;
     struct WAY_POINT way_point2;
     struct WAY_POINT way_point3;
-    struct WAY_POINT way_point4;//72
+    struct WAY_POINT way_point4;//64字节
 
     unsigned char spare0;
     unsigned char spare1;
     unsigned char spare2;
-    unsigned char checksum;//76个字节
+    unsigned char spare3;
 };
 
 struct GCS2AP_CMD
 {
-    unsigned char head1;
-    unsigned char head2;
-    unsigned char len;
-    unsigned char cnt;
-    unsigned char sysid;
-    unsigned char type;
-    unsigned char commu_method;
-    unsigned char ack_req;//8字节
-
     unsigned char pack_func_flag;//包功能标志
     unsigned char pack_func_info1;//包功能辅助信息1.A:在发送请求回传航点时，此字节为回传航点的起始编号,0表示从起始航点开始,255表示回传全部航点.清零同上。
     unsigned char pack_func_info2;//包功能辅助信息2.A:在发送请求回传航点时，此字节为回传航点的个数，清零同上。
@@ -77,7 +59,7 @@ struct GCS2AP_CMD
     unsigned char workmode;//工作模式，1:遥控;2:自驾;3:混控;0:停车(全部输出为0,电门锁生效)
     unsigned char rc_thruster;//[0-255]推进器pwm（遥控器输出）
     unsigned char rc_rudder;//[0-255]方向舵pwm（遥控器输出）
-    unsigned char rud_p;//[0.1],转弯参数P
+    unsigned char rud_p;//[0.1],转弯参数P  //8字节
     unsigned char rud_i;//[0.1],转弯参数I
     unsigned char rud_d;//[0.1],转弯参数D
     unsigned char cte_p;//[0.1],CTE参数P
@@ -101,7 +83,7 @@ struct GCS2AP_CMD
     unsigned char arrive_radius;//[10米],到达半径
     unsigned char cte_max_degree;//[度],偏航距最大补偿角
     unsigned char rudder_calib;//舵标定标志,D0=1:到达左舵限位;D1=1:到达右侧限位;D2=1:舵位在中位
-    unsigned char rudder_calib_cnt;
+    unsigned char rudder_calib_cnt;//32字节
     unsigned char set_switch_channel;//[1..2]切换器通道
     unsigned char set_switch_low_limit;//[V],切换器放电电压低值
     unsigned char set_switch_high_limit;//[V],切换器放电电压高值
@@ -109,40 +91,27 @@ struct GCS2AP_CMD
     unsigned char set_charge_voltage;//[V]充电机电压
     unsigned char set_charge_current;//[A]充电机电流
     unsigned char rudder_dead_zone_angle_degree;//[度]方向舵控制闭环时所用的死区角度数
-    unsigned char master_config;
+    unsigned char master_config;//40字节
     unsigned char slave_config;//D0=0:充电机允许 D1=0:切换器允许 D2=1:电流传感器1允许 D3=1:电流传感器2允许 D4=0:气象站工作允许 D5=0:火箭工作允许
-    unsigned char spare1;
-    unsigned char spare2;
-    unsigned char spare3;
+    unsigned char spare1_0;
+    unsigned char spare1_1;
+    unsigned char spare1_2;
 
-    unsigned int spare4;//56字节
-    unsigned int spare5;//60
+    unsigned int spare2_int;//48字节
+    unsigned int spare3_int;
+    unsigned int spare4_int;//56字节
 
     unsigned char wp_flag;//总航点数
     unsigned char wp_next;//下一个航点编号
     unsigned char spd;//[knot*0.1]航点设定航速
-    unsigned char alt;//64
+    unsigned char alt;//
 
-    unsigned int lng;//[度*0.00001]，航点GPS经度坐标，整型，精确到米
-    unsigned int lat;//[度*0.00001]，航点GPS纬度坐标，整型，精确到米  //72字节
-
-    unsigned char spare6;
-    unsigned char spare7;
-    unsigned char spare8;
-    unsigned char checksum;
+    unsigned int lng;//[度*0.00001]，航点GPS经度坐标，整型，精确到米  //64字节
+    unsigned int lat;//[度*0.00001]，航点GPS纬度坐标，整型，精确到米  //68字节
 };
 
 struct AP2GCS_REAL
 {
-    unsigned char head1;
-    unsigned char head2;
-    unsigned char len;
-    unsigned char cnt;
-    unsigned char sysid;
-    unsigned char type;
-    unsigned char commu_method;
-    unsigned char ack_req;//8字节
-
     unsigned char pack_func_flag;//包功能标志，暂时固定为0
     unsigned char pack_func_info1;//接收到的命令包计数
     unsigned char pack_func_info2;//接收到的航点包计数
@@ -150,11 +119,11 @@ struct AP2GCS_REAL
     unsigned int lng;//[度*0.00001]，GPS经度坐标，整型，精确到米
     unsigned int lat;//[度*0.00001]，GPS纬度坐标，整型，精确到米
     unsigned short spd;//[Knot*0.01]，实时航速
-    short dir_gps;//24个字节//[度*0.01]，地速航向，GPS航向
+    short dir_gps;//16个字节//[度*0.01]，地速航向，GPS航向
     short dir_heading;//[度*0.01]，机头朝向
     short dir_target;//[度*0.01]，目标点朝向
     short dir_nav;//[度*0.01]，导航航向
-    short roll;//32个字节//[度*0.01]，滚转
+    short roll;//24个字节//[度*0.01]，滚转
     short pitch;//[度*0.01]，俯仰
     short yaw;//[度*0.01]，偏航
     unsigned char codedisc;//码盘实时采集返回值 0-360
@@ -168,7 +137,7 @@ struct AP2GCS_REAL
     unsigned char boat_temp1;//[C],船内温度1
     unsigned char boat_temp2;//[C],船内温度2
     unsigned char boat_humi;//[%],船内湿度,预留,可作它用
-    unsigned char voltage_bat1;//48//[V],电池组1实时电压(切换器上的电压)
+    unsigned char voltage_bat1;//40//[V],电池组1实时电压(切换器上的电压)
     unsigned char voltage_bat2;//[V],电池组2实时电压(切换器上的电压)
     unsigned char current_bat1;//[0.1A],电池组1实时放电电流(电路互感器上检测的电流)
     unsigned char current_bat2;//[0.1A],电池组2实时放电电流(电路互感器上检测的电流)
@@ -176,7 +145,7 @@ struct AP2GCS_REAL
     unsigned char charge_state;//充电机状态,D1D0:当前充电通道,01:通道1,10:通道2,11:通道3; D2:开关机状态,0:开机,1:关机; D3: 手动自动状态, 0:自动,1:手动; D6-4:保留; D7:发电机状态,0:停止,1:工作
     unsigned char temp;//气象站数据：温度1
     unsigned char humi;//气象站数据：湿度
-    unsigned char windspeed;//56//气象站数据：风速
+    unsigned char windspeed;//48//气象站数据：风速
     unsigned char winddir;//气象站数据：风向
     unsigned char airpress;//气象站数据：气压
     unsigned char seasault;//气象站数据：海盐
@@ -192,24 +161,15 @@ struct AP2GCS_REAL
     unsigned char rkt_alt;//[10m]火箭升空高度
     unsigned char work_mode;
     unsigned char charger_voltage;
-    unsigned char charger_current;
-    unsigned char wp_next;
-    unsigned char master_state;
-    unsigned char slave_state;
-    unsigned char checksum;//76个字节
+    unsigned char charger_current;//64
+    unsigned char spare3;
+    unsigned char spare4;
+    unsigned char spare5;
+    unsigned char wp_next;//68个字节下一个航点编号
 };
 
 struct GCS2AP_RADIO
 {
-    unsigned char head1;
-    unsigned char head2;
-    unsigned char len;
-    unsigned char cnt;
-    unsigned char sysid;
-    unsigned char type;
-    unsigned char commu_method;
-    unsigned char ack_req;//8字节
-
     unsigned char pack_func_flag;//包功能标志
     unsigned char pack_func_info1;//包功能辅助信息1.A:在发送请求回传航点时，此字节为回传航点的起始编号,0表示从起始航点开始,255表示回传全部航点.清零同上。
     unsigned char pack_func_info2;//包功能辅助信息2.A:在发送请求回传航点时，此字节为回传航点的个数，清零同上。
@@ -217,12 +177,12 @@ struct GCS2AP_RADIO
     unsigned char workmode;//工作模式，1:遥控;2:自驾;3:混控;0:停车(全部输出为0,电门锁生效)
     unsigned char rc_thruster;//[0-255]推进器pwm（遥控器输出）
     unsigned char rc_rudder;//[0-255]方向舵pwm（遥控器输出）
-    unsigned char rud_p;//[0.1],转弯参数P
-    unsigned char rud_i;//[0.1],转弯参数I
-    unsigned char rud_d;//[0.1],转弯参数D
-    unsigned char cte_p;//[0.1],CTE参数P
-    unsigned char cte_i;//[0.1],CTE参数I
-    unsigned char cte_d;//[0.1],CTE参数D
+    unsigned char rud_p;//[0.01],转弯参数P  //8字节
+    unsigned char rud_i;//[0.01],转弯参数I
+    unsigned char rud_d;//[0.01],转弯参数D
+    unsigned char cte_p;//[0.01],CTE参数P
+    unsigned char cte_i;//[0.01],CTE参数I
+    unsigned char cte_d;//[0.01],CTE参数D
     unsigned char rudder_setup_reverse;//方向舵反向
     unsigned char thruster_setup_reverse;//推进器设置，0:正向，D0=1右侧反向:D1=1:左侧推进器反向
     unsigned char generator_on;//发电机设置，0:停止;1:工作;2:自动 //16字节
@@ -241,7 +201,7 @@ struct GCS2AP_RADIO
     unsigned char arrive_radius;//[10米],到达半径
     unsigned char cte_max_degree;//[度],偏航距最大补偿角
     unsigned char rudder_calib;//舵标定标志,D0=1:到达左舵限位;D1=1:到达右侧限位;D2=1:舵位在中位
-    unsigned char rudder_calib_cnt;
+    unsigned char rudder_calib_cnt;//32字节
     unsigned char set_switch_channel;//[1..2]切换器通道
     unsigned char set_switch_low_limit;//[V],切换器放电电压低值
     unsigned char set_switch_high_limit;//[V],切换器放电电压高值
@@ -249,32 +209,24 @@ struct GCS2AP_RADIO
     unsigned char set_charge_voltage;//[V]充电机电压
     unsigned char set_charge_current;//[A]充电机电流
     unsigned char rudder_dead_zone_angle_degree;//[度]方向舵控制闭环时所用的死区角度数
-    unsigned char master_config;
-    unsigned char slave_config;//D0=0:充电机允许 D1=0:切换器允许 D2=1:电流传感器1允许 D3=1:电流传感器2允许 D4=0:气象站工作允许 D5=0:火箭工作允许
-    unsigned char spare1;
-    unsigned char spare2;
-    unsigned char spare3;
+    unsigned char master_config;//40字节
 
-    unsigned int spare4;//56字节
-    unsigned int spare5;//60
+    unsigned char slave_config;
+    unsigned char spare1_0;
+    unsigned char spare1_1;
+    unsigned char spare1_2;
 
-    /*
-     * wp_flag总航点数 这个作为自动驾驶下的模式选择
-     * 0:巡航 255:guide 254:loiter 253:退出逗留模式 其他:该航点有效
-     * 意思是需要更改航点列表中的航点 用该命令包中的航点数据代替对应编号的航点数据
-     */
-    unsigned char wp_flag;
+    unsigned int spare2_int;//48字节
+    unsigned int spare3_int;
+    unsigned int spare4_int;//56字节
+
+    unsigned char wp_flag;//航点标志
     unsigned char wp_next;//下一个航点编号
     unsigned char spd;//[knot*0.1]航点设定航速
-    unsigned char alt;//64
+    unsigned char alt;//
 
-    unsigned int lng;//[度*0.00001]，航点GPS经度坐标，整型，精确到米
-    unsigned int lat;//[度*0.00001]，航点GPS纬度坐标，整型，精确到米  //72字节
-
-    unsigned char spare6;
-    unsigned char spare7;
-    unsigned char spare8;
-    unsigned char checksum;
+    unsigned int lng;//[度*0.00001]，航点GPS经度坐标，整型，精确到米  //64字节
+    unsigned int lat;//[度*0.00001]，航点GPS纬度坐标，整型，精确到米  //68字节
 
     /**************************/
     /******************************************************************************/
@@ -479,21 +431,21 @@ int decode_gcs2ap_beidou();
  * Description:  地面站请求回传航点时，发送/回传从start开始的第wp_num个航点，start最小是0
  */
 int send_ap2gcs_waypoint_num(unsigned char wp_start,unsigned char wp_num);
-int bd_send_ap2gcs_waypoint_num(unsigned char wp_start,unsigned char wp_num);
+//int bd_send_ap2gcs_waypoint_num(unsigned char wp_start,unsigned char wp_num);
 
 /*
  * Function:     send_ap2gcs_cmd
  * Description:  地面站请求回传命令时，发送/回传命令
  */
 int send_ap2gcs_cmd();
-int bd_send_ap2gcs_cmd();
+//int bd_send_ap2gcs_cmd();
 
 /*
  * Function:     send_ap2gcs_real
  * Description:  驾驶仪向地面站发送ap2gcs_real实时数据包
  */
 int send_ap2gcs_real();
-int bd_send_ap2gcs_real();
+//int bd_send_ap2gcs_real();
 
 /*
  * Function:     generate_packet

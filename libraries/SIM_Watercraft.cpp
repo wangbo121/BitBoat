@@ -50,7 +50,10 @@ Watercraft::Watercraft(const char *home_str, const char *frame_str)
 void Watercraft::update(const struct sitl_input &input)
 {
 
-	float motor_speed[frame->num_motors];
+
+
+	//float motor_speed[frame->num_motors];
+	float motor_speed[4];
 
 	//假设
 	//motro_speed[0] : 方向舵
@@ -60,7 +63,7 @@ void Watercraft::update(const struct sitl_input &input)
 	float U_max_speed = 3;//3m/s 最大速度 这个是沿船头方向的的速度
 
 	motor_speed[0] = ( (float)input.servos[0] -1500.0) / 500.0;//把pwm转化为-1.0 ～ +0.1
-	motor_speed[1] = ( (float)input.servos[0] -1000.0) / 1000.0;//把pwm转化为百分比 0.0～1.0
+	motor_speed[1] = ( (float)input.servos[1] -1000.0) / 1000.0;//把pwm转化为百分比 0.0～1.0
 
 	//根据nomoto野本一阶模型更新航向角 psi
 	float delta_time = 0.01;//0.01表示0.01秒
@@ -72,8 +75,12 @@ void Watercraft::update(const struct sitl_input &input)
 
 	delta = max_delta * motor_speed[0];//对方向舵的角度进行了限制
 
+	//printf("motor_speed[0] = %f\n",motor_speed[0]);
+	//printf("delta = %f\n",delta);
+
 	psi = r * delta_time + psi;
 	r = ( K_usv * delta - r ) / T_usv * delta_time + r;
+	//printf("r = %f\n",r);
 
 	//psi = psi % (2 * M_PI);
 	psi = fmod( (2 * M_PI), psi );
