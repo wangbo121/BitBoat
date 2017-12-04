@@ -20,6 +20,38 @@
 #define RAD_TO_DEG      (180.0f / M_PI)
 #endif
 
+template <typename T>
+float wrap_2PI(const T radian)
+{
+    float res = fmodf(static_cast<float>(radian), M_2PI);
+    if (res < 0) {
+        res += M_2PI;
+    }
+    return res;
+}
+
+template float wrap_2PI<int>(const int radian);
+template float wrap_2PI<short>(const short radian);
+template float wrap_2PI<float>(const float radian);
+template float wrap_2PI<double>(const double radian);
+
+template <typename T>
+float wrap_PI(const T radian)
+{
+    float res = wrap_2PI(radian);
+    if (res > M_PI) {
+        res -= M_2PI;
+    }
+    return res;
+}
+
+template float wrap_PI<int>(const int radian);
+template float wrap_PI<short>(const short radian);
+template float wrap_PI<float>(const float radian);
+template float wrap_PI<double>(const double radian);
+
+
+
 Watercraft::Watercraft(const char *home_str, const char *frame_str)
 {
 
@@ -81,29 +113,38 @@ void Watercraft::update(const struct sitl_input &input)
 	psi = r * delta_time + psi;
 	r = ( K_usv * delta - r ) / T_usv * delta_time + r;
 	//printf("r = %f\n",r);
-
+#if 0
 	//psi = psi % (2 * M_PI);
-	psi = fmod( (2 * M_PI), psi );
+	psi = fmod( psi, (2 * M_PI) );
 
 	if( psi > M_PI)
 	{
 		psi = psi - 2 * M_PI;
 	}
+#else
+	psi = wrap_PI(psi);
+#endif
+
+
 	math_heading = psi;
 	math_omega_z = r;
 
-
+	printf("psi = %f\n",psi);
 
 	/*
 	 * 更新位置
 	 */
-	float U = U_max_speed * motor_speed[1];
+	//psi = -1.57;//20171204已测试
+	//float U = U_max_speed * 1;//20171204已测试
+	//float U = U_max_speed * motor_speed[1];
+	float U = 10;
 	velocity_x = U * cosf(psi);
 	velocity_y = U *sinf(psi);
 
+	//printf("velocity_x = %f\n",velocity_x);
 	// new position vector
-	position_x = velocity_x * delta_time;
-	position_y = velocity_y * delta_time;
+	position_x += velocity_x * delta_time;
+	position_y += velocity_y * delta_time;
 
 
 	update_position();
@@ -122,6 +163,8 @@ void Watercraft::update_position(void)
     float distance = sqrtf(powf(position_x,2) + powf(position_y,2));
 
     location = home;
+
+
 
     location_update(location, bearing, distance);
 
@@ -142,6 +185,8 @@ void Watercraft::fill_fdm( struct sitl_fdm &fdm) const
 	 * fdm其实相当于整个飞控的外部设备，比如让正阳从别的设备读过来的
 	 */
 
+
+	//printf("location.lat = %d\n",location.lat);//20171204已测试
 
 	fdm.latitude = (float)location.lat * 1e-7;
 	fdm.longitude = (float)location.lng * 1e-7;//正常度数*1*10^7

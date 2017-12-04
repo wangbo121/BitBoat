@@ -347,12 +347,12 @@ void Boat::update_all_external_device_input( void )
 	/*
 	* gps数据 gps数据更新最多也就是10hz，所以这里只是赋值，到底gps的值在哪里用呢，是在medium_loop中调用的
 	*/
-	all_external_device_input.latitude = (39 *RAD_TO_DEG)*1e7;
-	all_external_device_input.longitude = (116 *RAD_TO_DEG)*1e7;
-	all_external_device_input.altitude = (10 )*1e2;
-	all_external_device_input.v_north = 10;
-	all_external_device_input.v_east = 10;
-	all_external_device_input.v_down = 10;
+//	all_external_device_input.latitude = (39 *RAD_TO_DEG)*1e7;
+//	all_external_device_input.longitude = (116 *RAD_TO_DEG)*1e7;
+//	all_external_device_input.altitude = (10 )*1e2;
+//	all_external_device_input.v_north = 10;
+//	all_external_device_input.v_east = 10;
+//	all_external_device_input.v_down = 10;
 	/*
 	* imu的数据
 	*/
@@ -421,8 +421,8 @@ void Boat::set_rc_out()
 
 void Boat::update_GPS()
 {
-	//gps_data.latitude =(int)( all_external_device_input.latitude * 1e5);
-	gps_data.latitude =3900000;
+	gps_data.latitude =(int)( all_external_device_input.latitude * 1e5);
+	//gps_data.latitude =3900000;
 	gps_data.longitude = (int)(all_external_device_input.longitude * 1e5);
 
 	gps_data.course = all_external_device_input.heading * DEG_TO_RAD;

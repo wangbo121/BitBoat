@@ -7,7 +7,8 @@
 
 #include "Boat.h"
 
-Watercraft sim_water_craft("39.6136,116.357,10,0","+");//+型机架，起始高度为10，yaw是0
+//Watercraft sim_water_craft("39.6136,116.357,10,0","+");//+型机架，起始高度为10，yaw是0
+Watercraft sim_water_craft("32.68436,117.05525,10,0","+");//+型机架，起始高度为10，yaw是0
 /*
   scheduler table - all regular tasks apart from the fast_loop()
   should be listed here, along with how often they should be called
@@ -160,7 +161,7 @@ void Boat::loop_fast()
      * 20171204为什么sim_water_craft.update这个不能运行呢，一加上就停止运行
      */
     sim_water_craft.update(input);//利用input更新，copter四旋翼的位置，速度，线加速度，角度，角速度，角加速度是没有的，所以一共3*5=15个数据
-    //sim_water_craft.fill_fdm(fdm);//现在的fdm中的数值就是四旋翼飞行动力模型的各个飞行状态15个数据
+    sim_water_craft.fill_fdm(fdm);//现在的fdm中的数值就是四旋翼飞行动力模型的各个飞行状态15个数据
 }
 
 void Boat::loop_slow()
