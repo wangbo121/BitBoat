@@ -129,7 +129,7 @@ void Watercraft::update(const struct sitl_input &input)
 	math_heading = psi;
 	math_omega_z = r;
 
-	printf("psi = %f\n",psi);
+	//printf("psi = %f\n",psi);
 
 	/*
 	 * 更新位置

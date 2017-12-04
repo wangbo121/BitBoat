@@ -200,8 +200,11 @@ void Boat::send_ap2gcs_wp_boatlink()
 
 }
 
+
+
 void Boat::send_ap2gcs_realtime_data_boatlink()
 {
+#if 0
     //printf("电台--请求发送实时数据给地面站\n");//20170410已测试，地面站能够接收所有实时数据
     global_bool_boatpilot.ap2gcs_real_cnt++;
     if(global_bool_boatpilot.ap2gcs_real_cnt_previous!=global_bool_boatpilot.ap2gcs_real_cnt)
@@ -213,6 +216,24 @@ void Boat::send_ap2gcs_realtime_data_boatlink()
         global_bool_boatpilot.ap2gcs_real_cnt_previous=global_bool_boatpilot.ap2gcs_real_cnt;
         global_bool_boatpilot.send_ap2gcs_real_req=FALSE;
     }
+#else
+    if( (!global_bool_boatpilot.send_ap2gcs_wp_req) && (!global_bool_boatpilot.send_ap2gcs_cmd_req) )
+    {
+    	//printf("电台--请求发送实时数据给地面站\n");//20170410已测试，地面站能够接收所有实时数据
+		global_bool_boatpilot.ap2gcs_real_cnt++;
+		if(global_bool_boatpilot.ap2gcs_real_cnt_previous!=global_bool_boatpilot.ap2gcs_real_cnt)
+		{
+			//发送实时数据
+			//DEBUG_PRINTF("发送实时数据\n");
+			send_ap2gcs_real();
+
+			global_bool_boatpilot.ap2gcs_real_cnt_previous=global_bool_boatpilot.ap2gcs_real_cnt;
+			global_bool_boatpilot.send_ap2gcs_real_req=FALSE;
+		}
+    }
+
+
+#endif
 
 }
 
