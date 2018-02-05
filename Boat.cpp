@@ -326,7 +326,6 @@ void Boat::get_timedata_now()
     datetime_now.second = (unsigned char)gbl_time_val->tm_sec;
 
     DEBUG_PRINTF("当前系统时间是:%d年%d月%d日%d时%d分%d秒\n",datetime_now.year,datetime_now.month,datetime_now.day,datetime_now.hour,datetime_now.minute,datetime_now.second);
-
 }
 
 void Boat::update_all_external_device_input( void )

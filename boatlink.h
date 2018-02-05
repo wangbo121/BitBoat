@@ -232,11 +232,11 @@ struct GCS2AP_RADIO
     /******************************************************************************/
 
     //以下是通过命令包的位操作字节翻译后，需要得到的值
-    unsigned char mmotor_on_pos;//电机启动时，遥控器的数值，也就是遥控器的最大值，因为费老师在地面站已经标定过了，所以并没有必要
-    unsigned char mmotor_off_pos;//电机关闭时，遥控器的数值，也就是遥控器的最小值，因为费老师在地面站已经标定过了，所以并没有必要
-    unsigned char rudder_left_pos;//方向舵处于最左边时，遥控器的数值，因为费老师在地面站已经标定过了，所以并没有必要
-    unsigned char rudder_right_pos;//方向舵处于最右边时，遥控器的数值，因为费老师在地面站已经标定过了，所以并没有必要
-    unsigned char rudder_mid_pos;//方向舵处于中间时，遥控器的数值，因为费老师在地面站已经标定过了，所以并没有必要
+    unsigned char mmotor_on_pos;//电机启动时，遥控器的数值，也就是遥控器的最大值，
+    unsigned char mmotor_off_pos;//电机关闭时，遥控器的数值，也就是遥控器的最小值，
+    unsigned char rudder_left_pos;//方向舵处于最左边时，遥控器的数值，
+    unsigned char rudder_right_pos;//方向舵处于最右边时，遥控器的数值，
+    unsigned char rudder_mid_pos;//方向舵处于中间时，遥控器的数值，
 
     unsigned char auto_work_mode;//自动模式下的工作模式，mission guide loiter
     unsigned char wp_guide_no;//设定的航点编号
@@ -244,7 +244,7 @@ struct GCS2AP_RADIO
 };
 
 /*
- * 一些通过地面站发送的参数需要记录在驾驶仪的，
+ * 一些通过地面站发送的参数需要记录在驾驶仪的flash中，
  * 地面站只需要同步，不需要重新设置
  */
 struct T_CONFIG
@@ -419,44 +419,39 @@ extern struct T_CONFIG boatpilot_config;
 extern struct T_BOATPILOT_LOG boatpilot_log;
 
 /*
- * Function:     decode_gcs2ap_radio
+ * Function:       decode_gcs2ap_radio
  * Description:  解析由地面站发给自驾仪的命令包，解析后，
- *               都放在gcs2ap_radio结构的变量中
+ *                        都放在gcs2ap_radio结构的变量中
  */
 int decode_gcs2ap_radio();
-int decode_gcs2ap_beidou();
 
 /*
- * Function:     send_ap2gcs_waypoint_num
+ * Function:       send_ap2gcs_waypoint_num
  * Description:  地面站请求回传航点时，发送/回传从start开始的第wp_num个航点，start最小是0
  */
 int send_ap2gcs_waypoint_num(unsigned char wp_start,unsigned char wp_num);
-//int bd_send_ap2gcs_waypoint_num(unsigned char wp_start,unsigned char wp_num);
 
 /*
- * Function:     send_ap2gcs_cmd
+ * Function:       send_ap2gcs_cmd
  * Description:  地面站请求回传命令时，发送/回传命令
  */
 int send_ap2gcs_cmd();
-//int bd_send_ap2gcs_cmd();
 
 /*
- * Function:     send_ap2gcs_real
+ * Function:       send_ap2gcs_real
  * Description:  驾驶仪向地面站发送ap2gcs_real实时数据包
  */
 int send_ap2gcs_real();
-//int bd_send_ap2gcs_real();
 
 /*
- * Function:     generate_packet
+ * Function:       generate_packet
  * Description:  把src_buf的数据打包成以0xaa 0x55为帧头的数据包
- *               src_buf:要发送的有效数据，数据段
- *               len:src_buf的长度
- *               packet_cnt:第packet_cnt个要发送的该数据类型的包
- *               message_type:需要要打包成的数据包类型
- *               commu_method:通信方式0是电台，1是北斗，2铱星
- *               ack_req:请求回传数据包，0不要求回传，1请回传此命令包
- *               wangbo20170119 原本这个函数是boatprotocol.c文件中static函数，但是北斗的也需要打包，所以不再是static的了
+ *                        src_buf:要发送的有效数据，数据段
+ *                        len:src_buf的长度
+ *                        packet_cnt:第packet_cnt个要发送的该数据类型的包
+ *                        message_type:需要要打包成的数据包类型
+ *                        commu_method:通信方式0是电台
+ *                        ack_req:请求回传数据包，0不要求回传，1请回传此命令包
  */
 int generate_packet(unsigned char*dst_buf,unsigned char *src_buf,unsigned char len,\
                     unsigned int packet_cnt,unsigned char message_type,\

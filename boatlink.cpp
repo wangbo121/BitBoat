@@ -23,17 +23,12 @@
 #include "control.h"
 #include "navigation.h"
 #include "gps.h"
-//#include "utilityfunctions.h"
 #include "utility.h"
 #include "save_data.h"
-//#include "generator.h"
 #include "servo.h"
-//#include "udp.h"
-//#include "commu.h"
 #include "location.h"
-//#include "modbus_rotary_encoder.h"
+
 #include "boatlink.h"
-//#include "bd.h"
 
 #define MOTOR_FORWARD 0
 
@@ -67,8 +62,6 @@ struct T_BOATPILOT_LOG boatpilot_log;
 
 static int decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GCS2AP_CMD *ptr_gcs2ap_cmd);
 static int decode_gcs2ap_waypoint(struct WAY_POINT *ptr_wp_data, struct GCS_AP_WP *ptr_gcs2ap_wp);
-//static int bd_decode_gcs2ap_waypoint(struct WAY_POINT *ptr_wp_data, struct GCS_AP_WP *ptr_gcs2ap_wp);
-//static int bd_decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GCS2AP_CMD *ptr_gcs2ap_cmd);
 
 int decode_gcs2ap_radio()
 {
@@ -91,8 +84,7 @@ int decode_gcs2ap_radio()
 }
 
 /*
- * 发送指定从wp_start起始的wp_num个航点，待修改20170413
- * 已修改20170420
+ * 发送指定从wp_start起始的wp_num个航点
  */
 int send_ap2gcs_waypoint_num(unsigned char wp_start,unsigned char wp_num)
 {
@@ -158,8 +150,6 @@ int send_ap2gcs_waypoint()
     return 0;
 }
 
-
-
 int send_ap2gcs_cmd()
 {
     unsigned char cmd[256];
@@ -177,7 +167,6 @@ int send_ap2gcs_cmd()
 
     return 0;
 }
-
 
 int send_ap2gcs_real()
 {
@@ -201,7 +190,7 @@ int send_ap2gcs_real()
     ap2gcs_real.pitch=(short)gps_data.pitch;
     ap2gcs_real.yaw=(short)gps_data.yaw;
 
-//    ap2gcs_real.codedisc=(unsigned char)(read_encoder.postion/2);//0-360
+    ap2gcs_real.codedisc=0;//0-360
     ap2gcs_real.da_out1=global_bool_boatpilot.left_motor_voltage;
     ap2gcs_real.da_out2=global_bool_boatpilot.right_motor_voltage;
     ap2gcs_real.rudder_pos=(unsigned char)(global_bool_boatpilot.rudder_angle_degree+45);
@@ -217,7 +206,6 @@ int send_ap2gcs_real()
 //    ap2gcs_real.voltage_bat2=data_s2m.switcher.voltage[1];
 //    ap2gcs_real.current_bat1=data_s2m.current[0]/50;
 //    ap2gcs_real.current_bat2=data_s2m.current[1]/50;
-    //ap2gcs_real.current_bat2=50;//20170413已测试，地面站可以收到显示
 //
 //    if(data_s2m.switcher.workstate[0]==0x55)
 //    {
@@ -265,17 +253,7 @@ int send_ap2gcs_real()
 //    {
 //        ap2gcs_real.toggle_state=(ap2gcs_real.toggle_state & 0xfc);
 //    }
-
-#if 0
-    //切换器2通道
-    if(global_bool_boatpilot.bat0_is_discharing)
-    {
-        //切换器通道是2
-        ap2gcs_real.toggle_state=(ap2gcs_real.toggle_state & 0xfc) | 0x02;
-
-
-    }
-#endif
+//
 //
 //    //充电机通道
 //    if(data_s2m.charger.channel==1)
@@ -313,15 +291,15 @@ int send_ap2gcs_real()
 //        ap2gcs_real.charge_state=(ap2gcs_real.charge_state & 0xfb);
 //    }
 
-    //发电机
-    if(global_bool_boatpilot.bool_generator_on)
-    {
-        ap2gcs_real.charge_state=(ap2gcs_real.charge_state & 0x7f) | 0x80;
-    }
-    else
-    {
-        ap2gcs_real.charge_state=(ap2gcs_real.charge_state & 0x7f);
-    }
+//    //发电机
+//    if(global_bool_boatpilot.bool_generator_on)
+//    {
+//        ap2gcs_real.charge_state=(ap2gcs_real.charge_state & 0x7f) | 0x80;
+//    }
+//    else
+//    {
+//        ap2gcs_real.charge_state=(ap2gcs_real.charge_state & 0x7f);
+//    }
 //
 //    //气象站数据
 //    ap2gcs_real.temp=data_s2m.aws.temp;
@@ -343,8 +321,6 @@ int send_ap2gcs_real()
 //    ap2gcs_real.rktnumber=data_s2m.rkt.rktnumber;
 //    ap2gcs_real.rkt_alt=data_s2m.rkt.alt;
     ap2gcs_real.work_mode=gcs2ap_radio_all.workmode;
-
-    //ap2gcs_real.wp_next=auto_navigation.current_target_wp_cnt;
     ap2gcs_real.wp_next=global_bool_boatpilot.wp_next;
 
     //printf("ap2gcs_real.toggle_state=%x\n",ap2gcs_real.toggle_state);//已测试20170413
@@ -1091,20 +1067,13 @@ int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char 
     }
 
     i = len + frame_head_len;
-#if 1
+
     //20170503根据实时数据包的需求，利用了本来是帧尾的2个字节
     packet[i]=global_bool_boatpilot.master_state;
     packet[i+1]=global_bool_boatpilot.slave_state;
     packet[i+2]=0;
     checksum=checksum+packet[i]+packet[i+1]+packet[i+2];
     packet[i+3] = (checksum & 0xFF);
-#else
-    //20170503根据实时数据包的需求，利用了本来是帧尾的2个字节
-    packet[i]=0;
-    packet[i+1]=0;
-    packet[i+2]=0;
-    packet[i+3] = (checksum & 0xFF);
-#endif
 
     i += 1;
 
@@ -1122,6 +1091,7 @@ int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char 
 
 int decode_binary_data()
 {
+//如果不需要解析数据decode_binary_data，那就把下面的#if 1改为 #if 0
 #if 1
     struct stat f_stat;
 

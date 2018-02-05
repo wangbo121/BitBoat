@@ -90,10 +90,10 @@ public:
 
     Boat(void)
     {
-    /*
-    * 在构造函数的开始就初始化一些内部变量
-    */
-    control_mode            = STABILIZE;
+		/*
+		* 在构造函数的开始就初始化一些内部变量
+		*/
+		control_mode            = STABILIZE;
     }
 
     // main loop scheduler
