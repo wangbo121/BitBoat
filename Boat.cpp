@@ -85,34 +85,8 @@ void Boat::setup( void )
 #endif
 
 #ifdef __GPS_
-    //gps_uart_init();
+    gps_uart_init();
 #endif
-
-#ifdef __MODBUS_
-//    modbus_uart_init();//继电器，模拟量设备485串口初始化
-//    modbus_rotary_uart_init();//码盘设备485串口初始化
-#endif
-
-#ifdef __UDP_
-    //open_udp_dev(IP_MASTER, UDP_SERVER_PORT, UDP_M_RECV_PORT);
-//    open_udp_dev(IP_SLAVER, UDP_SERVER_PORT, UDP_M_RECV_PORT);
-#endif
-
-#ifdef __BD_
-//    bd_uart_init();
-#endif
-
-    /*
-     * 设置继电器初始状态都置为0，也就是继电器的线圈不通电的状态
-     */
-//    set_switch_init();
-
-    /*
-     * 设置推进器所采用的模拟量通道
-     */
-//    set_switch.switch10_state=0xff00;
-//    set_switch.switch14_state=0xff00;
-//    global_bool_modbus.send_request_switch_cnt++;
 
     /*
      * 初始化导航环节

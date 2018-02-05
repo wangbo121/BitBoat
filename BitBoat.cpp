@@ -19,36 +19,39 @@ Watercraft sim_water_craft("32.68436,117.05525,10,0","+");//+型机架，起始�
   4 = 25hz
   10 = 10hz
   100 = 1hz
-  中间的数字是执行频率，也就是经过多少个tick(目前我写的是10ms一个tick)执行一次这个任务
+  中间的数字是执行频率，也就是经过多少个tick执行一次这个任务(目前我写的是10ms一个tick)
+  最右边的数字是最大允许的时间，单位是微妙
  */
 #define SCHED_TASK(func) (void (*)())&Boat::func
 
-const AP_Scheduler::Task Boat::scheduler_tasks[] = {
-       { SCHED_TASK(update_GPS),            10,     900 },
-//    { update_GPS,            2,     900 },
-//    { update_navigation,     10,    500 },
-//    { medium_loop,           2,     700 },
-//    { update_altitude,      10,    1000 },
-//    { fifty_hz_loop,         2,     950 },
-//    { run_nav_updates,      10,     800 },
-//    { slow_loop,            10,     500 },
-//    { gcs_check_input,       2,     700 },
-//    { gcs_send_heartbeat,  100,     700 },
-//    { gcs_data_stream_send,  2,    1500 },
-//    { gcs_send_deferred,     2,    1200 },
-//    { compass_accumulate,    2,     700 },
-//    { barometer_accumulate,  2,     900 },
-//    { super_slow_loop,     100,    1100 },
-//    { perf_update,        1000,     500 }
-//      { (void (*)())&Boat::loop_slow,     100,    1100 },
+const AP_Scheduler::Task Boat::scheduler_tasks[] =
+{
+      { SCHED_TASK(update_GPS),                                                  10,     900 },
+      { SCHED_TASK(set_rc_out),                                                    100,     100 },
 
-      { SCHED_TASK(set_rc_out),                               100,     100 },
-      { SCHED_TASK(send_ap2gcs_cmd_boatlink),     1,    1000 },
-      { SCHED_TASK(send_ap2gcs_wp_boatlink),     1,    1000 },
-      { SCHED_TASK(send_ap2gcs_realtime_data_boatlink),     100,    1000 },
-      { SCHED_TASK(record_log),                             100,    1100 },
-      { SCHED_TASK(get_timedata_now),                       100,    1100 },
-      { SCHED_TASK(loop_slow),                              100,    1100 },
+      { SCHED_TASK(send_ap2gcs_cmd_boatlink),                          1,    1000 },
+      { SCHED_TASK(send_ap2gcs_wp_boatlink),                            1,    1000 },
+      { SCHED_TASK(send_ap2gcs_realtime_data_boatlink),    100,    1000 },
+
+      { SCHED_TASK(record_log),                                                   100,    1100 },
+      { SCHED_TASK(get_timedata_now),                                     100,    1100 },
+      { SCHED_TASK(loop_slow),                                                    100,    1100 },
+
+      //    { update_GPS,            2,     900 },
+      //    { update_navigation,     10,    500 },
+      //    { medium_loop,           2,     700 },
+      //    { update_altitude,      10,    1000 },
+      //    { fifty_hz_loop,         2,     950 },
+      //    { run_nav_updates,      10,     800 },
+      //    { slow_loop,            10,     500 },
+      //    { gcs_check_input,       2,     700 },
+      //    { gcs_send_heartbeat,  100,     700 },
+      //    { gcs_data_stream_send,  2,    1500 },
+      //    { gcs_send_deferred,     2,    1200 },
+      //    { compass_accumulate,    2,     700 },
+      //    { barometer_accumulate,  2,     900 },
+      //    { super_slow_loop,     100,    1100 },
+      //    { perf_update,        1000,     500 }
       { SCHED_TASK(end_of_task),                           1000,    1100 }
 };
 
@@ -163,54 +166,11 @@ void Boat::loop_fast()
      */
     sim_water_craft.update(input);//利用input更新，copter四旋翼的位置，速度，线加速度，角度，角速度，角加速度是没有的，所以一共3*5=15个数据
     sim_water_craft.fill_fdm(fdm);//现在的fdm中的数值就是四旋翼飞行动力模型的各个飞行状态15个数据
-
-
-#if 0
-
-    if(global_bool_boatpilot.send_ap2gcs_wp_req)
-	{
-		printf("电台--请求发送航点数据给地面站\n");
-		global_bool_boatpilot.ap2gcs_wp_cnt++;
-
-		if(global_bool_boatpilot.ap2gcs_wp_cnt_previous!=global_bool_boatpilot.ap2gcs_wp_cnt)
-		{
-			ap2gcs_wp.pack_func_info3=global_bool_boatpilot.ap2gcs_wp_cnt;
-
-			if(global_bool_boatpilot.send_ap2gcs_wp_end_num>=global_bool_boatpilot.wp_total_num-1)
-			{
-				global_bool_boatpilot.send_ap2gcs_wp_end_num=global_bool_boatpilot.wp_total_num-1;
-			}
-			send_ap2gcs_waypoint_num(global_bool_boatpilot.send_ap2gcs_wp_start_num,global_bool_boatpilot.send_ap2gcs_wp_end_num-global_bool_boatpilot.send_ap2gcs_wp_start_num+1);
-
-			global_bool_boatpilot.ap2gcs_wp_cnt_previous=global_bool_boatpilot.ap2gcs_wp_cnt;
-			global_bool_boatpilot.send_ap2gcs_wp_req=FALSE;
-		}
-	}
-	else if(global_bool_boatpilot.send_ap2gcs_cmd_req)
-	{
-		//printf("电台--请求发送命令数据给地面站\n");//20170410已测试，地面站能够接收所有回传命令
-		global_bool_boatpilot.ap2gcs_cmd_cnt++;
-		if(global_bool_boatpilot.ap2gcs_cmd_cnt_previous!=global_bool_boatpilot.ap2gcs_cmd_cnt)
-		{
-			//发送/回传命令给地面站
-			send_ap2gcs_cmd();
-
-			global_bool_boatpilot.ap2gcs_cmd_cnt_previous=global_bool_boatpilot.ap2gcs_cmd_cnt;
-			global_bool_boatpilot.send_ap2gcs_cmd_req=FALSE;
-		}
-	}
-#endif
-
-
-
-
-
 }
 
 void Boat::loop_slow()
 {
-    //printf("hello loop_slow\n");
-
+    //DEBUG_PRINTF("hello loop_slow\n");
 }
 
 void Boat::end_of_task()

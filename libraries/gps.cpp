@@ -34,6 +34,9 @@ int gps_uart_init()
     uart_device_gps.parity=UART_GPS_PARITY;
     uart_device_gps.stopbits=UART_GPS_STOPBITS;
 
+    /*
+     * 20180205因为我的电脑就1个串口还得用，所以暂时把这个打开串口和创建串口线程注释掉了
+     */
 //    uart_device_gps.uart_num=open_uart_dev(uart_device_gps.uart_name);
 //
 //    uart_device_gps.ptr_fun=read_gps_data;

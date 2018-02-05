@@ -10,7 +10,6 @@
 /*转换int或者short的字节顺序，该程序arm平台为大端模式，地面站x86架构为小端模式*/
 //__bswap_32()
 #include <byteswap.h>
-/*open() close()所需头文件*/
 #include <unistd.h>
 
 #include "global.h"
@@ -94,10 +93,7 @@ int read_radio_data(unsigned char *buf, unsigned int len)
 
 	/*
 	 * len 表示通过电台读到的数据字节个数
-	 * 判断 如果电台没有数据则转换到北斗接收
 	 * 因为帧头是6个字节，所以如果小于6个字节，我们就说电台没有了
-	 * 优先解析电台数据，只有在电台没有数据的情况下采用北斗数据
-	 * 现在是同时解析电台和北斗数据20170508
 	 */
 	if(len>7)
 	{
@@ -109,16 +105,13 @@ int read_radio_data(unsigned char *buf, unsigned int len)
 	}
 	if((global_bool_boatpilot.radio_lose_data_time_s-global_bool_boatpilot.radio_get_data_previous_time_s)>10)
 	{
-	    //global_bool_boatpilot.bool_gcs2ap_beidou=1;
-	    //return 0;
-	}
-	else
-	{
-	    //global_bool_boatpilot.bool_gcs2ap_beidou=0;
+		//当前时间和上一次电台获取到地面站数据的时间的差大于10秒钟了，有必要采取一些动作
+		//比如返航，比如切换为卫星通信等
 	}
 
 	memcpy(_buffer, buf, len);
 	//printf("radio data len = %d\n",len);
+
 #if 0
 	printf("radio data buf=\n");
 	for(i=0;i<len;i++)
@@ -223,7 +216,7 @@ int read_radio_data(unsigned char *buf, unsigned int len)
 			    global_bool_boatpilot.radio_recv_packet_cnt = _pack_recv_cnt;
 			    if(global_bool_boatpilot.radio_recv_packet_cnt_previous!=global_bool_boatpilot.radio_recv_packet_cnt)
 			    {
-			    	//printf("wangbo2 _pack_recv_type = %d, _pack_recv_len = %d\n",_pack_recv_type,_pack_recv_len);
+			    	//printf(" _pack_recv_type = %d, _pack_recv_len = %d\n",_pack_recv_type,_pack_recv_len);
 			        switch (_pack_recv_type)
                     {
                     case COMMAND_GCS2AP_WAYPOINT:
@@ -232,8 +225,6 @@ int read_radio_data(unsigned char *buf, unsigned int len)
                             printf("正确接收到GCS_AP_WP数据包，且数据包数据长度与航点结构长度相同\n");
                             memcpy(&gcs_ap_wp, _pack_recv_buf, _pack_recv_len);
                             global_bool_boatpilot.bool_get_gcs2ap_waypoint = TRUE;
-                            //global_bool_boatpilot.bool_gcs2ap_beidou=_pack_recv_com_link;
-                            //global_bool_boatpilot.send_ap2gcs_wp_req=_pack_recv_ack_req;
                             global_bool_boatpilot.gcs2ap_wp_cnt=_pack_recv_cnt;
                             global_bool_boatpilot.ap2gcs_wp_cnt=_pack_recv_cnt;
                         }
@@ -242,11 +233,9 @@ int read_radio_data(unsigned char *buf, unsigned int len)
                     case COMMAND_GCS2AP_CMD:
                         if (_pack_recv_len == sizeof(gcs2ap_cmd))
                         {
-                            printf("正确接收到GCS2AP_CMD数据包，且数据包数据长度与命令结构长度相同\n");//20170410已测试
+                            printf("正确接收到GCS2AP_CMD数据包，且数据包数据长度与命令结构长度相同\n");
                             memcpy(&gcs2ap_cmd, _pack_recv_buf, _pack_recv_len);
                             global_bool_boatpilot.bool_get_gcs2ap_cmd = TRUE;
-                            //global_bool_boatpilot.bool_gcs2ap_beidou=_pack_recv_com_link;//这次先不判断北斗，北斗和电台同时发送实时数据，同时接收并解析命令包
-                            //global_bool_boatpilot.send_ap2gcs_cmd_req=_pack_recv_ack_req;
                             global_bool_boatpilot.gcs2ap_cmd_cnt=_pack_recv_cnt;
                             global_bool_boatpilot.ap2gcs_cmd_cnt=_pack_recv_cnt;
                         }

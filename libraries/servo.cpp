@@ -10,11 +10,6 @@
 #include <sys/time.h>
 
 #include "boatlink.h"
-//#include "modbus_485.h"
-//#include "modbus_rotary_encoder.h"
-//#include "modbus_relay_switch.h"
-//#include "modbus_analog_ipam4404.h"
-//#include "maintask.h"
 #include "utility.h"
 
 #include "servo.h"
@@ -24,91 +19,92 @@
 
 int set_rudder(float pwm, int rudder_num)
 {
-//    float pwm_normalize=0.0;
-//    float dead_zone=0.0;
-//
-//    dead_zone=0.022*gcs2ap_radio_all.rudder_dead_zone_angle_degree;
-//
-//    //printf("set servor pwm:%f\n",pwm);
-//    if(pwm<1000.0)
-//    {
-//        pwm=1000.0;
-//    }
-//    else if(pwm>2000.0)
-//    {
-//        pwm=2000.0;
-//    }
-//
-//    /*pwm within 1000-2000 to -1.0--+1.0*/
-//    pwm_normalize=((float)pwm-1500)/500;/*-1.0--+1.0*/
-//
-//    /*默认的方向舵通道数*/
-//    switch(rudder_num)
-//    {
-//    case DEFAULT_RUDDER_NUM:
-//        /*0xff00 继电器闭合状态 0x0000继电器断开状态*/
-//
-//        set_switch.switch4_state=0x0000;
-//
-//        /*如果读取的码盘的刻度大于计算输出的方向舵，那么就往左打舵
-//         * 如果读取的小于计算的值，则右舵
-//         * pwm值范围改为-1--+1,pwm其实对应的是期望的输出舵角
-//         * 码盘的值范围也改为-1--+1
-//         * */
-//        if(read_encoder.position_normalize > pwm_normalize + dead_zone)
-//        {
-//            //当前的舵面角度大于了期望的pwm舵面角度，所以要打左舵
-//            /*switch2_state左舵闭合*/
-//            set_switch.switch2_state=0xff00;
-//            /*switch3_state右舵断开*/
-//            set_switch.switch3_state=0x0000;
-//        }
-//        else if(read_encoder.position_normalize < pwm_normalize - dead_zone)
-//        {
-//            //当前的舵面角度小于了期望的pwm舵面角度，所以要打右舵
-//            set_switch.switch2_state=0x0000;
-//            set_switch.switch3_state=0xff00;
-//        }
-//        else
-//        {
-//            //停止 stop rudder
-//            set_switch.switch2_state=0x0000;
-//            set_switch.switch3_state=0x0000;
-//        }
-//
-//        break;
-//    case SPARE_RUDDER_NUM:
-//        /*0xff00 继电器闭合状态 0x0000继电器断开状态*/
-//
-//        set_switch.switch4_state=0xff00;
-//
-//        if(read_encoder.position_normalize > pwm_normalize + dead_zone)
-//        {
-//            /*switch0_state左舵闭合*/
-//            set_switch.switch0_state=0xff00;
-//            /*switch3_state右舵断开*/
-//            set_switch.switch1_state=0x0000;
-//
-//        }
-//        else if(read_encoder.position_normalize < pwm_normalize - dead_zone)
-//        {
-//            set_switch.switch0_state=0x0000;
-//            set_switch.switch1_state=0xff00;
-//
-//        }
-//        else
-//        {
-//            set_switch.switch0_state=0x0000;
-//            set_switch.switch1_state=0x0000;
-//        }
-//
-//        break;
-//    default:
-//
-//        break;
-//    }
-//    global_bool_modbus.send_request_switch_cnt++;//请求发送继电器指令
+#if 0
+    float pwm_normalize=0.0;
+    float dead_zone=0.0;
 
+    dead_zone=0.022*gcs2ap_radio_all.rudder_dead_zone_angle_degree;
+
+    //printf("set servor pwm:%f\n",pwm);
+    if(pwm<1000.0)
+    {
+        pwm=1000.0;
+    }
+    else if(pwm>2000.0)
+    {
+        pwm=2000.0;
+    }
+
+    /*pwm within 1000-2000 to -1.0--+1.0*/
+    pwm_normalize=((float)pwm-1500)/500;/*-1.0--+1.0*/
+
+    /*默认的方向舵通道数*/
+    switch(rudder_num)
+    {
+    case DEFAULT_RUDDER_NUM:
+        /*0xff00 继电器闭合状态 0x0000继电器断开状态*/
+
+        set_switch.switch4_state=0x0000;
+
+        /*如果读取的码盘的刻度大于计算输出的方向舵，那么就往左打舵
+         * 如果读取的小于计算的值，则右舵
+         * pwm值范围改为-1--+1,pwm其实对应的是期望的输出舵角
+         * 码盘的值范围也改为-1--+1
+         * */
+        if(read_encoder.position_normalize > pwm_normalize + dead_zone)
+        {
+            //当前的舵面角度大于了期望的pwm舵面角度，所以要打左舵
+            /*switch2_state左舵闭合*/
+            set_switch.switch2_state=0xff00;
+            /*switch3_state右舵断开*/
+            set_switch.switch3_state=0x0000;
+        }
+        else if(read_encoder.position_normalize < pwm_normalize - dead_zone)
+        {
+            //当前的舵面角度小于了期望的pwm舵面角度，所以要打右舵
+            set_switch.switch2_state=0x0000;
+            set_switch.switch3_state=0xff00;
+        }
+        else
+        {
+            //停止 stop rudder
+            set_switch.switch2_state=0x0000;
+            set_switch.switch3_state=0x0000;
+        }
+
+        break;
+    case SPARE_RUDDER_NUM:
+        /*0xff00 继电器闭合状态 0x0000继电器断开状态*/
+
+        set_switch.switch4_state=0xff00;
+
+        if(read_encoder.position_normalize > pwm_normalize + dead_zone)
+        {
+            /*switch0_state左舵闭合*/
+            set_switch.switch0_state=0xff00;
+            /*switch3_state右舵断开*/
+            set_switch.switch1_state=0x0000;
+
+        }
+        else if(read_encoder.position_normalize < pwm_normalize - dead_zone)
+        {
+            set_switch.switch0_state=0x0000;
+            set_switch.switch1_state=0xff00;
+
+        }
+        else
+        {
+            set_switch.switch0_state=0x0000;
+            set_switch.switch1_state=0x0000;
+        }
+
+        break;
+    default:
+
+        break;
+    }
+    global_bool_modbus.send_request_switch_cnt++;//请求发送继电器指令
+#endif
     return 0;
 }
 
@@ -263,9 +259,6 @@ int set_right_motor_backward()
 #endif
     return 0;
 }
-
-
-
 
 int set_left_motor_on()
 {

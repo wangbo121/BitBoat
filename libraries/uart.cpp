@@ -29,8 +29,8 @@
 #define UART_BUF_SIZE  512
 
 static char *uart_dev[UART_DEV_TOTAL]={"/dev/ttyO0","/dev/ttyO1","/dev/ttyO2","/dev/ttyO3","/dev/ttyO4","/dev/ttyO5",\
-                                       "/dev/ttyUSB0","/dev/ttyUSB1","/dev/ttyUSB2","/dev/ttyUSB3","/dev/ttyUSB4","/dev/ttyUSB5",\
-                                      };
+                                                                             "/dev/ttyUSB0","/dev/ttyUSB1","/dev/ttyUSB2","/dev/ttyUSB3","/dev/ttyUSB4","/dev/ttyUSB5",\
+                                                                            };
 static int uart_fd[UART_DEV_TOTAL]={0};
 static pthread_t uart_pthrd[UART_DEV_TOTAL]={0};
 
@@ -306,7 +306,6 @@ int read_uart_data(char *uart_name, char *rcv_buf, int time_out_ms, int buf_len)
     return pos;
 }
 
-
 int read_uart_data_one_byte(char *uart_name)
 {
     int fd=0;
@@ -398,7 +397,8 @@ int create_uart_pthread(struct T_UART_DEVICE *ptr_uart)
     int ret=0;
     int uart_no;
 
-    static struct T_UART_DEVICE temp_device;//20171124这个temp_device必须是静态的或者在程序永久存在的，因为pthread_create函数会循环调用这参数
+    //20171124这个temp_device必须是静态的或者在程序永久存在的，因为pthread_create函数会循环调用这参数，勿删
+    static struct T_UART_DEVICE temp_device;
 
     memcpy(&temp_device,ptr_uart,sizeof(struct T_UART_DEVICE));
 

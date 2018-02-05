@@ -112,7 +112,6 @@ int load_data_struct_from_binary(char* file_name,void* data_struct,int data_stru
             printf("文件存在，但是 %s 文件没有数据，载入数据失败\n",file_name);
 
             return -1;//没有数据，就不载入了
-            //return fd;//没有数据，也返回打开的文件描述符，用来以后写
         }
     }
     else
@@ -127,7 +126,6 @@ int load_data_struct_from_binary(char* file_name,void* data_struct,int data_stru
         {
             printf("文件不存在，并且创建文件 %s 成功！",file_name);
             //chmod(file_name,0777);//改变文件权限为 任何人都可以修改
-            //chmod(file_name,0000);//改变文件权限为 任何人都可以修改
             chmod(file_name,0666);//改变文件权限为 任何人都可以修改
         }
 
