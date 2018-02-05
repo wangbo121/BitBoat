@@ -42,7 +42,6 @@ const AP_Scheduler::Task Boat::scheduler_tasks[] = {
 //    { perf_update,        1000,     500 }
 //      { (void (*)())&Boat::loop_slow,     100,    1100 },
 
-
       { SCHED_TASK(set_rc_out),                               100,     100 },
       { SCHED_TASK(send_ap2gcs_cmd_boatlink),     1,    1000 },
       { SCHED_TASK(send_ap2gcs_wp_boatlink),     1,    1000 },
