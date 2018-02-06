@@ -12,6 +12,7 @@
 #include "pid.h"
 #include "location.h"
 #include "boatlink.h"
+#include "Boat.h"
 
 static int sgn(float x)
 {
@@ -266,7 +267,14 @@ float get_cross_track_error_correct_radian_NED(struct T_LOCATION *last_target_lo
     /*
      * 20180205这里目前用的还是用1000米对应1弧度，后面改成用arctan函数，然后缩放，再利用pid
      */
-    gamma_CTE = get_pid_cte(CTE_m, 1,CTE_p,CTE_i,CTE_d);//最终由偏航距计算的修正的补偿方向舵角
+    //gamma_CTE = get_pid_cte(CTE_m, 1,CTE_p,CTE_i,CTE_d);//最终由偏航距计算的修正的补偿方向舵角
+
+    boat.pid_CTE.set_kP(CTE_p);
+    boat.pid_CTE.set_kI(CTE_i);
+    boat.pid_CTE.set_kD(CTE_d);
+    gamma_CTE = boat.pid_CTE.get_pid(CTE_m, 20, 1);//最终由偏航距计算的修正的补偿方向舵角
+
+
     gamma_CTE_max_radian=convert_degree_to_radian((float)gcs2ap_radio_all.cte_max_degree);
     //printf("gamma_CTE=%f\n",gamma_CTE);//20170508已测试
 

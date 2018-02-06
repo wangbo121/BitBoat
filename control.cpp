@@ -25,6 +25,7 @@
 #include "utility.h"
 #include "save_data.h"
 #include "control.h"
+#include "Boat.h"
 
 
 
@@ -375,6 +376,7 @@ static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput,struct CTRL_INPUT *
         pid.p = ((float)ctrlpara.rudder_p)*0.1;
         pid.i = ((float)ctrlpara.rudder_i)*0.000039215;
         pid.d = ((float)ctrlpara.rudder_d)*0.1;
+
         if(gcs2ap_radio_all.navigation_mode==NAVIGATION_COURSE_ANGLE)
         {
             ptr_ctrloutput->rudder_pwm = cal_rudder_control(ptr_ctrlinput->command_course_angle_radian,\
@@ -501,7 +503,12 @@ static float cal_rudder_control(float command_heading,float current_track_headin
 	error_head_track=error_head_track * M_PI_RECIPROCAL;/*M_PI_RECIPROCAL=1/pi*/
 
 //	rudder_ctrl = -get_pid(error_head_track, 1.0, pid.p, pid.i, pid.d);
-	rudder_ctrl = get_pid(error_head_track, 1.0, pid.p, pid.i, pid.d);//这个是淮南船厂测试用，没有问题
+	//rudder_ctrl = get_pid(error_head_track, 1.0, pid.p, pid.i, pid.d);//这个是淮南船厂测试用，没有问题
+
+	boat.pid_yaw.set_kP(pid.p);
+	boat.pid_yaw.set_kI(pid.i);
+	boat.pid_yaw.set_kD(pid.d);
+	rudder_ctrl = boat.pid_yaw.get_pid(error_head_track, 20, 1);
 
 	if(rudder_ctrl>full_rudder_threshold)
 	{

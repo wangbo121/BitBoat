@@ -33,6 +33,8 @@
 #include "control.h"
 #include "radio.h"
 #include "save_data.h"
+#include "pid.h"
+#include "Boat.h"
 
 #include "all_external_device.h"
 
@@ -88,6 +90,9 @@ class Boat
 public:
     friend class GCS_MAVLINK;
 
+    AP_PID pid_yaw;
+    AP_PID pid_CTE;
+
     Boat(void)
     {
 		/*
@@ -106,19 +111,15 @@ public:
     public:
 
     private:
-    uint8_t control_mode;
+    uint8_t          control_mode;
+    uint32_t        loop_cnt;
 
-    uint32_t loop_cnt;
-
-    int fd_boatpilot_log;
-    int fd_waypoint;
-    int fd_config;
-    //static int fd_bd;
-
+    int 				   fd_boatpilot_log;
+    int				   fd_waypoint;
+    int				   fd_config;
 
     // Global parameters are all contained within the 'g' class.
     //Parameters g;
-
 
     private:
     void loop_fast();

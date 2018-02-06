@@ -77,7 +77,6 @@ void Boat::setup( void )
         global_bool_boatpilot.wp_next=boatpilot_config.current_target_wp_num;
         global_bool_boatpilot.wp_total_num=boatpilot_config.total_wp_num;
         //printf("global_bool_boatpilot.wp_total_num=%d\n",global_bool_boatpilot.wp_total_num);//20170508已测试
-
     }
 
 #ifdef __RADIO_
@@ -113,8 +112,6 @@ void Boat::setup( void )
     gcs2ap_radio_all.cte_max_degree=5;/*初始化偏航距的最大修正角度*/
     gcs2ap_radio_all.throttle_change_time=5;/*油门改变10%所消耗的时间[秒]*/
     gcs2ap_radio_all.navigation_mode=NAVIGATION_COURSE_ANGLE;
-    //gcs2ap_radio_all.turn_mode=1;//1:rudder 2:diffspd差速 3:方向舵和差速混合
-    //gcs2ap_radio_all.turn_mode=2;//1:rudder 2:diffspd差速 3:方向舵和差速混合
     gcs2ap_radio_all.rudder_dead_zone_angle_degree=3;
     gcs2ap_radio_all.diffspd_coef=100;
     gcs2ap_radio_all.diffspd_lim=10;
@@ -131,6 +128,13 @@ void Boat::setup( void )
     global_bool_boatpilot.rudder_right_limit_position=368.0*0.5;
     global_bool_boatpilot.turn_mode=1;////转弯方式，0:方向舵，1:差速 2:方向舵和差速同时混合转弯
 
+    pid_yaw.set_kP(2);
+    pid_yaw.set_kI(0);
+    pid_yaw.set_kD(0);
+
+    pid_CTE.set_kP(2);
+    pid_CTE.set_kI(0);
+    pid_CTE.set_kD(0);
 }
 
 void Boat::send_ap2gcs_cmd_boatlink()
@@ -173,8 +177,6 @@ void Boat::send_ap2gcs_wp_boatlink()
     }
 
 }
-
-
 
 void Boat::send_ap2gcs_realtime_data_boatlink()
 {
@@ -270,7 +272,6 @@ void Boat::record_config()
         boatpilot_config_previous=boatpilot_config;
         global_bool_boatpilot.save_config_req=FALSE;
     }
-
 }
 
 void Boat::record_wp()
@@ -306,7 +307,6 @@ void Boat::record_log()
 
         global_bool_boatpilot.save_boatpilot_log_req=FALSE;
     }
-
 }
 
 T_DATETIME datetime_now;//当前的日期和时间，精确到秒。在主线程中每秒更新一次，其它程序直接使用即可。
