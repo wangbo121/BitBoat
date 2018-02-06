@@ -105,7 +105,7 @@ int read_gps_data(unsigned char *buf, unsigned int len)
 
 int gps_uart_close()
 {
-    uart_device_gps.uart_name=UART_MODBUS;
+    uart_device_gps.uart_name=UART_GPS;
 //    close_uart_dev(uart_device_gps.uart_name);
 
 	return 0;

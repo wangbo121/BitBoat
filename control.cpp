@@ -18,17 +18,10 @@
 #include "pid.h"
 #include "radio.h"
 #include "servo.h"
-//#include "modbus_rotary_encoder.h"
-//#include "modbus_relay_switch.h"
-//#include "modbus_analog_ipam4404.h"
-//#include "utilityfunctions.h"
 #include "utility.h"
 #include "save_data.h"
 #include "control.h"
 #include "Boat.h"
-
-
-
 
 #define MIDDLE_RUDDER_PWM 1500
 #define MIDDLE_THROTTLE_PWM 1500
@@ -55,14 +48,6 @@
 #define FWD_LMT 2000
 #define BWD_LMT 1000
 
-/*
- * 限制到左35度，右35度
- * 35/45*500=111.1约等于110
- * 35/45*500+1000=1110
- * 2000-35/45*500=1890
- */
-//#define LEFT_LMT 1110
-//#define RIGHT_LMT 1890
 #define LEFT_LMT 1000
 #define RIGHT_LMT 2000
 
@@ -264,7 +249,7 @@ int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput)
 }
 
 /*
- * Function:     get_ctrlpara
+ * Function:       get_ctrlpara
  * Description:  从地面站获取控制参数，所有的参数均为unsigned char型，使用时需要进行类型转换
  *
  */
@@ -293,9 +278,9 @@ static int get_ctrlpara(struct CTRL_PARA *ptr_ctrlpara, struct GCS2AP_RADIO *ptr
 }
 
 /*
- * Function:     get_ctrlinput
+ * Function:       get_ctrlinput
  * Description:  把从地面站传输过来的手控方向舵和油门量（unsigned char数值）转换为标准的1000-2000（浮点数值）
- *               获取目标航向和当前航迹的方向（gps的航向）
+ *                        获取目标航向和当前航迹的方向（gps的航向）
  */
 static int get_ctrlinput(struct CTRL_INPUT *ptr_ctrlinput, struct GCS2AP_RADIO *ptr_gcs2ap_radio_all,struct T_NAVIGATION * ptr_auto_navigation)
 {
@@ -474,11 +459,11 @@ static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput,struct CTRL_INPUT *
 }
 
 /*
- * Function:     cal_rudder_control
+ * Function:       cal_rudder_control
  * Description:  先把error_head_track这个目标航向和实际航向的误差，化为-1--+1
- *               然后get_pid函数，但是这个get_pid函数，仍然需要保证范围在-1--+1
- *               最后把get_pid之后的rudder_ctrl，映射到1000-2000或者100-200，这个是针对舵机的pwm值
- *               此函数目前输出1000-2000
+ *                        然后get_pid函数，但是这个get_pid函数，仍然需要保证范围在-1--+1
+ *                        最后把get_pid之后的rudder_ctrl，映射到1000-2000或者100-200，这个是针对舵机的pwm值
+ *                        此函数目前输出1000-2000
  */
 static float cal_rudder_control(float command_heading,float current_track_heading,struct T_PID pid)
 {
@@ -501,9 +486,6 @@ static float cal_rudder_control(float command_heading,float current_track_headin
 
 	/*再由-pi--+pi转化为-1--+1*/
 	error_head_track=error_head_track * M_PI_RECIPROCAL;/*M_PI_RECIPROCAL=1/pi*/
-
-//	rudder_ctrl = -get_pid(error_head_track, 1.0, pid.p, pid.i, pid.d);
-	//rudder_ctrl = get_pid(error_head_track, 1.0, pid.p, pid.i, pid.d);//这个是淮南船厂测试用，没有问题
 
 	boat.pid_yaw.set_kP(pid.p);
 	boat.pid_yaw.set_kI(pid.i);
@@ -573,11 +555,11 @@ static float cal_throttle_control(float command_throttle,float current_throttle)
 }
 
 /*
- * Function:     conver_to_pwm
+ * Function:       conver_to_pwm
  * Description:  将min和max之间的input转化为1000到2000的pwm值
- *               也就是说目前使用的遥控器最小的值为9最大值为252，并不是对应的0-255
- *               所以9以下的数值相当于浪费了，因此我们把9作为最小值，252作为最大值
- *               相当于遥控器的输入其实就是9-252，然后对应了1000-2000
+ *                        也就是说目前使用的遥控器最小的值为9最大值为252，并不是对应的0-255
+ *                        所以9以下的数值相当于浪费了，因此我们把9作为最小值，252作为最大值
+ *                        相当于遥控器的输入其实就是9-252，然后对应了1000-2000
  */
 static float convert_to_pwm(unsigned char min,unsigned char max,unsigned char input )
 {

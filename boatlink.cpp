@@ -103,7 +103,6 @@ int send_ap2gcs_waypoint_num(unsigned char wp_start,unsigned char wp_num)
                         0,1);
     send_radio_data(buf_packet, ret);
 
-#if 1
     int i=0;
     for(i=0;i<wp_num;i++)
     {
@@ -113,17 +112,6 @@ int send_ap2gcs_waypoint_num(unsigned char wp_start,unsigned char wp_num)
         printf("驾驶仪-->地面站航点包的第%d个航点的高度=%d\n",wp_start+i,wp_data[wp_start+i].alt);
         printf("驾驶仪-->地面站航点包的第%d个航点的速度=%d\n",wp_start+i,wp_data[wp_start+i].spd);
     }
-#else
-    int i=0;
-    for(i=0;i<3;i++)
-    {
-        printf("驾驶仪-->地面站航点包的第%d个航点的编号=%d\n",wp_start+i,wp_data[wp_start+i].no);
-        printf("驾驶仪-->地面站航点包的第%d个航点的经度=%d\n",wp_start+i,wp_data[wp_start+i].lng);
-        printf("驾驶仪-->地面站航点包的第%d个航点的纬度=%d\n",wp_start+i,wp_data[wp_start+i].lat);
-        printf("驾驶仪-->地面站航点包的第%d个航点的高度=%d\n",wp_start+i,wp_data[wp_start+i].alt);
-        printf("驾驶仪-->地面站航点包的第%d个航点的速度=%d\n",wp_start+i,wp_data[wp_start+i].spd);
-    }
-#endif
 
     return 0;
 }
@@ -362,8 +350,6 @@ static int decode_gcs2ap_waypoint(struct WAY_POINT *ptr_wp_data, struct GCS_AP_W
     }
     else
     {
-        //printf("wp_start_no=%d\n",wp_start_no);//20170410已经测试
-        //printf("wp_num_in_pack=%d\n",wp_num_in_pack);//20170410已经测试
         memcpy(&(ptr_wp_data[wp_start_no]),&(ptr_gcs2ap_wp->way_point0),sizeof(struct WAY_POINT)*wp_num_in_pack);
 
         wp_cnt+=wp_num_in_pack;
@@ -381,8 +367,6 @@ static int decode_gcs2ap_waypoint(struct WAY_POINT *ptr_wp_data, struct GCS_AP_W
 
         global_bool_boatpilot.wp_total_num = wp_total;//这个global_bool_boatpilot.wp_total_num必须留着，因为gcs2ap_radio_all中的wp_total可能为0，来说明航点无效
         global_bool_boatpilot.wp_packet_cnt=wp_packet_cnt;//包的计数通过实时数据返回给地面站，地面站确认后，再继续发航点包
-
-        //printf("航点总数=%d\n",global_bool_boatpilot.wp_total_num);//已测试20170413
 
         printf("wp_num_in_pack=%d\n",wp_num_in_pack);
         int i=0;

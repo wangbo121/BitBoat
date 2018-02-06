@@ -69,7 +69,6 @@ void Boat::setup( void )
 
         global_bool_boatpilot.wp_next=boatpilot_config.current_target_wp_num;
         global_bool_boatpilot.wp_total_num=boatpilot_config.total_wp_num;
-        //printf("global_bool_boatpilot.wp_total_num=%d\n",global_bool_boatpilot.wp_total_num);//20170508已测试
     }
 
 #ifdef __RADIO_
@@ -121,6 +120,9 @@ void Boat::setup( void )
     global_bool_boatpilot.rudder_right_limit_position=368.0*0.5;
     global_bool_boatpilot.turn_mode=1;////转弯方式，0:方向舵，1:差速 2:方向舵和差速同时混合转弯
 
+    /*
+     * 设置PID控制器的参数
+     */
     pid_yaw.set_kP(2);
     pid_yaw.set_kI(0);
     pid_yaw.set_kD(0);
@@ -170,24 +172,10 @@ void Boat::send_ap2gcs_wp_boatlink()
             global_bool_boatpilot.send_ap2gcs_wp_req=FALSE;
         }
     }
-
 }
 
 void Boat::send_ap2gcs_realtime_data_boatlink()
 {
-#if 0
-    //printf("电台--请求发送实时数据给地面站\n");//20170410已测试，地面站能够接收所有实时数据
-    global_bool_boatpilot.ap2gcs_real_cnt++;
-    if(global_bool_boatpilot.ap2gcs_real_cnt_previous!=global_bool_boatpilot.ap2gcs_real_cnt)
-    {
-        //发送实时数据
-    	//DEBUG_PRINTF("发送实时数据\n");
-        send_ap2gcs_real();
-
-        global_bool_boatpilot.ap2gcs_real_cnt_previous=global_bool_boatpilot.ap2gcs_real_cnt;
-        global_bool_boatpilot.send_ap2gcs_real_req=FALSE;
-    }
-#else
     if( (!global_bool_boatpilot.send_ap2gcs_wp_req) && (!global_bool_boatpilot.send_ap2gcs_cmd_req) )
     {
     	//printf("电台--请求发送实时数据给地面站\n");//20170410已测试，地面站能够接收所有实时数据
@@ -202,10 +190,6 @@ void Boat::send_ap2gcs_realtime_data_boatlink()
 			global_bool_boatpilot.send_ap2gcs_real_req=FALSE;
 		}
     }
-
-
-#endif
-
 }
 
 void Boat::record_config()
@@ -326,35 +310,14 @@ void Boat::get_timedata_now()
 void Boat::update_all_external_device_input( void )
 {
 	/*
-	 * 飞控本身假设所有的外部设备的信息都已经获取 并且存在了all_external_device_input中
+	 * 驾驶仪本身假设所有的外部设备的信息都已经获取 并且存在了all_external_device_input中
 	 * 但是我们还是要假设去更新外部设备数据，比如用update_GPS来从all_external_device_input中获取数据
 	 * 之所以增加all_external_device_input这一层，是为了增加模块化，不用考虑外部的数据
 	 */
 
-	//如果跟王正阳的硬件驱动一起调试，则这个函数是不需要的，硬件驱动把数据赋值给all_external_device_input即可
-	#ifdef LINUX_OS
 	/*
-	* gps数据 gps数据更新最多也就是10hz，所以这里只是赋值，到底gps的值在哪里用呢，是在medium_loop中调用的
-	*/
-//	all_external_device_input.latitude = (39 *RAD_TO_DEG)*1e7;
-//	all_external_device_input.longitude = (116 *RAD_TO_DEG)*1e7;
-//	all_external_device_input.altitude = (10 )*1e2;
-//	all_external_device_input.v_north = 10;
-//	all_external_device_input.v_east = 10;
-//	all_external_device_input.v_down = 10;
-	/*
-	* imu的数据
-	*/
-	//all_external_device_input._accel_x = fdm_feed_back.A_X_pilot;
-	//all_external_device_input._accel_y = fdm_feed_back.A_Y_pilot;
-	//all_external_device_input._accel_z = fdm_feed_back.A_Z_pilot;
-	//all_external_device_input._gyro_x = fdm_feed_back.phidot;
-	//all_external_device_input._gyro_y = fdm_feed_back.thetadot;
-	//all_external_device_input._gyro_z = fdm_feed_back.psidot;
-	#endif
-	/*
-	* 这里应该是获取遥控器的信号
-	*/
+	 * 这里是获取遥控器的信号
+	 */
 	all_external_device_input.rc_raw_in_0 = 1500;
 	all_external_device_input.rc_raw_in_1 = 1500;
 	all_external_device_input.rc_raw_in_2 = 1500;
@@ -364,22 +327,22 @@ void Boat::update_all_external_device_input( void )
 	all_external_device_input.rc_raw_in_6 = 1500;
 	all_external_device_input.rc_raw_in_7 = 1500;
 	all_external_device_input.rc_raw_in_8 = 1500;
+
+
 	/*
 	* 上面的all_external_device_input其实应该是由外部设备有数据更新后把数据
 	* 赋值给all_external_device_input，而我的飞控只是从这里获取数据，不用管数据是否更新
-	* 而且我只是从这里读取数据，应该不会出现同时写某一个变量的情况
+	* 而且我只是从这里读取数据，应该不会出现同时写某一个变量的情况吧
+	* 但是这种方式有可能出现这边在写内存，而另一边在读内存，这个概率有多大又会造成什么影响呢
 	* 上面的这些赋值应该是由王正阳从设备驱动那里获取数据值
 	* 实际使用时，上面的需要删除掉我这里并不需要
 	* 我需要的是下面的从all_external_device_input获取数据
 	*/
 
 
-
 	/*
 	 * 这里使用仿真sim_water_craft的数据
 	 */
-
-
 	all_external_device_input.latitude = fdm.latitude;
 	all_external_device_input.longitude = fdm.longitude;
 	all_external_device_input.altitude = 10 ;
@@ -387,8 +350,6 @@ void Boat::update_all_external_device_input( void )
 	all_external_device_input.v_east = fdm.speedE;
 	all_external_device_input.v_down = fdm.speedD;
 	all_external_device_input.heading = fdm.heading;
-
-
 }
 
 void Boat::set_rc_out()
@@ -404,14 +365,20 @@ void Boat::set_rc_out()
     float rc_raw_out_8;
 
     rc_raw_out_0 = all_external_device_output.rc_raw_out_0;
+    rc_raw_out_1 = all_external_device_output.rc_raw_out_1;
+    rc_raw_out_2 = all_external_device_output.rc_raw_out_2;
+    rc_raw_out_3 = all_external_device_output.rc_raw_out_3;
+    rc_raw_out_4 = all_external_device_output.rc_raw_out_4;
+    rc_raw_out_5 = all_external_device_output.rc_raw_out_5;
+    rc_raw_out_6 = all_external_device_output.rc_raw_out_6;
+    rc_raw_out_7 = all_external_device_output.rc_raw_out_7;
 
-    //然后把rc_raw_out_0输出给舵机或者电机，频率是50hz
+    //然后把rc_raw_out_0输出给舵机或者电机，频率是50hz，勿删
 }
 
 void Boat::update_GPS()
 {
 	gps_data.latitude =(int)( all_external_device_input.latitude * 1e5);
-	//gps_data.latitude =3900000;
 	gps_data.longitude = (int)(all_external_device_input.longitude * 1e5);
 
 	gps_data.course = all_external_device_input.heading * DEG_TO_RAD;
@@ -419,6 +386,4 @@ void Boat::update_GPS()
 
 	gps_data.velocity_north = (int)(all_external_device_input.v_north *1e3);
 	gps_data.velocity_east = (int)(all_external_device_input.v_east * 1e3);
-
-
 }

@@ -10,44 +10,22 @@
 
 #include "radio.h"
 #include "global.h"
-#include "navigation.h"
-#include "boatlink.h"
-#include "gps.h"
-#include "control.h"
-#include "location.h"
-//#include "utilityfunctions.h"
-#include "utility.h"
-#include "pid.h"
-
-
-
-/*
- * navigation.c
- *
- *  Created on: 2016年5月10日
- *      Author: wangbo
- */
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-
-#include "radio.h"
-#include "global.h"
-#include "navigation.h"
 #include "boatlink.h"
 #include "gps.h"
 #include "control.h"
 #include "location.h"
 #include "utility.h"
 #include "pid.h"
+
+#include "navigation.h"
 
 struct T_NAVIGATION auto_navigation;
 
-static unsigned int get_next_wp_num(struct WAY_POINT *ptr_wp_data,\
-                                    struct T_LOCATION *current_loc,\
-		                            unsigned int current_target_wp_num,\
-							        unsigned int total_wp_num,\
-							        unsigned int arrive_radius);
+static unsigned int get_next_wp_num(  struct WAY_POINT *ptr_wp_data,\
+																			struct T_LOCATION *current_loc,\
+																			unsigned int current_target_wp_num,\
+																			unsigned int total_wp_num,\
+																			unsigned int arrive_radius);
 
 void navigation_init(void)
 {
@@ -61,9 +39,9 @@ void navigation_init(void)
 	auto_navigation.previous_target_loc=(struct T_LOCATION *)malloc(sizeof (struct T_LOCATION));
 }
 
-int navigation_loop(struct T_NAVIGATION *ptr_auto_navigation,\
-                    struct WAY_POINT *ptr_wp_data,\
-                    nmea_msg *ptr_gps_data)
+int navigation_loop( struct T_NAVIGATION *ptr_auto_navigation,\
+										struct WAY_POINT *ptr_wp_data,\
+										nmea_msg *ptr_gps_data)
 {
     unsigned int target_wp_num = 0;
 
@@ -244,6 +222,11 @@ static unsigned int get_next_wp_num(struct WAY_POINT *ptr_wp_data,\
 	//20170325采用ned坐标系下的到达判断
 	bool_arrive_point=arrive_specific_location_over_line_project_NED(&last_target,current_loc,specific_loc);
 
+	/*
+	 * 或者到达指定航点的某个半径范围的圆圈内
+	 * 或者超过了指定航点和下一航点的连线
+	 * 我们都认为是到达了该航点
+	 */
 	//if (bool_arrive_point)
 	//if (bool_arrive_point && bool_arrive_point_radius)
 	if (bool_arrive_point || bool_arrive_point_radius)

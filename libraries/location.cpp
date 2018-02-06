@@ -300,7 +300,6 @@ float get_cross_track_error_correct_radian_NED(struct T_LOCATION *last_target_lo
     if(CTE_m >= 0)
     {
         //printf("在航线的左侧了，打右舵gamma_CTE=%f\n",convert_radian_to_degree(gamma_CTE));//20170508已测试
-
     }
     else
     {

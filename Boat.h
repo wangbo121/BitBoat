@@ -27,21 +27,18 @@
 #include "global.h"
 #include "scheduler.h"
 #include "utility.h"
-
 #include "boatlink.h"
 #include "navigation.h"
 #include "control.h"
 #include "radio.h"
 #include "save_data.h"
 #include "pid.h"
-#include "Boat.h"
-
 #include "all_external_device.h"
-
 #include "SIM_Vehicle.h"
 
-// Auto Pilot modes
-// ----------------
+/*
+ * 控制模式的宏定义
+ */
 #define STABILIZE 0                     // hold level position
 #define ACRO 1                          // rate control  比例控制，其实也就是纯手动控制
 #define ALT_HOLD 2                      // AUTO control
@@ -89,7 +86,7 @@ public:
     int				   fd_waypoint;
     int				   fd_config;
 
-    // Global parameters are all contained within the 'g' class.
+    // Global parameters are all contained within the 'g' class. 勿删保留
     //Parameters g;
 
     private:
@@ -110,14 +107,9 @@ public:
     void set_analogs();//设置模拟量
     void set_relays();//设置继电器开关量
 
-
     void get_timedata_now();//获取当前的时间，包含年月日时分秒的
-
     void update_all_external_device_input( void );
-
     void update_GPS();
-
-
 
     Watercraft::sitl_input input;//这个是4个电机的输入，然后用于multi_copter.update(input)更新出飞机的飞行状态
     Watercraft::sitl_fdm fdm;
@@ -126,6 +118,5 @@ public:
 };
 
 extern Boat boat;
-
 
 #endif /* BOAT_H_ */

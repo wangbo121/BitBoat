@@ -52,8 +52,8 @@ extern struct T_NAVIGATION auto_navigation;
 void navigation_init(void);
 
 int navigation_loop(struct T_NAVIGATION *ptr_auto_navigation,\
-		            struct WAY_POINT *ptr_wp_data,\
-		            nmea_msg *ptr_gps_data);
+										struct WAY_POINT *ptr_wp_data,\
+										nmea_msg *ptr_gps_data);
 
 float get_command_heading(struct T_LOCATION *previous_target_wp, struct T_LOCATION *target_wp, struct T_LOCATION *current_loc);
 float get_command_heading_NED(struct T_LOCATION *previous_target_loc,  struct T_LOCATION *current_loc, struct T_LOCATION *target_loc);

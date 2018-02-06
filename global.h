@@ -8,7 +8,6 @@
 #ifndef GLOBAL_H_
 #define GLOBAL_H_
 
-
 /*
  * 简单打印调试信息
  */
@@ -23,13 +22,8 @@
 // mark a function as not to be inlined
 #define NOINLINE __attribute__((noinline))
 
-
-
 #define __RADIO_
 #define __GPS_
-#define __MODBUS_
-#define __UDP_
-#define __BD_
 
 #define REAL_START
 //#define TEST
@@ -40,21 +34,6 @@
 //#define UART_RADIO         "/dev/ttyO3"
 #define UART_RADIO         "/dev/ttyUSB0"
 #define UART_GPS           "/dev/ttyO2"
-#define UART_MODBUS        "/dev/ttyO1"
-#define UART_MODBUS_ROTARY "/dev/ttyO5"
-#define UART_BD            "/dev/ttyO4"
-
-//20170519把北斗的口用来作为模拟的gps，实际一定改为上面的串口
-//#define UART_RADIO         "/dev/ttyO3"
-//#define UART_GPS           "/dev/ttyO4"
-//#define UART_MODBUS        "/dev/ttyO1"
-//#define UART_MODBUS_ROTARY "/dev/ttyO5"
-//#define UART_BD            "/dev/ttyO2"
-
-#define IP_MASTER "10.10.80.1"//主控的ip地址
-#define IP_SLAVER "10.10.80.2"//副控的ip地址
-#define UDP_M_RECV_PORT 7000
-#define UDP_SERVER_PORT 7500
 
 /*建议写成1e-5这种形式*/
 #define GPS_LOCATION_SCALE 1e-5 //gps中经纬度因为是放大了10^5的，所以需要缩小
@@ -77,7 +56,7 @@
 #define DEG_TO_RAD (M_PI / 180.0f)
 #define RAD_TO_DEG (180.0f / M_PI)
 
-/*pi的倒数*/
+/*PI-3.1415926的倒数*/
 #ifndef M_PI_RECIPROCAL
 #define M_PI_RECIPROCAL 0.318309891
 #endif
@@ -182,18 +161,10 @@ struct T_GLOBAL_BOOL_BOATPILOT
 
     int cte_distance_error;//84字节//[0.01米]
 
-#if 0
-    //float rudder_middle_position;//[0-720]方向舵标定时，定义的方向舵的中位的2倍，初始值设置为360线(驾驶仪认为是180度)，码盘的360度对应的是720线
-    float rudder_middle_position;//方向舵处于中间位置时对应的码盘的读数
-    float rudder_left_limit_position;//[0-360]方向舵标定时的左极限，初始默认180-45=135度
-    float rudder_right_limit_position;//[0-360]方向舵标定时的右极限，初始默认180+45=225度
-    float rudder_delta_fabs;//[0-90]20170508    [0-45]方向舵标定时，为保证向左和向右转动时左右极限值对称，故采用此变化范围
-#else
     short rudder_middle_position;//方向舵处于中间位置时对应的码盘的读数
     short rudder_left_limit_position;//[0-720]方向舵标定时的左极限位置，对应的码盘读数
     short rudder_right_limit_position;//[0-720]方向舵标定时的右极限位置，对应的码盘读数
     short rudder_delta_fabs;//92字节//[0-90]方向舵标定时，为保证向左和向右转动时左右极限值对称，故有此变量
-#endif
 
     /*
      * 以后改变global变量结构
@@ -231,28 +202,18 @@ typedef struct T_DateTime
 }T_DATETIME;
 
 #define GPS_LOG_FILE "gps.log"
-#define REALTIME_LOG_FILE "realtime.log"
 #define BOATPILOT_LOG_FILE "boatpilot.log"
 #define WAY_POINT_FILE "waypoint.log"
 #define CONFIG_FILE "config.log"
 
-#define BEIDOU_LOG_FILE "BD.dat"
-
 extern int fd_gps_log;
-extern int fd_realtime_log;
 extern int fd_boatpilot_log;
 extern int fd_waypoint;
 extern int fd_config;
-
-extern int fd_bd;
 
 extern struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
 
 extern T_DATETIME datetime_now;//当前的日期和时间，精确到秒。在主线程中每秒更新一次，其它程序直接使用即可。
 extern struct tm *gbl_time_val;//全局时间变量，其它的时间都从这里取
-//extern time_t timep;
-
-
-
 
 #endif /* GLOBAL_H_ */

@@ -40,7 +40,7 @@ const BIT_Scheduler::Task Boat::scheduler_tasks[] =
       { SCHED_TASK(get_timedata_now),                                     100,    1100 },
       { SCHED_TASK(loop_slow),                                                    100,    1100 },
 
-      { SCHED_TASK(end_of_task),                           1000,    1100 }
+      { SCHED_TASK(end_of_task),                                               1000,    1100 }
 };
 
 #define MAINTASK_TICK_TIME_MS 10//这个设置为10ms，对应每个循环100hz
@@ -54,11 +54,11 @@ int main(int argc,char * const argv[])
 {
     DEBUG_PRINTF("Welcome to BitPilot\n");
 
-    // initialise the main loop scheduler
+    // 初始化任务调度表
     boat.scheduler.init(&boat.scheduler_tasks[0], sizeof(boat.scheduler_tasks)/sizeof(boat.scheduler_tasks[0]));
     //printf(" sizeof(scheduler_tasks)/sizeof(scheduler_tasks[0]) = %d\n",sizeof(boat.scheduler_tasks)/sizeof(boat.scheduler_tasks[0]));
 
-    //初始化工作
+    //初始化步骤，初始化一些设备或者参数等
     boat.setup();
 
     while (1)
@@ -67,11 +67,6 @@ int main(int argc,char * const argv[])
         maintask_tick.tv_usec = micro_seconds;
         select(0, NULL, NULL, NULL, &maintask_tick);
 
-        /*
-         * 如果这个while(1)的循环周期是10ms那么
-         * 这个loop循环中所有的函数都执行一边（或者说运行最多函数时），所需要的时间应该是小于10ms的
-         * 如果所有任务都执行一遍，所需要的时间还是小于10ms呢，会停在那里等待吗？
-         */
         boat.loop();
     }
 
@@ -84,14 +79,12 @@ void Boat::loop( void )
 
 	loop_cnt++;
 
-
-
     uint32_t timer = (uint32_t)gettimeofday_us();//当前系统运行时间精确到微秒
 
     loop_fast();//在无人机中是姿态控制内环，在无人船中是导航控制环
 
-    // tell the scheduler one tick has passed
-    scheduler.tick();//告诉调度器scheduler一个tick已经过去了，目前1个tick指的是10毫秒
+    //  告诉调度器scheduler一个tick已经过去了，目前1个tick指的是10毫秒
+    scheduler.tick();
 
     /*
      * loop_us这个应该是一个tick循环所指定的时间，比如我这里目前定义的是10ms，
@@ -104,10 +97,6 @@ void Boat::loop( void )
 
     if(loop_cnt > 100)
 	{
-    	/*
-    	 * //20171204 为什么time_available=0了呢 貌似是因为gettimeofday_us返回值是float型的，前面必须加
-    	 */
-		//printf("loop_cnt = 100, time_available =%d \n",time_available);//20171204 为什么time_available=0了呢(uint32_t)
 		loop_cnt = 0;
 	}
 
@@ -117,7 +106,8 @@ void Boat::loop( void )
 void Boat::loop_fast()
 {
     /*
-     * 这个loop_fast如果针对于飞机来说就是控制姿态的内环控制，无人机的导航控制环节在scheduler数组的执行中
+     * 这个loop_fast如果针对于飞机来说就是控制姿态的内环控制，
+     * 无人机的导航控制环节在scheduler数组的执行中。
      * 如果对于无人船来说，暂时作为导航和控制环
      */
 
@@ -136,33 +126,26 @@ void Boat::loop_fast()
 
     /*3 control*/
     control_loop();
-    /*
-     * execute_ctrloutput是把control_loop的计算结果，实际映射到某个通道，比如rudder对应两个电机啥的
-     * 而实际的输出放在
-     */
-    //execute_ctrloutput(&ctrloutput);
 
+
+    /*
+     * 下面是把驾驶仪计算得到的电机或者舵机的输出给到simulator模拟器中
+     */
     servos_set_out[0] = (uint16_t)(ctrloutput.rudder_pwm);
     servos_set_out[1] = (uint16_t)(ctrloutput.mmotor_onoff_pwm);
 
-    //DEBUG_PRINTF("servos_set_out[0] = %d\n",servos_set_out[0]);
-
     memcpy(input.servos,servos_set_out,sizeof(servos_set_out));
 
-    /*
-     * 20171204为什么sim_water_craft.update这个不能运行呢，一加上就停止运行
-     */
-    sim_water_craft.update(input);//利用input更新，copter四旋翼的位置，速度，线加速度，角度，角速度，角加速度是没有的，所以一共3*5=15个数据
-    sim_water_craft.fill_fdm(fdm);//现在的fdm中的数值就是四旋翼飞行动力模型的各个飞行状态15个数据
+    sim_water_craft.update(input);
+    sim_water_craft.fill_fdm(fdm);
 }
 
 void Boat::loop_slow()
 {
-    //DEBUG_PRINTF("hello loop_slow\n");
+    //DEBUG_PRINTF("Hello loop_slow\n");
 }
 
 void Boat::end_of_task()
 {
-
+	//DEBUG_PRINTF("Hello end_of_task\n");
 }
-
