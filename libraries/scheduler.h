@@ -46,13 +46,7 @@ public:
     // return the number of microseconds available for the current task
     uint16_t time_available_usec(void);
 
-    // return debug parameter
-    uint8_t debug(void) { return _debug; }
-
 private:
-    // used to enable scheduler debugging
-    int8_t _debug;
-
     // progmem list of tasks to run
     const struct Task *_tasks;
 

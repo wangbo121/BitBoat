@@ -36,6 +36,7 @@ struct T_NED
 {
     float x;
     float y;
+    float z;
 };
 
 /*
