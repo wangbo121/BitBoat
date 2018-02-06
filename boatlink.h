@@ -177,12 +177,12 @@ struct GCS2AP_RADIO
     unsigned char workmode;//工作模式，1:遥控;2:自驾;3:混控;0:停车(全部输出为0,电门锁生效)
     unsigned char rc_thruster;//[0-255]推进器pwm（遥控器输出）
     unsigned char rc_rudder;//[0-255]方向舵pwm（遥控器输出）
-    unsigned char rud_p;//[0.01],转弯参数P  //8字节
+    unsigned char rud_p;//[0.1],转弯参数P  //8字节
     unsigned char rud_i;//[0.01],转弯参数I
-    unsigned char rud_d;//[0.01],转弯参数D
-    unsigned char cte_p;//[0.01],CTE参数P
+    unsigned char rud_d;//[0.1],转弯参数D
+    unsigned char cte_p;//[0.1],CTE参数P
     unsigned char cte_i;//[0.01],CTE参数I
-    unsigned char cte_d;//[0.01],CTE参数D
+    unsigned char cte_d;//[0.1],CTE参数D
     unsigned char rudder_setup_reverse;//方向舵反向
     unsigned char thruster_setup_reverse;//推进器设置，0:正向，D0=1右侧反向:D1=1:左侧推进器反向
     unsigned char generator_on;//发电机设置，0:停止;1:工作;2:自动 //16字节

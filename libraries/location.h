@@ -23,6 +23,7 @@
 #ifndef M_PI
 #define M_PI       3.14159265358979323846
 #endif
+#define M_PI_INV 0.31831
 
 struct T_LOCATION
 {

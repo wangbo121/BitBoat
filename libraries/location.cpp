@@ -254,30 +254,32 @@ float get_cross_track_error_correct_radian_NED(struct T_LOCATION *last_target_lo
     float distance=0.0;
 
     CTE_m=get_cross_track_error_NED(last_target_loc, current_loc, target_loc);
-    //CTE_m=fabs(CTE_m);//计算偏航距离时，已经考虑了在目标航线左侧时为正，右侧时为负，所以不需要绝对值，直接再用pid控制方法就可以了
-    global_bool_boatpilot.cte_distance_error=(short)fabs(CTE_m)*100;//这个是为了距离扩大100倍发送到地面站
     //printf("偏航距离是 NED=%f[m]\n",CTE_m);//20170508已测试
+    global_bool_boatpilot.cte_distance_error=(short)fabs(CTE_m)*100;//这个是为了距离扩大100倍发送到地面站
 
-    //0.001对应1000米对应1弧度也就是57度左右，0.0001对应10000米对应57度
-
-    CTE_p=(float)gcs2ap_radio_all.cte_p*0.0001;
-    CTE_i=(float)gcs2ap_radio_all.cte_i*0.1*0.000039215;
-    CTE_d=(float)gcs2ap_radio_all.cte_d*0.1;
-
-    /*
-     * 20180205这里目前用的还是用1000米对应1弧度，后面改成用arctan函数，然后缩放，再利用pid
-     */
-    //gamma_CTE = get_pid_cte(CTE_m, 1,CTE_p,CTE_i,CTE_d);//最终由偏航距计算的修正的补偿方向舵角
-
-    boat.pid_CTE.set_kP(CTE_p);
-    boat.pid_CTE.set_kI(CTE_i);
-    boat.pid_CTE.set_kD(CTE_d);
+#if 0
+	CTE_p=(float)gcs2ap_radio_all.cte_p * 0.1;
+	CTE_i=(float)gcs2ap_radio_all.cte_i *   0.01;
+	CTE_d=(float)gcs2ap_radio_all.cte_d * 0.1;
     gamma_CTE = boat.pid_CTE.get_pid(CTE_m, 20, 1);//最终由偏航距计算的修正的补偿方向舵角
+#else
+    // 可以选择用反正切的
+    CTE_p=(float)gcs2ap_radio_all.cte_p * 0.1;
+    CTE_i=(float)gcs2ap_radio_all.cte_i *   0.01;
+    CTE_d=(float)gcs2ap_radio_all.cte_d * 0.1;
 
+	boat.pid_CTE.set_kP(CTE_p);
+	boat.pid_CTE.set_kI(CTE_i);
+	boat.pid_CTE.set_kD(CTE_d);
 
-    gamma_CTE_max_radian=convert_degree_to_radian((float)gcs2ap_radio_all.cte_max_degree);
+    float atan_cte=0.0;
+    atan_cte = 0.5 * atan(CTE_m);// 2/pi*arctan(CTE_m) 限制幅度是pi/4
+    //printf("atan_cte = %f \n",atan_cte);
+    gamma_CTE = boat.pid_CTE.get_pid(atan_cte, 20, 1);
+#endif
     //printf("gamma_CTE=%f\n",gamma_CTE);//20170508已测试
 
+    gamma_CTE_max_radian=convert_degree_to_radian((float)gcs2ap_radio_all.cte_max_degree);
     if(gamma_CTE_max_radian>=MAX_CTE_CORRECT_RADIAN)
     {
         gamma_CTE_max_radian=MAX_CTE_CORRECT_RADIAN;
@@ -295,7 +297,7 @@ float get_cross_track_error_correct_radian_NED(struct T_LOCATION *last_target_lo
     {
         gamma_CTE = -gamma_CTE_max_radian;
     }
-    global_bool_boatpilot.cte_error_check_radian=(short)gamma_CTE*1000;
+    global_bool_boatpilot.cte_error_check_radian=(short)gamma_CTE*1000;// 把数据放大1000倍，成为整型，然后通过实时数据发送给地面站
 
     if(CTE_m >= 0)
     {

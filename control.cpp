@@ -358,22 +358,23 @@ static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput,struct CTRL_INPUT *
     case AUTO_MODE:
         //printf("进入自动驾驶\n");
         /*1. 计算方向舵输出*/
-        pid.p = ((float)ctrlpara.rudder_p)*0.1;
-        pid.i = ((float)ctrlpara.rudder_i)*0.000039215;
-        pid.d = ((float)ctrlpara.rudder_d)*0.1;
+        pid.p = ((float)ctrlpara.rudder_p) * 0.1;
+        //pid.i = ((float)ctrlpara.rudder_i) * 0.000039215;
+        pid.i = ((float)ctrlpara.rudder_i) * 0.01;
+        pid.d = ((float)ctrlpara.rudder_d) * 0.1;
 
         if(gcs2ap_radio_all.navigation_mode==NAVIGATION_COURSE_ANGLE)
         {
             ptr_ctrloutput->rudder_pwm = cal_rudder_control(ptr_ctrlinput->command_course_angle_radian,\
-                                                            ptr_ctrlinput->gps_course_angle_radian,\
-                                                            pid);
+																									ptr_ctrlinput->gps_course_angle_radian,\
+																									pid);
         }
         else
         {
             /*在风平浪静的情况下，其实是可以用 船头船尾连线与正北方向的夹角heading angle作为前进速度的方向*/
             ptr_ctrloutput->rudder_pwm = cal_rudder_control(ptr_ctrlinput->command_heading_angle_radian,\
-                                                            ptr_ctrlinput->gps_heading_angle_radian,\
-                                                            pid);
+																									ptr_ctrlinput->gps_heading_angle_radian,\
+																									pid);
         }
 
         /*
@@ -487,6 +488,9 @@ static float cal_rudder_control(float command_heading,float current_track_headin
 	/*再由-pi--+pi转化为-1--+1*/
 	error_head_track=error_head_track * M_PI_RECIPROCAL;/*M_PI_RECIPROCAL=1/pi*/
 
+//	printf("boat.pid_yaw = %f \n",boat.pid_yaw.get_kP());
+//	printf("boat.pid_yaw = %f \n",boat.pid_yaw.get_kI());
+//	printf("boat.pid_yaw = %f \n",boat.pid_yaw.get_kD());
 	boat.pid_yaw.set_kP(pid.p);
 	boat.pid_yaw.set_kI(pid.i);
 	boat.pid_yaw.set_kD(pid.d);

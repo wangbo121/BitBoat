@@ -34,14 +34,15 @@ float BIT_PID::get_pid(float error, float dt, float scaler)
 	output += error * _kp;
 
 	// Compute derivative component if time has elapsed
-	if ((fabs(_kd) > 0) && (dt > 0)) {
+	if ((fabs(_kd) > 0) && (dt > 0))
+	{
 		float derivative = (error - _last_error) / delta_time;
 
 		// discrete low pass filter, cuts out the
 		// high frequency noise that can drive the controller crazy
 		float RC = 1/(2*M_PI*_fCut);
 		derivative = _last_derivative +
-		        (delta_time / (RC + delta_time)) * (derivative - _last_derivative);
+							 (delta_time / (RC + delta_time)) * (derivative - _last_derivative);
 
 		// update state
 		_last_error 		= error;
@@ -55,11 +56,15 @@ float BIT_PID::get_pid(float error, float dt, float scaler)
 	output *= scaler;
 
 	// Compute integral component if time has elapsed
-	if ((fabs(_ki) > 0) && (dt > 0)) {
+	if ((fabs(_ki) > 0) && (dt > 0))
+	{
 		_integrator 		+= (error * _ki) * scaler * delta_time;
-		if (_integrator < -_imax) {
+		if (_integrator < -_imax)
+		{
 			_integrator = -_imax;
-		} else if (_integrator > _imax) {
+		}
+		else if (_integrator > _imax)
+		{
 			_integrator = _imax;
 		}
 		output 				+= _integrator;
@@ -83,27 +88,33 @@ float BIT_PID::get_p(float error)
 
 float BIT_PID::get_i(float error, float dt)
 {
-    if(dt != 0) {
+    if(dt != 0)
+    {
         _integrator += ((float)error * _ki) * dt;
 
-        if (_integrator < -_imax) {
+        if (_integrator < -_imax)
+        {
             _integrator = -_imax;
-        } else if (_integrator > _imax) {
+        }
+        else if (_integrator > _imax)
+        {
             _integrator = _imax;
         }
     }
+
     return _integrator;
 }
 
-float        BIT_PID:: get_d(float error, float dt)
+float BIT_PID:: get_d(float error, float dt)
 {
-	if ((_kd != 0) && (dt != 0)) {
+	if ((_kd != 0) && (dt != 0))
+	{
 		_derivative = (error - _last_error) / dt;
 
 		// discrete low pass filter, cuts out the
 		// high frequency noise that can drive the controller crazy
 		_derivative = _last_derivative +
-					  (dt / ( _filter + dt)) * (_derivative - _last_derivative);
+				               (dt / ( _filter + dt)) * (_derivative - _last_derivative);
 
 		// update state
 		_last_error            = error;
@@ -112,8 +123,8 @@ float        BIT_PID:: get_d(float error, float dt)
 		// add in derivative component
 		return _kd * _derivative;
 	}
-	return 0;
 
+	return 0;
 }
 
 float BIT_PID::get_pi(float error, float dt)
