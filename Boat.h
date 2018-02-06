@@ -90,8 +90,8 @@ class Boat
 public:
     friend class GCS_MAVLINK;
 
-    AP_PID pid_yaw;
-    AP_PID pid_CTE;
+    BIT_PID pid_yaw;
+    BIT_PID pid_CTE;
 
     Boat(void)
     {
@@ -102,8 +102,8 @@ public:
     }
 
     // main loop scheduler
-    AP_Scheduler scheduler;
-    static const AP_Scheduler::Task scheduler_tasks[];
+    BIT_Scheduler scheduler;
+    static const BIT_Scheduler::Task scheduler_tasks[];
 
     void setup();
     void loop();

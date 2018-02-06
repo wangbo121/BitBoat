@@ -7,8 +7,11 @@
 
 #include "Boat.h"
 
-//Watercraft sim_water_craft("39.6136,116.357,10,0","+");//+型机架，起始高度为10，yaw是0
+/*
+ * 仿真测试使用
+ */
 Watercraft sim_water_craft("32.68436,117.05525,10,0","+");//+型机架，起始高度为10，yaw是0
+
 /*
   scheduler table - all regular tasks apart from the fast_loop()
   should be listed here, along with how often they should be called
@@ -24,7 +27,7 @@ Watercraft sim_water_craft("32.68436,117.05525,10,0","+");//+型机架，起始�
  */
 #define SCHED_TASK(func) (void (*)())&Boat::func
 
-const AP_Scheduler::Task Boat::scheduler_tasks[] =
+const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 {
       { SCHED_TASK(update_GPS),                                                  10,     900 },
       { SCHED_TASK(set_rc_out),                                                    100,     100 },
@@ -37,21 +40,6 @@ const AP_Scheduler::Task Boat::scheduler_tasks[] =
       { SCHED_TASK(get_timedata_now),                                     100,    1100 },
       { SCHED_TASK(loop_slow),                                                    100,    1100 },
 
-      //    { update_GPS,            2,     900 },
-      //    { update_navigation,     10,    500 },
-      //    { medium_loop,           2,     700 },
-      //    { update_altitude,      10,    1000 },
-      //    { fifty_hz_loop,         2,     950 },
-      //    { run_nav_updates,      10,     800 },
-      //    { slow_loop,            10,     500 },
-      //    { gcs_check_input,       2,     700 },
-      //    { gcs_send_heartbeat,  100,     700 },
-      //    { gcs_data_stream_send,  2,    1500 },
-      //    { gcs_send_deferred,     2,    1200 },
-      //    { compass_accumulate,    2,     700 },
-      //    { barometer_accumulate,  2,     900 },
-      //    { super_slow_loop,     100,    1100 },
-      //    { perf_update,        1000,     500 }
       { SCHED_TASK(end_of_task),                           1000,    1100 }
 };
 

@@ -131,10 +131,12 @@ void Boat::setup( void )
     pid_yaw.set_kP(2);
     pid_yaw.set_kI(0);
     pid_yaw.set_kD(0);
+    pid_yaw.set_imax(0.174*3);//30度
 
     pid_CTE.set_kP(2);
     pid_CTE.set_kI(0);
     pid_CTE.set_kD(0);
+    pid_yaw.set_imax(0.174*3);//30度
 }
 
 void Boat::send_ap2gcs_cmd_boatlink()

@@ -8,54 +8,26 @@
 #ifndef HEADERS_PID_H_
 #define HEADERS_PID_H_
 
-#ifndef M_PI
-#define M_PI       3.14159265358979323846
-#endif
-
-/*
- * 计算得到目标航向和实际航向误差导致的pid控制器的控制量
- * 单位是弧度，是方向舵的控制两
- */
-float get_pid(float error, float scaler,float _kp,float _ki,float _kd);
-
-/*
- * 把目标航向和实际航向的误差的积分和微分都清零
- */
-void reset_I();
-
-/*
- * 计算得到偏航距的pid控制修正量，为什么说是修正
- * 因为这个偏航距本身是为了修正航向，使得尽快靠近航线
- */
-float get_pid_cte(float error, float scaler,float _kp,float _ki,float _kd);
-
-/*
- * 把误差的积分和微分都清零
- */
-void reset_I_cte();
-
-
-
-
-
-
-
-
-
 /***********************************************************/
-/***********************************************************/
-/*************************把PID写成类*************/
+/***************************************/
+/***把PID写成类*************/
+
 #include <inttypes.h>
 #include <math.h>		// for fabs()
 
 //实例化的对象只对应(管理)一个 PID 控制器
-class AP_PID
+class BIT_PID
 {
 public:
-	AP_PID();
+	BIT_PID();
 
 	/*
 	 * 计算得到PID控制器的结果，get results from pid controller
+	 */
+
+	/*
+	 * 计算得到目标航向和实际航向误差导致的pid控制器的控制量
+	 * 单位是弧度，是方向舵的控制两
 	 */
 	float 	      get_pid(float error, float dt_ms, float scaler = 1.0);
 	float         get_pi(float error, float dt);
@@ -74,7 +46,7 @@ public:
 	void	set_kP(const float v)		{ _kp = v; }
 	void	set_kI(const float v)		{ _ki = v; }
 	void	set_kD(const float v)		{ _kd = v; }
-	//void	set_imax(const float v)	{ _imax = v; }
+	void	set_imax(const float v)	{ _imax = v; }
 
 	/*
 	 * 获取PID控制器的参数
@@ -106,7 +78,8 @@ private:
 	/*
 	 * 积分限幅
 	 */
-	static const float _imax = 0.174*3;//这个是积分幅度的最大值，限制在10度，10/180*3.14=0.174
+	//static const float _imax = 0.174*3;//这个是积分幅度的最大值，限制在10度，10/180*3.14=0.174
+	float _imax ;//这个是积分幅度的最大值，限制在10度，10/180*3.14=0.174
 
 	/*
 	 * 低通滤波器

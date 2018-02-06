@@ -8,39 +8,39 @@
 #ifndef LIBRARIES_SCHEDULER_H_
 #define LIBRARIES_SCHEDULER_H_
 
-
 /*
-  A task scheduler for APM main loops
-
-  Sketches should call scheduler.init() on startup, then call
-  scheduler.tick() at regular intervals (typically every 10ms).
-
-  To run tasks use scheduler.run(), passing the amount of time that
-  the scheduler is allowed to use before it must return
+ * 这是任务调度
+ * 在开始的时候要调用scheduler.init()，然后每次循环都调用scheduler.tick()，每次循环时间大概是10ms
+ * 最后调用scheduler.run()，这个run函数中的参数时最大允许执行时间，也就是当这个允许的时间到了后，
+ * 就需要返回了，不再执行任务
  */
 
 #include <stdint.h>
 
-class AP_Scheduler
+class BIT_Scheduler
 {
 public:
-    typedef void (*task_fn_t)(void);
+    typedef void (*task_fn_t) (void);
 
-    struct Task {
+    struct Task
+    {
         task_fn_t function;
-        uint16_t interval_ticks;
+        uint16_t interval_ticks;// 需要经过interval_ticks个周期，才能执行该任务
         uint16_t max_time_micros;
     };
 
-    // initialise scheduler
+    //调度初始化，指定任务表的地址，明确有多少个任务
     void init(const Task *tasks, uint8_t num_tasks);
 
-    // call when one tick has passed
+    // 每一次tick都会把计数加1
     void tick(void);
 
-    // run the tasks. Call this once per 'tick'.
-    // time_available is the amount of time available to run
-    // tasks in microseconds
+    /*
+     * 每一次tick都会调用一次这个run函数去执行尚未完成的scheduler中的任务
+     * 执行调度任务表中的任务，参数是最大允许时间
+     * 时间单位是微秒
+     * 这个会在最大允许时间内执行尽可能多的任务
+     */
     void run(uint16_t time_available);
 
     // return the number of microseconds available for the current task
@@ -48,8 +48,6 @@ public:
 
     // return debug parameter
     uint8_t debug(void) { return _debug; }
-
-    //static const struct AP_Param::GroupInfo var_info[];
 
 private:
     // used to enable scheduler debugging
@@ -74,10 +72,5 @@ private:
     // the time in microseconds when the task started
     uint32_t _task_time_started;
 };
-
-
-
-
-
 
 #endif /* LIBRARIES_SCHEDULER_H_ */
