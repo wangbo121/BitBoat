@@ -38,36 +38,7 @@
 
 #include "all_external_device.h"
 
-#include "SIM_Watercraft.h"
-
-//#include "maintask.h"
-//#include "loopfast.h"
-//#include "loopslow.h"
-//#include "utilityfunctions.h"
-//#include "save_data.h"
-//#include "boatlink.h"
-//#include "gps.h"
-//#include "navigation.h"
-//#include "uart.h"
-//#include "servo.h"
-//#include "control.h"
-//#include "modbus_485.h"
-//#include "modbus_relay_switch.h"
-//#include "udp.h"
-//#include "commu.h"
-//#include "bd.h"
-//#include "generator.h"
-//#include "radio.h"
-//#include "location.h"
-
-
-
-
-
-
-
-
-
+#include "SIM_Vehicle.h"
 
 // Auto Pilot modes
 // ----------------
