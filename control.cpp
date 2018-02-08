@@ -496,7 +496,7 @@ static float cal_rudder_control(float command_heading,float current_track_headin
 	boat.pid_yaw.set_kD(pid.d);
 	rudder_ctrl = boat.pid_yaw.get_pid(error_head_track, 20, 1);// 这个是PID控制器的
 	//printf("rudder_ctrl PID = %f \n",rudder_ctrl);
-	rudder_ctrl = boat.pid_yaw.get_pid_finite(error_head_track, 20, 1);// 这个是有限时间控制器的
+	//rudder_ctrl = boat.pid_yaw.get_pid_finite(error_head_track, 20, 1);// 这个是有限时间控制器的
 	//printf("rudder_ctrl Finite-time = %f \n",rudder_ctrl);
 
 	if(rudder_ctrl>full_rudder_threshold)

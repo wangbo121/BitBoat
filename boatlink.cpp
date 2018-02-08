@@ -1225,9 +1225,26 @@ int decode_binary_wp_data()
 
         /*截至2017年05月12日-总共 个数据*/
         boatpilot_len = sprintf(boatpilot_save_data,\
-                        "%u, %u, %hhu,%hhu,%hhu,%hhu\n", \
-                        wp_data[0].lng, wp_data[0].lat, wp_data[0].no, wp_data[0].type, wp_data[0].spd, wp_data[0].alt \
-                            );
+                        "%u, %u, %hhu,%hhu,%hhu,%hhu,\
+                         %u, %u, %hhu,%hhu,%hhu,%hhu,\
+        		         %u, %u, %hhu,%hhu,%hhu,%hhu,\
+                        %u, %u, %hhu,%hhu,%hhu,%hhu,\
+                         %u, %u, %hhu,%hhu,%hhu,%hhu,\
+        		         %u, %u, %hhu,%hhu,%hhu,%hhu,\
+                        %u, %u, %hhu,%hhu,%hhu,%hhu,\
+                         %u, %u, %hhu,%hhu,%hhu,%hhu,\
+        		         %u, %u, %hhu,%hhu,%hhu,%hhu,\
+                         %u, %u, %hhu,%hhu,%hhu,%hhu\n", \
+                        wp_data[0].lng, wp_data[0].lat, wp_data[0].no, wp_data[0].type, wp_data[0].spd, wp_data[0].alt, \
+                        wp_data[1].lng, wp_data[1].lat, wp_data[1].no, wp_data[1].type, wp_data[1].spd, wp_data[1].alt, \
+                        wp_data[2].lng, wp_data[2].lat, wp_data[2].no, wp_data[2].type, wp_data[2].spd, wp_data[2].alt, \
+                        wp_data[3].lng, wp_data[3].lat, wp_data[3].no, wp_data[3].type, wp_data[3].spd, wp_data[3].alt, \
+                        wp_data[4].lng, wp_data[4].lat, wp_data[4].no, wp_data[4].type, wp_data[4].spd, wp_data[4].alt, \
+                        wp_data[5].lng, wp_data[5].lat, wp_data[5].no, wp_data[5].type, wp_data[5].spd, wp_data[5].alt, \
+						wp_data[6].lng, wp_data[6].lat, wp_data[6].no, wp_data[6].type, wp_data[6].spd, wp_data[6].alt, \
+						wp_data[7].lng, wp_data[7].lat, wp_data[7].no, wp_data[7].type, wp_data[7].spd, wp_data[7].alt, \
+						wp_data[8].lng, wp_data[8].lat, wp_data[8].no, wp_data[8].type, wp_data[8].spd, wp_data[8].alt, \
+						wp_data[9].lng, wp_data[9].lat, wp_data[9].no, wp_data[9].type, wp_data[9].spd, wp_data[9].alt);
         printf("boatpilot_len转换为字符串的字节数=%d\n",boatpilot_len);
 
         save_data_to_string_log(fd_boatpilot_wp_txt,boatpilot_save_data,boatpilot_len);

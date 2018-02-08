@@ -57,7 +57,8 @@ int main(int argc,char * const argv[])
 {
     DEBUG_PRINTF("Welcome to BitPilot\n");
 
-    decode_binary_wp_data();
+    //decode_binary_data();
+    //decode_binary_wp_data();
 
     // 初始化任务调度表
     boat.scheduler.init(&boat.scheduler_tasks[0], sizeof(boat.scheduler_tasks)/sizeof(boat.scheduler_tasks[0]));

@@ -267,6 +267,7 @@ void Boat::record_wp()
 	if(global_bool_boatpilot.save_wp_req)
 	{
 		write_len=write(fd_waypoint,(char *)wp_data,sizeof(struct WAY_POINT)*MAX_WAYPOINT_NUM);
+		global_bool_boatpilot.save_wp_req = FALSE;
 	}
 }
 
