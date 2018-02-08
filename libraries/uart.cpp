@@ -10,16 +10,12 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
-
  /*set baud rate*/
 #include <termios.h>
-
 #include <sys/select.h>
 #include <sys/time.h>
-//#include <sys/types.h>
 #include <errno.h>
 #include <sys/stat.h>
-
 /*create uart device pthread*/
 #include <pthread.h>
 

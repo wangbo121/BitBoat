@@ -9,21 +9,15 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <unistd.h>
+#include <time.h>
+#include <sys/time.h>
 
 #include "utility.h"
 
 #ifndef LINUX_OS
 #define LINUX_OS
 #endif
-
-#ifdef LINUX_OS
-
-#ifdef LINUX_OS
-#include <unistd.h>
-#include <time.h>
-#include <sys/time.h>
-#endif
-
 
 /*
  * 精确到毫秒的延时
@@ -135,4 +129,3 @@ float clock_gettime_us()
 
     return time_s*1e6;
 }
-#endif

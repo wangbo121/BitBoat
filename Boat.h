@@ -24,17 +24,18 @@
 #include <iostream>
 #include <cmath>
 
-#include "global.h"
+
 #include "scheduler.h"
 #include "utility.h"
-#include "boatlink.h"
-#include "navigation.h"
-#include "control.h"
 #include "radio.h"
 #include "save_data.h"
 #include "pid.h"
 #include "all_external_device.h"
 #include "SIM_Vehicle.h"
+#include "global.h"
+#include "boatlink.h"
+#include "control.h"
+#include "navigation.h"
 
 /*
  * 控制模式的宏定义

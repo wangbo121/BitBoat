@@ -16,6 +16,7 @@
 #include "location.h"
 #include "utility.h"
 #include "pid.h"
+#include "Boat.h"
 
 #include "navigation.h"
 
@@ -260,8 +261,26 @@ float get_command_heading_NED(struct T_LOCATION *previous_target_loc,  struct T_
     global_bool_boatpilot.current_to_target_radian=(short)current_to_target_radian*1000;
     global_bool_boatpilot.dir_target_degree=(short)(convert_radian_to_degree(current_to_target_radian)*100);/*把这个目标航向返回给实时数据*/
 
+#if 0
+    20180207 勿删
     cross_track_error_correct_radian = get_cross_track_error_correct_radian_NED(previous_target_loc, current_loc, target_loc);
     //printf("cross_track_error_correct_radian=%f\n",cross_track_error_correct_radian);//20170410已测试
+#else
+	float CTE_p=0.0;
+	float CTE_i=0.0;
+	float CTE_d=0.0;
+    // 可以选择用反正切的
+	CTE_p=(float)gcs2ap_radio_all.cte_p * 0.1;
+	CTE_i=(float)gcs2ap_radio_all.cte_i *   0.01;
+	CTE_d=(float)gcs2ap_radio_all.cte_d * 0.1;
+	//printf("CTE_i = %f\n",CTE_i);
+	//printf("CTE_d = %f\n",CTE_d);// 20180207已测试
+
+	boat.pid_CTE.set_kP(CTE_p);
+	boat.pid_CTE.set_kI(CTE_i);
+	boat.pid_CTE.set_kD(CTE_d);
+	cross_track_error_correct_radian = get_cross_track_error_correct_radian_NED_PID(previous_target_loc, current_loc, target_loc, &boat.pid_CTE);
+#endif
 
     /*
      * 虽然经过偏航距离修正，但是还是要朝着当前位置到目标航点直接方位角的小于180度方向走

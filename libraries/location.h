@@ -101,4 +101,12 @@ float get_cross_track_error_NED(struct T_LOCATION *last_target_loc,struct T_LOCA
  */
 float get_cross_track_error_correct_radian_NED(struct T_LOCATION *last_target_loc,struct T_LOCATION *current_loc, struct T_LOCATION *target_loc);
 
+/*
+ * 比上面的加入了偏航距控制器的结构
+ * 使用的是偏航距PID控制器
+ */
+float get_cross_track_error_correct_radian_NED_PID(struct T_LOCATION *last_target_loc,
+		                                                                                                struct T_LOCATION *current_loc, struct T_LOCATION *target_loc,
+		                                                                                                 void *pid_class_ptr);
+
 #endif /* HEADERS_LOCATION_H_ */

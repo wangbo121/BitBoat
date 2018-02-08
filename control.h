@@ -99,17 +99,17 @@ extern struct CTRL_INPUT ctrlinput;
 extern struct CTRL_OUTPUT ctrloutput;
 
 /*
- * Function:     control
+ * Function:       control
  * Description:  利用ctrlinput，navigation，ctrlpara，gpsdata的数据，
- *               计算方向舵和油门的输出量
+ *                        计算方向舵和油门的输出量
  */
 int control_loop(void);
 
 /*
- * Function:     execute_ctrloutput
+ * Function:       execute_ctrloutput
  * Description:  利用ctrlinput，navigation，ctrlpara，gpsdata的数据，
- *               control_loop 只是计算出控制的量，但是并不输出，execute_ctrloutput才是输出
- *               二者的频率可以相同，也可以不同
+ *                        control_loop 只是计算出控制的量，但是并不输出，execute_ctrloutput才是输出
+ *                        二者的频率可以相同，也可以不同
  */
 int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput);
 
