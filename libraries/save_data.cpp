@@ -38,6 +38,10 @@ int create_log_file(char *log_name)
 		exit(1);
 	}
 
+	chmod(convert_to_string,0666);//改变文件权限为 任何人都可以修改
+
+	//printf("create_log_file fd =%d\n",fd);// 20180208已测试
+
 	return fd;
 }
 
@@ -99,7 +103,7 @@ int load_data_struct_from_binary(char* file_name,void* data_struct,int data_stru
         }
         else if(f_stat.st_size>=data_struct_size)
         {
-            //printf("f_stat.st_size=%u\n",f_stat.st_size);
+            printf("f_stat.st_size=%u\n",f_stat.st_size);
             //载入文件的最后一个数据结构
             lseek(fd,f_stat.st_size-data_struct_size,SEEK_SET);
             read_len = read(fd, data_struct, data_struct_size);
@@ -111,7 +115,8 @@ int load_data_struct_from_binary(char* file_name,void* data_struct,int data_stru
         {
             printf("文件存在，但是 %s 文件没有数据，载入数据失败\n",file_name);
 
-            return -1;//没有数据，就不载入了
+            //return -1;//没有数据，就不载入了
+            return fd;
         }
     }
     else

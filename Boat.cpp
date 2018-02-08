@@ -9,6 +9,10 @@
 
 Boat boat;
 
+int fd_boatpilot_log;
+int fd_waypoint;
+int fd_config;
+
 void Boat::setup( void )
 {
 
@@ -16,6 +20,7 @@ void Boat::setup( void )
      * 创建要保存的二进制日志文件boatpilot_log
      */
     fd_boatpilot_log=create_log_file(BOATPILOT_LOG_FILE);
+    //printf("setup fd =%d\n",fd_boatpilot_log);// 20180208已测试
 
     /*
      * 载入航点文件waypoint
@@ -27,7 +32,7 @@ void Boat::setup( void )
     }
     else
     {
-        printf("可以读取航点或者创建航点文件\n");
+        printf("可以读取航点或者创建航点文件 fd = %d\n",fd_waypoint);
     }
 
     /*
@@ -40,7 +45,7 @@ void Boat::setup( void )
     }
     else
     {
-        printf("可以读取配置或者创建配置文件\n");
+        printf("可以读取配置或者创建配置文件 fd = %d\n",fd_config);
 
         gcs2ap_radio_all.workmode=boatpilot_config.work_mode;
         gcs2ap_radio_all.rud_p=boatpilot_config.rud_p;
@@ -114,11 +119,12 @@ void Boat::setup( void )
      * 但是一些标志量用global_bool_boatpilot中的bool表示
      */
     global_bool_boatpilot.radio_send_time=clock_gettime_s();/*从系统开启的到当前的时间，作为程序运行时间的开始计时*/
-    global_bool_boatpilot.bool_gcs2ap_beidou=1;//20170419电台和北斗，同时接收并解析命令包，同时发送实时数据包
     global_bool_boatpilot.rudder_middle_position=368.0;
     global_bool_boatpilot.rudder_left_limit_position=368.0*0.5;
     global_bool_boatpilot.rudder_right_limit_position=368.0*0.5;
     global_bool_boatpilot.turn_mode=1;////转弯方式，0:方向舵，1:差速 2:方向舵和差速同时混合转弯
+
+    global_bool_boatpilot.save_boatpilot_log_req = TRUE;
 
     /*
      * 设置PID控制器的参数
@@ -196,6 +202,7 @@ void Boat::record_config()
 {
     if(global_bool_boatpilot.assign_config_req)
     {
+    	//printf("更新config fd_config = %d \n",fd_config);
         global_bool_boatpilot.assign_config_cnt++;
         if(global_bool_boatpilot.assign_config_cnt_previous!=global_bool_boatpilot.assign_config_cnt)
         {
@@ -255,11 +262,18 @@ void Boat::record_config()
 
 void Boat::record_wp()
 {
+	int write_len;
 
+	if(global_bool_boatpilot.save_wp_req)
+	{
+		write_len=write(fd_waypoint,(char *)wp_data,sizeof(struct WAY_POINT)*MAX_WAYPOINT_NUM);
+	}
 }
 
 void Boat::record_log()
 {
+	//DEBUG_PRINTF("记录日志\n");
+	global_bool_boatpilot.save_boatpilot_log_req = TRUE;
     if(global_bool_boatpilot.save_boatpilot_log_req)
     {
         /*时间戳*/
@@ -282,6 +296,7 @@ void Boat::record_log()
          *
          */
         //printf("sizeof(boatpilot_log)=%d,sizeof(boatpilot_log.global)=%d\n",sizeof(boatpilot_log),sizeof(boatpilot_log.global));
+        //printf("fd_boatpilot_log = %d\n",fd_boatpilot_log);
         save_data_to_binary_log(fd_boatpilot_log,&boatpilot_log,sizeof(boatpilot_log));
 
         global_bool_boatpilot.save_boatpilot_log_req=FALSE;

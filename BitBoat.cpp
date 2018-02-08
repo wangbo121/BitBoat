@@ -38,6 +38,8 @@ const BIT_Scheduler::Task Boat::scheduler_tasks[] =
       { SCHED_TASK(send_ap2gcs_realtime_data_boatlink),    100,    1000 },
 
       { SCHED_TASK(record_log),                                                   100,    1100 },
+      { SCHED_TASK(record_wp),                                                   100,    1100 },
+      { SCHED_TASK(record_config),                                                   100,    1100 },
       { SCHED_TASK(get_timedata_now),                                     100,    1100 },
       { SCHED_TASK(loop_slow),                                                    100,    1100 },
 
@@ -54,6 +56,8 @@ struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
 int main(int argc,char * const argv[])
 {
     DEBUG_PRINTF("Welcome to BitPilot\n");
+
+    decode_binary_wp_data();
 
     // 初始化任务调度表
     boat.scheduler.init(&boat.scheduler_tasks[0], sizeof(boat.scheduler_tasks)/sizeof(boat.scheduler_tasks[0]));

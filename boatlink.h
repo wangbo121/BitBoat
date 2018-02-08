@@ -462,4 +462,6 @@ int generate_packet(unsigned char*dst_buf,unsigned char *src_buf,unsigned char l
  */
 int decode_binary_data();
 
+int decode_binary_wp_data();
+
 #endif /* HEADERS_BOATLINK_H_ */

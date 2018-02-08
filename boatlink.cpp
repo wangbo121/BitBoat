@@ -27,6 +27,7 @@
 #include "save_data.h"
 #include "servo.h"
 #include "location.h"
+#include "Boat.h"
 
 #include "boatlink.h"
 
@@ -361,7 +362,8 @@ static int decode_gcs2ap_waypoint(struct WAY_POINT *ptr_wp_data, struct GCS_AP_W
             wp_cnt=0;
 
             /*保存航点到航点文件*/
-            //write_len=write(fd_waypoint,(char *)ptr_wp_data,sizeof(struct WAY_POINT)*MAX_WAYPOINT_NUM);
+            //write_len=write(boat.fd_waypoint,(char *)ptr_wp_data,sizeof(struct WAY_POINT)*MAX_WAYPOINT_NUM);
+            global_bool_boatpilot.save_wp_req = TRUE;
             printf("write_len 写入了%d个字节的航点\n",write_len);
         }
 
@@ -1171,6 +1173,64 @@ int decode_binary_data()
         printf("boatpilot_len转换为字符串的字节数=%d\n",boatpilot_len);
 
         save_data_to_string_log(fd_boatpilot_log_txt,boatpilot_save_data,boatpilot_len);
+    }
+
+    exit(0);
+#endif
+
+    return 0;
+}
+
+
+/*
+ * 测试保存的二进制文件是否成功，把二进制文件再读回来然后保存为字符串
+ */
+#define BOATPILOT_WP_TXT "boatpilot_wp.txt"
+#define BOATPILOT_BINARY_WP_FILE "waypoint.log"
+
+int decode_binary_wp_data()
+{
+//如果不需要解析数据decode_binary_data，那就把下面的#if 1改为 #if 0
+#if 1
+    struct stat f_stat;
+
+    int fd_boatpilot_wp_txt=0;
+    fd_boatpilot_wp_txt=create_log_file(BOATPILOT_WP_TXT);//把二进制的log文件转为文本文件保存在BOATPILOT_LOG_TXT中
+
+    /*
+     * 经过验证，下面的程序可以把二进制文件解析出来再保存到txt文件中便于分析
+     */
+    int fd_boatpilot_wp_binary=0;
+    int boatpilot_len=0;
+    static char boatpilot_save_data[4096]={"hello"};//截至20170512日志文件是244个字节，所以数组定义为256是够用的
+    int i=0;
+
+    fd_boatpilot_wp_binary=open(BOATPILOT_BINARY_WP_FILE,O_RDWR |O_CREAT);
+    stat( BOATPILOT_BINARY_WP_FILE, &f_stat );
+    printf("f_stat.st_size=%u\n",(unsigned int)f_stat.st_size);
+
+    unsigned int single_struct_size;
+    //single_struct_size = sizeof(struct WAY_POINT) * MAX_WAYPOINT_NUM;
+    single_struct_size = sizeof(wp_data);
+    for(i=0;i<f_stat.st_size/single_struct_size;i++)
+    {
+        //lseek(fd_boatpilot_wp_binary,i*sizeof(boatpilot_log),SEEK_SET);
+    	lseek(fd_boatpilot_wp_binary,i*single_struct_size,SEEK_SET);
+        //boatpilot_len=read(fd_boatpilot_wp_binary, &boatpilot_log, sizeof(boatpilot_log));
+    	boatpilot_len=read(fd_boatpilot_wp_binary, wp_data, single_struct_size);
+        printf("boatpilot_len=%d\n",boatpilot_len);
+        printf("boatpilot_wp.lng=%d\n",wp_data[0].lng);
+        printf("boatpilot_wp.lat=%d\n",wp_data[0].lat);
+        printf("boatpilot_wp.no=%d\n",wp_data[0].no);
+
+        /*截至2017年05月12日-总共 个数据*/
+        boatpilot_len = sprintf(boatpilot_save_data,\
+                        "%u, %u, %hhu,%hhu,%hhu,%hhu\n", \
+                        wp_data[0].lng, wp_data[0].lat, wp_data[0].no, wp_data[0].type, wp_data[0].spd, wp_data[0].alt \
+                            );
+        printf("boatpilot_len转换为字符串的字节数=%d\n",boatpilot_len);
+
+        save_data_to_string_log(fd_boatpilot_wp_txt,boatpilot_save_data,boatpilot_len);
     }
 
     exit(0);

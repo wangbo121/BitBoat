@@ -36,6 +36,11 @@ public:
 	float         get_d(float input, float dt);
 
 	/*
+	 * 为了在论文中检测有限时间控制器
+	 */
+	float get_pid_finite(float error, float dt, float scaler);
+
+	/*
 	 * 清零积分量
 	 */
 	void	reset_I();

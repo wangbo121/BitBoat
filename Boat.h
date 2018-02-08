@@ -77,15 +77,17 @@ public:
     void setup();
     void loop();
 
-    public:
+//    static int 				   fd_boatpilot_log;
+//    static  int				   fd_waypoint;
+
 
     private:
     uint8_t          control_mode;
     uint32_t        loop_cnt;
 
-    int 				   fd_boatpilot_log;
-    int				   fd_waypoint;
-    int				   fd_config;
+//    int 				   fd_boatpilot_log;
+//    int				   fd_waypoint;
+    //int				   fd_config;
 
     // Global parameters are all contained within the 'g' class. 勿删保留
     //Parameters g;
