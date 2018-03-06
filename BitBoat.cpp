@@ -36,6 +36,7 @@ const BIT_Scheduler::Task Boat::scheduler_tasks[] =
       { SCHED_TASK(send_ap2gcs_cmd_boatlink),                          1,    1000 },
       { SCHED_TASK(send_ap2gcs_wp_boatlink),                            1,    1000 },
       { SCHED_TASK(send_ap2gcs_realtime_data_boatlink),    100,    1000 },
+      { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),    100,    1000 },
 
       { SCHED_TASK(record_log),                                                   100,    1100 },
       { SCHED_TASK(record_wp),                                                   100,    1100 },
@@ -154,4 +155,17 @@ void Boat::loop_slow()
 void Boat::end_of_task()
 {
 	//DEBUG_PRINTF("Hello end_of_task\n");
+}
+
+void Boat::send_ap2gcs_realtime_data_boatlink_by_udp()
+{
+
+	//printf("send_ap2gcs_real_udp\n ");
+	send_ap2gcs_real_udp();
+
+
+//	unsigned char socket_udp_send[2000];
+//	memcpy(socket_udp_send,&ap2fg_send,sizeof(ap2fg_send));
+//
+//	send_socket_udp_data(fd_socket_generic, socket_udp_send, sizeof(ap2fg_send),"127.0.0.1",5506 );
 }

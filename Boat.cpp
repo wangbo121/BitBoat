@@ -13,6 +13,9 @@ int fd_boatpilot_log;
 int fd_waypoint;
 int fd_config;
 
+//20180306通过udp发送实时数据
+int fd_socket_generic;
+
 void Boat::setup( void )
 {
 
@@ -138,6 +141,16 @@ void Boat::setup( void )
     pid_CTE.set_kI(0);
     pid_CTE.set_kD(0);
     pid_CTE.set_imax(0.174*3);//30度
+
+
+
+    /*
+     * 20180306通过udp发送实时数据
+     */
+	//open_udp_dev(IP_SEND_TO, PORT_SENT_TO, PORT_RECEIVE);//发送fdm飞行动力模型给flightgear，从而能够呈现姿态等
+	//open_socket_udp_dev(&fd_socket_generic,"127.0.0.1",5056);//发送generic的协议给flightgear，从而能够螺旋桨能够旋转
+    open_socket_udp_dev(&fd_socket_generic,"10.108.16.182",4000);//发送generic的协议给flightgear，从而能够螺旋桨能够旋转
+
 }
 
 void Boat::send_ap2gcs_cmd_boatlink()

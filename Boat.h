@@ -36,6 +36,9 @@
 #include "boatlink.h"
 #include "control.h"
 #include "navigation.h"
+#include "boatlink_udp.h"
+
+#include "udp.h"
 
 /*
  * 控制模式的宏定义
@@ -100,6 +103,8 @@ public:
     void send_ap2gcs_cmd_boatlink();
     void send_ap2gcs_wp_boatlink();
     void send_ap2gcs_realtime_data_boatlink();
+
+    void send_ap2gcs_realtime_data_boatlink_by_udp();
 
     void record_config();//记录配置文件
     void record_wp();//记录航点文件

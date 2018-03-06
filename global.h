@@ -212,6 +212,8 @@ extern int fd_boatpilot_log;
 extern int fd_waypoint;
 extern int fd_config;
 
+extern int fd_socket_generic;
+
 extern struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
 
 extern T_DATETIME datetime_now;//当前的日期和时间，精确到秒。在主线程中每秒更新一次，其它程序直接使用即可。

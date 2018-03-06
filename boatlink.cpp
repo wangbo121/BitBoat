@@ -28,6 +28,7 @@
 #include "servo.h"
 #include "location.h"
 #include "Boat.h"
+#include "udp.h"
 
 #include "boatlink.h"
 
