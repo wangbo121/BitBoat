@@ -56,7 +56,7 @@ struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
 
 int main(int argc,char * const argv[])
 {
-    DEBUG_PRINTF("Welcome to BitPilot\n");
+    DEBUG_PRINTF("Welcome to BitPilot \n");
 
     //decode_binary_data();
     //decode_binary_wp_data();
@@ -126,7 +126,8 @@ void Boat::loop_fast()
     update_all_external_device_input();
 
     /*1. decode_gcs2ap_radio*/
-    decode_gcs2ap_radio();
+    //decode_gcs2ap_radio();
+    decode_gcs2ap_udp();
 
     /*2. navigation*/
     navigation_loop(&auto_navigation,wp_data,&gps_data);
@@ -159,13 +160,5 @@ void Boat::end_of_task()
 
 void Boat::send_ap2gcs_realtime_data_boatlink_by_udp()
 {
-
-	//printf("send_ap2gcs_real_udp\n ");
 	send_ap2gcs_real_udp();
-
-
-//	unsigned char socket_udp_send[2000];
-//	memcpy(socket_udp_send,&ap2fg_send,sizeof(ap2fg_send));
-//
-//	send_socket_udp_data(fd_socket_generic, socket_udp_send, sizeof(ap2fg_send),"127.0.0.1",5506 );
 }

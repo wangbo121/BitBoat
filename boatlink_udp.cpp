@@ -33,6 +33,8 @@
 #include "boatlink_udp.h"
 
 struct AP2GCS_REAL_UDP ap2gcs_real_udp;
+struct GCS2AP_CMD_UDP gcs2ap_cmd_udp;
+struct GCS2AP_ALL_UDP gcs2ap_all_udp;
 
 int send_ap2gcs_real_udp()
 {
@@ -42,6 +44,14 @@ int send_ap2gcs_real_udp()
     static unsigned int real_udp_cnt;
 
     real_udp_cnt++;
+    ap2gcs_real_udp.head1 = 0xaa;
+    ap2gcs_real_udp.head2 = 0x55;
+    ap2gcs_real_udp.len = 76;
+    ap2gcs_real_udp.type = COMMAND_AP2GCS_REAL_UDP;
+    ap2gcs_real_udp.vessel = 1;  //发送数据的船的ID编号，从1开始，最多到100,0为无效船
+    ap2gcs_real_udp.master_ap_link_ack = 0x10;//D7:主/备自驾仪(1主,0备);D6~4:自驾仪编号(0..7);D3~1:链路编号(0:局域网;1:北斗;2:串口数传电台);D0:是否需要返回确认包(1:需要;0:不需)
+    ap2gcs_real_udp.plan_id = 0;//采用的航线编号，从1开始，最大为10，0表示没有航线
+
     ap2gcs_real_udp.cnt = real_udp_cnt;
     ap2gcs_real_udp.pack_func_flag=0;
     ap2gcs_real_udp.pack_func_info1=global_bool_boatpilot.gcs2ap_cmd_cnt;
@@ -58,24 +68,15 @@ int send_ap2gcs_real_udp()
     ap2gcs_real_udp.pitch=(short)gps_data.pitch;
     ap2gcs_real_udp.yaw=(short)gps_data.yaw;
 
-
     //ap2gcs_real_udp.wp_next=global_bool_boatpilot.wp_next;
     ap2gcs_real_udp.wp_next = 8;
     ap2gcs_real_udp.sail_mode = 1;
     ap2gcs_real_udp.form_type = 0;
     ap2gcs_real_udp.pilot_vessel = 0;
 
-    printf("sizeof (struct AP2GCS_REAL_UDP) = %d \n",sizeof (struct AP2GCS_REAL_UDP));
-
-    unsigned char vessel_id = 6;
-    unsigned char master_ap_link_ack = 0xa0;
-    unsigned char plan_id = 3;
-
-    //printf("ap2gcs_real.toggle_state=%x\n",ap2gcs_real.toggle_state);//已测试20170413
+    printf("send_ap2gcs_real_udp    :    sizeof (struct AP2GCS_REAL_UDP) = %ld \n",sizeof (struct AP2GCS_REAL_UDP));
+    //printf("ap2gcs_real.toggle_state=%x\n",ap2gcs_real.toggle_state);
     memcpy(real, &ap2gcs_real_udp, sizeof (struct AP2GCS_REAL_UDP));
-    ret=generate_packet_udp(buf_packet, real, sizeof (struct AP2GCS_REAL_UDP),\
-    		real_udp_cnt, COMMAND_AP2GCS_REAL_UDP,\
-    		vessel_id,  master_ap_link_ack, plan_id);
 
     printf("send_ap2gcs_real_udp    :    ret = %d   fd_socket_generic = %d\n",ret,fd_socket_generic);
     send_socket_udp_data(fd_socket_generic, buf_packet, ret,"10.108.16.151",4000 );
@@ -84,59 +85,180 @@ int send_ap2gcs_real_udp()
     return 0;
 }
 
-int generate_packet_udp(unsigned char*dst_buf,unsigned char *src_buf,unsigned char len,\
-                    unsigned int packet_cnt,unsigned char message_type,\
-                    unsigned char vessel_id,unsigned char master_ap_link_ack, unsigned char plan_id)
+static int decode_gcs2ap_cmd_udp(struct GCS2AP_ALL_UDP *ptr_gcs2ap_all_udp, struct GCS2AP_CMD_UDP *ptr_gcs2ap_cmd_udp);
+
+int decode_gcs2ap_udp()
 {
-
-	static unsigned char frame_head_len=8;
-	static unsigned char frame_end_len=4;
-	unsigned char packet[128];
-	unsigned char checksum = 0;
-
-	int i, j;
-	int packet_data_len;
-
-	packet[0] = 0xaa;
-	packet[1] = 0x55;
-	//packet[2] = len;//按道理应该是根据包所包含的字节数设置这个len
-	packet[2] = 76;//统一定义为76字节，包含帧头帧尾
-	packet_data_len = len;
-	//packet_data_len = 76;
-
-	packet[3] = 0;//数据包长度高8位
-
-	packet[4] = message_type;
-	packet[5] = vessel_id;
-
-	packet[6]= master_ap_link_ack;
-	packet[7]= plan_id;
-
-	for (i = frame_head_len, j = 0; i < packet_data_len + frame_head_len; i++, j++)
+	/*1 decode gcs2ap_cmd*/
+	if (global_bool_boatpilot.bool_get_gcs2ap_cmd)
 	{
-		packet[i] = src_buf[j];
+		decode_gcs2ap_cmd_udp(&gcs2ap_all_udp, &gcs2ap_cmd_udp);
+		global_bool_boatpilot.bool_get_gcs2ap_cmd = FALSE;
 	}
 
-	for (i = 0; i < len + frame_head_len; i++)
-	{
-		checksum += packet[i];
-	}
-
-	i = len + frame_head_len;
-
-	//20170503根据实时数据包的需求，利用了本来是帧尾的2个字节
-	packet[i] = 0 ;
-	packet[i+1] = 0 ;
-	packet[i+2] = 0;
-	checksum=checksum+packet[i]+packet[i+1]+packet[i+2];
-	packet[i+3] = (checksum & 0xFF);
-
-	i += 1;
-
-	memcpy(dst_buf, packet, packet_data_len + frame_head_len + frame_end_len);
-
-	/*返回总的发送字节数*/
-	return packet_data_len + frame_head_len + frame_end_len;
+	return 0;
 }
+
+static int decode_gcs2ap_cmd_udp(struct GCS2AP_ALL_UDP *ptr_gcs2ap_all_udp, struct GCS2AP_CMD_UDP *ptr_gcs2ap_cmd_udp)
+{
+	unsigned char temp;
+	ptr_gcs2ap_all_udp->head1 = ptr_gcs2ap_cmd_udp->head1;
+	ptr_gcs2ap_all_udp->head2 = ptr_gcs2ap_cmd_udp->head2;
+	ptr_gcs2ap_all_udp->len = ptr_gcs2ap_cmd_udp->len;
+	ptr_gcs2ap_all_udp->type = ptr_gcs2ap_cmd_udp->type;
+	ptr_gcs2ap_all_udp->vessel_ID = ptr_gcs2ap_cmd_udp->vessel_ID;
+	ptr_gcs2ap_all_udp->master_ap_link_ack = ptr_gcs2ap_cmd_udp->master_ap_link_ack;
+	ptr_gcs2ap_all_udp->gcs_ID = ptr_gcs2ap_cmd_udp->gcs_ID;
+	ptr_gcs2ap_all_udp->cnt = ptr_gcs2ap_cmd_udp->cnt;
+	ptr_gcs2ap_all_udp->func_flag = ptr_gcs2ap_cmd_udp->func_flag;
+	ptr_gcs2ap_all_udp->func_info1 = ptr_gcs2ap_cmd_udp->func_info1;
+	ptr_gcs2ap_all_udp->func_info2 = ptr_gcs2ap_cmd_udp->func_info2;
+	ptr_gcs2ap_all_udp->auto_manu = ptr_gcs2ap_cmd_udp->auto_manu;
+	ptr_gcs2ap_all_udp->throttle = ptr_gcs2ap_cmd_udp->throttle;
+	ptr_gcs2ap_all_udp->rudder = ptr_gcs2ap_cmd_udp->rudder;
+	ptr_gcs2ap_all_udp->fwdbwd = ptr_gcs2ap_cmd_udp->fwdbwd;
+	ptr_gcs2ap_all_udp->controller_type = ptr_gcs2ap_cmd_udp->controller_type;
+	ptr_gcs2ap_all_udp->ctrl_para_1 = ptr_gcs2ap_cmd_udp->ctrl_para_1;
+	ptr_gcs2ap_all_udp->ctrl_para_2 = ptr_gcs2ap_cmd_udp->ctrl_para_2;
+	ptr_gcs2ap_all_udp->ctrl_para_3 = ptr_gcs2ap_cmd_udp->ctrl_para_3;
+	ptr_gcs2ap_all_udp->ctrl_para_4 = ptr_gcs2ap_cmd_udp->ctrl_para_4;
+	ptr_gcs2ap_all_udp->ctrl_para_5 = ptr_gcs2ap_cmd_udp->ctrl_para_5;
+	ptr_gcs2ap_all_udp->ctrl_para_6 = ptr_gcs2ap_cmd_udp->ctrl_para_6;
+	ptr_gcs2ap_all_udp->ctrl_para_7 = ptr_gcs2ap_cmd_udp->ctrl_para_7;
+	ptr_gcs2ap_all_udp->ctrl_para_8 = ptr_gcs2ap_cmd_udp->ctrl_para_8;
+	ptr_gcs2ap_all_udp->ctrl_para_9 = ptr_gcs2ap_cmd_udp->ctrl_para_9;
+	ptr_gcs2ap_all_udp->ctrl_para_10 = ptr_gcs2ap_cmd_udp->ctrl_para_10;
+	ptr_gcs2ap_all_udp->ctrl_para_11 = ptr_gcs2ap_cmd_udp->ctrl_para_11;
+	ptr_gcs2ap_all_udp->ctrl_para_12 = ptr_gcs2ap_cmd_udp->ctrl_para_12;
+	ptr_gcs2ap_all_udp->sail_mode = ptr_gcs2ap_cmd_udp->sail_mode;
+	ptr_gcs2ap_all_udp->wp_next = ptr_gcs2ap_cmd_udp->wp_next;
+	ptr_gcs2ap_all_udp->sensor_correct = ptr_gcs2ap_cmd_udp->sensor_correct;
+	ptr_gcs2ap_all_udp->pilot_vessel = ptr_gcs2ap_cmd_udp->pilot_vessel;
+
+	if(ptr_gcs2ap_all_udp->master_ap_link_ack & 0x80)
+	{
+		ptr_gcs2ap_all_udp->pilot_type = 1;//1表示是主驾驶仪
+	}
+	ptr_gcs2ap_all_udp->pilot_cnt = ptr_gcs2ap_all_udp->master_ap_link_ack & 0x70;
+	ptr_gcs2ap_all_udp->link_ID = ptr_gcs2ap_all_udp->master_ap_link_ack & 0x0e;
+	if(ptr_gcs2ap_all_udp->master_ap_link_ack & 0x01)
+	{
+		//地面站需要返回确认包
+	}
+
+	if(ptr_gcs2ap_all_udp->auto_manu == 1)
+	{
+		//自动生效
+	}
+	else
+	{
+		//遥控生效
+	}
+
+	ptr_gcs2ap_all_udp->rc_thruster = ptr_gcs2ap_all_udp->throttle;
+	ptr_gcs2ap_all_udp->rc_rudder = ptr_gcs2ap_all_udp->rudder;
+	ptr_gcs2ap_all_udp->thruster_backward = ptr_gcs2ap_all_udp->fwdbwd;
+
+	switch(ptr_gcs2ap_all_udp->controller_type)
+	{
+	case CONTROLLER_TYPE_PID:
+		//ptr_gcs2ap_all_udp->ctrl_para_1;//throttle_p
+		//ptr_gcs2ap_all_udp->ctrl_para_2;//throttle_i
+		//ptr_gcs2ap_all_udp->ctrl_para_3;//throttle_d
+		ptr_gcs2ap_all_udp->rud_p= ptr_gcs2ap_all_udp->ctrl_para_4;
+		ptr_gcs2ap_all_udp->rud_i= ptr_gcs2ap_all_udp->ctrl_para_5;
+		ptr_gcs2ap_all_udp->rud_d= ptr_gcs2ap_all_udp->ctrl_para_6;
+		ptr_gcs2ap_all_udp->cte_p= ptr_gcs2ap_all_udp->ctrl_para_7;
+		ptr_gcs2ap_all_udp->cte_i= ptr_gcs2ap_all_udp->ctrl_para_8;
+		ptr_gcs2ap_all_udp->cte_d= ptr_gcs2ap_all_udp->ctrl_para_9;
+		//ptr_gcs2ap_all_udp->ctrl_para_10;//yaw_rate_p
+		//ptr_gcs2ap_all_udp->ctrl_para_11;//yaw_rate_i
+		//ptr_gcs2ap_all_udp->ctrl_para_12;//yaw_rate_d
+
+		break;
+	case CONTROLLER_TYPE_ADRC:
+		break;
+	case CONTROLLER_TYPE_SMC:
+		break;
+	default:
+		break;
+	}
+
+	temp = ptr_gcs2ap_all_udp->sail_mode & 0x0f;
+	switch(temp)
+	{
+	case SAIL_MODE_0:
+		ptr_gcs2ap_all_udp->workmode = RC_MODE;
+		break;
+	case SAIL_MODE_1:
+		ptr_gcs2ap_all_udp->workmode = AUTO_MODE;
+		ptr_gcs2ap_all_udp->auto_work_mode = AUTO_MISSION_MODE;
+		break;
+	case SAIL_MODE_2:
+		ptr_gcs2ap_all_udp->workmode = STOP_MODE;
+		break;
+	case SAIL_MODE_3:
+		ptr_gcs2ap_all_udp->workmode = RTL_MODE;
+		break;
+	case SAIL_MODE_4:
+		ptr_gcs2ap_all_udp->workmode = AUTO_MODE;
+		ptr_gcs2ap_all_udp->auto_work_mode = AUTO_GUIDE_MODE;
+		break;
+	case SAIL_MODE_5:
+		ptr_gcs2ap_all_udp->workmode = AUTO_MODE;
+		ptr_gcs2ap_all_udp->auto_work_mode = AUTO_LOITER_MODE;
+		break;
+	default:
+		ptr_gcs2ap_all_udp->workmode = RC_MODE;
+		break;
+	}
+
+	temp = ptr_gcs2ap_all_udp->sail_mode & 0x70;
+	switch(temp)
+	{
+	case FORMATION_SOLO:
+		//单独航行
+		break;
+	case FORMATION_LEADER_FOLLOWER:
+		//领导跟随编队
+		break;
+	case FORMATION_DISTRIBUTED:
+		//分布式编队
+		break;
+	default:
+		break;
+	}
+
+	temp = ptr_gcs2ap_all_udp->sail_mode & 0x80;
+	if(temp == 1)
+	{
+		  ptr_gcs2ap_all_udp->wp_guide_no=ptr_gcs2ap_all_udp->wp_next;
+	}
+
+	switch(ptr_gcs2ap_all_udp->sensor_correct)
+	{
+	case SENSRO_CHECK_ACC:
+		//校准加速度计
+		break;
+	case SENSRO_CHECK_GYRO:
+		//校准陀螺仪
+		break;
+	case SENSRO_CHECK_MAG:
+		//校准磁力计
+		break;
+	case SENSRO_CHECK_BARO:
+		//校准气压计
+		break;
+	case SENSRO_CHECK_RESET:
+		//重启主控
+		break;
+	default:
+		break;
+	}
+
+
+	return 0;
+}
+
 
 

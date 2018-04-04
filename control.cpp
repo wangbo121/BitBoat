@@ -10,7 +10,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-#include "boatlink.h"
+//#include "boatlink.h"
 #include "global.h"
 #include "location.h"
 #include "navigation.h"
@@ -22,6 +22,7 @@
 #include "save_data.h"
 #include "control.h"
 #include "Boat.h"
+#include "boatlink_udp.h"
 
 #define MIDDLE_RUDDER_PWM 1500
 #define MIDDLE_THROTTLE_PWM 1500
@@ -55,8 +56,8 @@ struct CTRL_PARA ctrlpara;
 struct CTRL_INPUT ctrlinput;
 struct CTRL_OUTPUT ctrloutput;
 
-static int get_ctrlpara(struct CTRL_PARA *ptr_ctrlpara, struct GCS2AP_RADIO *ptr_gcs2ap_radio_all);
-static int get_ctrlinput(struct CTRL_INPUT *ptr_ctrlinput, struct GCS2AP_RADIO *ptr_gcs2ap_radio_all,struct T_NAVIGATION * ptr_auto_navigation);
+static int get_ctrlpara(struct CTRL_PARA *ptr_ctrlpara, struct GCS2AP_ALL_UDP *ptr_gcs2ap_all_udp);
+static int get_ctrlinput(struct CTRL_INPUT *ptr_ctrlinput, struct GCS2AP_ALL_UDP *ptr_gcs2ap_all_udp,struct T_NAVIGATION * ptr_auto_navigation);
 static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput,struct CTRL_INPUT *ptr_ctrlinput,struct CTRL_PARA *ptr_ctrlpara);
 
 static float cal_rudder_control(float command_heading,float current_track_heading,struct T_PID pid);
@@ -66,8 +67,8 @@ static float convert_to_pwm(unsigned char min,unsigned char max,unsigned char in
 
 int control_loop(void)
 {
-    get_ctrlpara(&ctrlpara, &gcs2ap_radio_all);
-    get_ctrlinput(&ctrlinput, &gcs2ap_radio_all,&auto_navigation);
+    get_ctrlpara(&ctrlpara, &gcs2ap_all_udp);
+    get_ctrlinput(&ctrlinput, &gcs2ap_all_udp,&auto_navigation);
     get_ctrloutput(&ctrloutput,&ctrlinput,&ctrlpara);
 
 	return 0;
@@ -132,9 +133,9 @@ int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput)
     int delta_percent;
     int delta_max;//最大改变百分比
 
-    delta_max=(int)gcs2ap_radio_all.diffspd_lim;
+    delta_max=(int)gcs2ap_all_udp.diffspd_lim;
 
-    delta_percent=(int)gcs2ap_radio_all.diffspd_coef-100;
+    delta_percent=(int)gcs2ap_all_udp.diffspd_coef-100;
     delta_percent_abs=abs(delta_percent);
     if(delta_percent_abs>delta_max)
     {
@@ -253,18 +254,18 @@ int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput)
  * Description:  从地面站获取控制参数，所有的参数均为unsigned char型，使用时需要进行类型转换
  *
  */
-static int get_ctrlpara(struct CTRL_PARA *ptr_ctrlpara, struct GCS2AP_RADIO *ptr_gcs2ap_radio_all)
+static int get_ctrlpara(struct CTRL_PARA *ptr_ctrlpara, struct GCS2AP_ALL_UDP *ptr_gcs2ap_all_udp)
 {
-	ptr_ctrlpara->rudder_p = ptr_gcs2ap_radio_all->rud_p;
-	ptr_ctrlpara->rudder_i = ptr_gcs2ap_radio_all->rud_i;
-	ptr_ctrlpara->rudder_d = ptr_gcs2ap_radio_all->rud_d;
-	ptr_ctrlpara->cruise_throttle=ptr_gcs2ap_radio_all->cruise_throttle_percent;
+	ptr_ctrlpara->rudder_p = ptr_gcs2ap_all_udp->rud_p;
+	ptr_ctrlpara->rudder_i = ptr_gcs2ap_all_udp->rud_i;
+	ptr_ctrlpara->rudder_d = ptr_gcs2ap_all_udp->rud_d;
+	ptr_ctrlpara->cruise_throttle=ptr_gcs2ap_all_udp->cruise_throttle_percent;
 
-	ptr_ctrlpara->mmotor_on_pos=ptr_gcs2ap_radio_all->mmotor_on_pos;
-	ptr_ctrlpara->mmotor_off_pos=ptr_gcs2ap_radio_all->mmotor_off_pos;
-	ptr_ctrlpara->rudder_left_pos=ptr_gcs2ap_radio_all->rudder_left_pos;
-	ptr_ctrlpara->rudder_right_pos=ptr_gcs2ap_radio_all->rudder_right_pos;
-	ptr_ctrlpara->rudder_mid_pos=ptr_gcs2ap_radio_all->rudder_mid_pos;
+	ptr_ctrlpara->mmotor_on_pos=ptr_gcs2ap_all_udp->mmotor_on_pos;
+	ptr_ctrlpara->mmotor_off_pos=ptr_gcs2ap_all_udp->mmotor_off_pos;
+	ptr_ctrlpara->rudder_left_pos=ptr_gcs2ap_all_udp->rudder_left_pos;
+	ptr_ctrlpara->rudder_right_pos=ptr_gcs2ap_all_udp->rudder_right_pos;
+	ptr_ctrlpara->rudder_mid_pos=ptr_gcs2ap_all_udp->rudder_mid_pos;
 
 	int temp;
     if(ctrlpara.mmotor_off_pos>ctrlpara.mmotor_on_pos)
@@ -282,29 +283,13 @@ static int get_ctrlpara(struct CTRL_PARA *ptr_ctrlpara, struct GCS2AP_RADIO *ptr
  * Description:  把从地面站传输过来的手控方向舵和油门量（unsigned char数值）转换为标准的1000-2000（浮点数值）
  *                        获取目标航向和当前航迹的方向（gps的航向）
  */
-static int get_ctrlinput(struct CTRL_INPUT *ptr_ctrlinput, struct GCS2AP_RADIO *ptr_gcs2ap_radio_all,struct T_NAVIGATION * ptr_auto_navigation)
+static int get_ctrlinput(struct CTRL_INPUT *ptr_ctrlinput, struct GCS2AP_ALL_UDP *ptr_gcs2ap_all_udp,struct T_NAVIGATION * ptr_auto_navigation)
 {
-    ptr_ctrlinput->rudder_reverse = ptr_gcs2ap_radio_all->rudder_setup_reverse;
-    ptr_ctrlinput->throttle_reverse = ptr_gcs2ap_radio_all->thruster_setup_reverse;
 
-    if (ptr_ctrlinput->rudder_reverse)
-    {
-        ptr_ctrlinput->rudder_pwm = convert_to_pwm(ctrlpara.rudder_left_pos,ctrlpara.rudder_right_pos,(ctrlpara.rudder_right_pos - ptr_gcs2ap_radio_all->rc_rudder));
-    }
-    else
-    {
-        /*这里先直接用*/
-        ptr_ctrlinput->rudder_pwm = convert_to_pwm(ctrlpara.rudder_left_pos,ctrlpara.rudder_right_pos,ptr_gcs2ap_radio_all->rc_rudder);
-    }
+	ptr_ctrlinput->rudder_pwm = convert_to_pwm(ctrlpara.rudder_left_pos,ctrlpara.rudder_right_pos,ptr_gcs2ap_all_udp->rc_rudder);
 
-    if (ptr_ctrlinput->throttle_reverse)
-    {
-        ptr_ctrlinput->mmotor_onoff_pwm = convert_to_pwm(ctrlpara.mmotor_off_pos,ctrlpara.mmotor_on_pos,(ctrlpara.mmotor_on_pos - ptr_gcs2ap_radio_all->rc_thruster));
-    }
-    else
-    {
-        ptr_ctrlinput->mmotor_onoff_pwm = convert_to_pwm(ctrlpara.mmotor_off_pos,ctrlpara.mmotor_on_pos,ptr_gcs2ap_radio_all->rc_thruster);
-    }
+	ptr_ctrlinput->mmotor_onoff_pwm = convert_to_pwm(ctrlpara.mmotor_off_pos,ctrlpara.mmotor_on_pos,ptr_gcs2ap_all_udp->rc_thruster);
+
 
     /*
      * 1. 获取期望航迹角course angle 或者 期望航向角heading angle
@@ -315,7 +300,7 @@ static int get_ctrlinput(struct CTRL_INPUT *ptr_ctrlinput, struct GCS2AP_RADIO *
     /*
      * 2. 获取当前实际的航迹角course angle 或者 当前实际的航向角heading
      */
-    if(gcs2ap_radio_all.navigation_mode==NAVIGATION_COURSE_ANGLE)
+    if(gcs2ap_all_udp.navigation_mode==NAVIGATION_COURSE_ANGLE)
     {
         ptr_ctrlinput->gps_course_angle_radian = ptr_auto_navigation->gps_course_angle_radian;//单位弧度
     }
@@ -334,7 +319,7 @@ static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput,struct CTRL_INPUT *
     static unsigned char final_manual_throttle_before_auto = 0;
     float command_throttle;
 
-    switch(gcs2ap_radio_all.workmode)
+    switch(gcs2ap_all_udp.workmode)
     {
     case STOP_MODE:
         //推进器停止，方向舵停止
@@ -351,8 +336,6 @@ static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput,struct CTRL_INPUT *
         ptr_ctrloutput->mmotor_onoff_pwm = ptr_ctrlinput->mmotor_onoff_pwm;
         ptr_ctrloutput->rudder_pwm = ptr_ctrlinput->rudder_pwm;
         break;
-    case MIX_MODE:
-        break;
     case RTL_MODE:
         //break;
     case AUTO_MODE:
@@ -363,7 +346,7 @@ static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput,struct CTRL_INPUT *
         pid.i = ((float)ctrlpara.rudder_i) * 0.01;
         pid.d = ((float)ctrlpara.rudder_d) * 0.1;
 
-        if(gcs2ap_radio_all.navigation_mode==NAVIGATION_COURSE_ANGLE)
+        if(gcs2ap_all_udp.navigation_mode==NAVIGATION_COURSE_ANGLE)
         {
             ptr_ctrloutput->rudder_pwm = cal_rudder_control(ptr_ctrlinput->command_course_angle_radian,\
 																									ptr_ctrlinput->gps_course_angle_radian,\
@@ -535,7 +518,7 @@ static float cal_throttle_control(float command_throttle,float current_throttle)
 	 * 模拟量输出电压稳定后才能再次更改需要发送的电压，至少2秒，我这里暂时用10秒钟，其实也够
 	 * 而这个如果485设备出现强制发送就会干扰切换器和充电机，这说明充电机和切换器的健壮性还是不够，仍需要更改
 	 */
-	if((current_time-last_time)>gcs2ap_radio_all.throttle_change_time)
+	if((current_time-last_time)>gcs2ap_all_udp.throttle_change_time)
 	{
 		if(current_throttle<(command_throttle-50))
 		{

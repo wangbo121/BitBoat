@@ -19,6 +19,12 @@
 /*create uart device pthread*/
 #include <pthread.h>
 
+/*
+ * 设置特殊的波特率
+ */
+#include <sys/ioctl.h>
+#include <linux/serial.h>
+
 #include "uart.h"
 
 #define UART_DEV_TOTAL 12
@@ -124,6 +130,43 @@ int open_uart_dev(char *uart_name)
     return uart_no;
 }
 
+struct serial_t
+{
+    int     fd;
+    char    *device;
+    int     baud;
+    int     databit;
+    char    parity;
+    int    stopbit;
+    int    startbit;
+    struct termios    options;
+};
+int serial_set_speci_baud(struct serial_t *tty,int baud)
+{
+   struct serial_struct ss,ss_set;
+   cfsetispeed(&tty->options,B38400);
+   cfsetospeed(&tty->options,B38400);
+   tcflush(tty->fd,TCIFLUSH);
+   tcsetattr(tty->fd,TCSANOW,&tty->options);
+   if((ioctl(tty->fd,TIOCGSERIAL,&ss))<0){
+       printf("BAUD: error to get the serial_struct info:%s\n",strerror(errno));
+       return -1;
+   }
+   ss.flags = ASYNC_SPD_CUST;
+   ss.custom_divisor = ss.baud_base / baud;
+   //设置波特率
+   if((ioctl(tty->fd,TIOCSSERIAL,&ss))<0){
+       printf("BAUD: error to set serial_struct:%s\n",strerror(errno));
+       return -2;
+   }
+
+   //获取波特率
+   ioctl(tty->fd,TIOCGSERIAL,&ss_set);
+   printf("BAUD: success set baud to %d,custom_divisor=%d,baud_base=%d\n",
+           baud,ss_set.custom_divisor,ss_set.baud_base);
+   return 0;
+}
+
 int set_uart_opt(char *uart_name, int speed, int bits, char event, int stop)
 {
     int fd;
@@ -193,6 +236,12 @@ int set_uart_opt(char *uart_name, int speed, int bits, char event, int stop)
         cfsetispeed(&newtio, B57600);
         cfsetospeed(&newtio, B57600);
         break;
+    case 100000:
+    	struct serial_t tty;
+    	tty.fd = fd;
+    	tty.baud = 100000;
+    	serial_set_speci_baud(&tty, 100000);
+    	return 0;
     case 115200:
         cfsetispeed(&newtio, B115200);
         cfsetospeed(&newtio, B115200);

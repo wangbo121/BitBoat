@@ -14,7 +14,7 @@
 
 #include "global.h"
 #include "uart.h"
-#include "boatlink.h"
+//#include "boatlink.h"
 #include "utility.h"
 
 #include "radio.h"
@@ -219,6 +219,7 @@ int read_radio_data(unsigned char *buf, unsigned int len)
 			    	//printf(" _pack_recv_type = %d, _pack_recv_len = %d\n",_pack_recv_type,_pack_recv_len);
 			        switch (_pack_recv_type)
                     {
+#if 0
                     case COMMAND_GCS2AP_WAYPOINT:
                         if (_pack_recv_len == sizeof(gcs_ap_wp))
                         {
@@ -246,8 +247,10 @@ int read_radio_data(unsigned char *buf, unsigned int len)
                         send_uart_data(UART_RADIO, send_buf_test, 4);
                         radio_recv_state = 0;
                         break;
+#endif
                     default:
                         break;
+
                     }
 			        global_bool_boatpilot.radio_recv_packet_cnt_previous=global_bool_boatpilot.radio_recv_packet_cnt;
 			    }

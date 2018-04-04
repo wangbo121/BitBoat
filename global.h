@@ -73,15 +73,62 @@
 #define FALSE 0
 #endif
 
-#define STOP_MODE        0
-#define RC_MODE          1
-#define AUTO_MODE        2
-#define MIX_MODE         3
-#define RTL_MODE         4
+/*
+ * SAIL_MODE是地面站发送的控制模式可以有8种
+ */
+#define SAIL_MODE_0    0//遥控
+#define SAIL_MODE_1    1//自驾
+#define SAIL_MODE_2    2//停止
+#define SAIL_MODE_3    3//返航
+#define SAIL_MODE_4    4//guide
+#define SAIL_MODE_5    5//逗留
+
+#define RC_MODE             0
+#define AUTO_MODE       1
+#define STOP_MODE        2
+#define RTL_MODE           3
 
 #define AUTO_MISSION_MODE     0
-#define AUTO_GUIDE_MODE       1
-#define AUTO_LOITER_MODE      2
+#define AUTO_GUIDE_MODE         1
+#define AUTO_LOITER_MODE        2
+
+//FORMATION_是无人船编队的方式，0:单独 1:领导跟随 2:分布式
+#define FORMATION_SOLO                             0
+#define FORMATION_LEADER_FOLLOWER    1
+#define FORMATION_DISTRIBUTED                2
+
+//传感器校准
+#define SENSRO_CHECK_ACC    0
+#define SENSRO_CHECK_GYRO    1
+#define SENSRO_CHECK_MAG    2
+#define SENSRO_CHECK_BARO    3
+#define SENSRO_CHECK_RESET    4
+
+#define AP_LISTEN_UDP_IP           "127.0.0.1"   //自驾仪监听地面站发送来的数据时用的网卡ip地址
+#define AP_LISTEN_UDP_PORT     49000           //自驾仪监听地面站发送来的数据时用的端口号
+
+#define AP_SENDTO_UDP_IP         "127.0.0.1" //自驾仪向对方发送数据时，对方的socket或者网卡对应的ip地址
+#define AP_SENDTO_UDP_PORT   49005   //自驾仪向对方发送数据时，对方的socket或者网卡对应的端口号
+
+#define CONTROLLER_TYPE_PID      0
+#define CONTROLLER_TYPE_ADRC  1
+#define CONTROLLER_TYPE_SMC    2
+
+struct WAY_POINT
+{
+    unsigned char no;
+    unsigned char type;
+    unsigned char spd;
+    unsigned char alt;
+
+    unsigned int lng;
+    unsigned int lat;
+};
+/*
+ * 存放电台传过来的航点数据包，最大航点数为255
+ */
+#define MAX_WAYPOINT_NUM 255
+extern struct WAY_POINT wp_data[MAX_WAYPOINT_NUM];
 
 struct T_GLOBAL_BOOL_BOATPILOT
 {
@@ -190,6 +237,47 @@ struct T_GLOBAL_BOOL_BOATPILOT
     float udp_wait_time;
     float bd_wait_time;
 };
+
+/*
+ * 一些通过地面站发送的参数需要记录在驾驶仪的flash中，
+ * 地面站只需要同步，不需要重新设置
+ */
+struct T_CONFIG
+{
+    unsigned char work_mode;
+    unsigned char rud_p;
+    unsigned char rud_i;
+    unsigned char rud_d;
+    unsigned char cte_p;
+    unsigned char cte_i;
+    unsigned char cte_d;
+    unsigned char rudder_setup_reverse;//8
+    unsigned char thruster_setup_reverse;
+
+    unsigned char cruise_throttle_percent;//[0-100%]巡航油门百分比数
+    unsigned char throttle_change_time;//[秒],油门改变百分之10所用的时间
+    unsigned char arrive_radius;//[10米],到达半径
+    unsigned char cte_max_degree;//[度],偏航距最大补偿角
+
+    unsigned char rudder_left_pos;
+    unsigned char rudder_right_pos;
+    unsigned char rudder_mid_pos;//16
+
+    unsigned char set_switch_channel;//[1..2]切换器通道
+    unsigned char set_switch_low_limit;//[V],切换器放电电压低值
+    unsigned char set_switch_high_limit;//[V],切换器放电电压高值
+    unsigned char set_charge_channel;//[1..2]充电机通道
+    unsigned char set_charge_voltage;//[V]充电机电压
+    unsigned char set_charge_current;//[A]充电机电流
+    unsigned char rudder_dead_zone_angle_degree;//[度]方向舵控制闭环时所用的死区角度数
+    unsigned char total_wp_num;//40字节
+
+    unsigned char current_target_wp_num;
+    unsigned char spare0_char;
+    unsigned char spare1_char;
+    unsigned char spare2_char;//40字节
+};
+
 
 typedef struct T_DateTime
 {

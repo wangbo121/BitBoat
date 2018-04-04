@@ -10,7 +10,7 @@
 
 #include "radio.h"
 #include "global.h"
-#include "boatlink.h"
+//#include "boatlink.h"
 #include "gps.h"
 #include "control.h"
 #include "location.h"
@@ -46,11 +46,11 @@ int navigation_loop( struct T_NAVIGATION *ptr_auto_navigation,\
 {
     unsigned int target_wp_num = 0;
 
-    if(gcs2ap_radio_all.arrive_radius<MIN_ARRIVE_RADIUS)
+    if(gcs2ap_all_udp.arrive_radius<MIN_ARRIVE_RADIUS)
     {
-        gcs2ap_radio_all.arrive_radius = MIN_ARRIVE_RADIUS;
+        gcs2ap_all_udp.arrive_radius = MIN_ARRIVE_RADIUS;
     }
-    ptr_auto_navigation->arrive_radius=gcs2ap_radio_all.arrive_radius*10;
+    ptr_auto_navigation->arrive_radius=gcs2ap_all_udp.arrive_radius*10;
 
     //总航点数
     ptr_auto_navigation->total_wp_num=global_bool_boatpilot.wp_total_num;
@@ -59,7 +59,7 @@ int navigation_loop( struct T_NAVIGATION *ptr_auto_navigation,\
     ptr_auto_navigation->current_loc->lng = (float)(ptr_gps_data->longitude)*GPS_LOCATION_SCALE;
     ptr_auto_navigation->current_loc->lat = (float)(ptr_gps_data->latitude)*GPS_LOCATION_SCALE;
 
-    switch(gcs2ap_radio_all.workmode)
+    switch(gcs2ap_all_udp.workmode)
     {
     case STOP_MODE:
         //推进器停止，方向舵停止
@@ -67,15 +67,15 @@ int navigation_loop( struct T_NAVIGATION *ptr_auto_navigation,\
     case RC_MODE:
         break;
     case AUTO_MODE:
-        switch(gcs2ap_radio_all.auto_work_mode)
+        switch(gcs2ap_all_udp.auto_work_mode)
         {
         case AUTO_MISSION_MODE:
             break;
         case AUTO_GUIDE_MODE:
-            ptr_auto_navigation->current_target_wp_cnt = gcs2ap_radio_all.wp_guide_no;
-            gcs2ap_radio_all.cte_p=0.0;
-            gcs2ap_radio_all.cte_i=0.0;
-            gcs2ap_radio_all.cte_d=0.0;
+            ptr_auto_navigation->current_target_wp_cnt = gcs2ap_all_udp.wp_guide_no;
+            gcs2ap_all_udp.cte_p=0.0;
+            gcs2ap_all_udp.cte_i=0.0;
+            gcs2ap_all_udp.cte_d=0.0;
             break;
         case AUTO_LOITER_MODE:
             break;
@@ -129,13 +129,11 @@ int navigation_loop( struct T_NAVIGATION *ptr_auto_navigation,\
 
         global_bool_boatpilot.wp_next=ptr_auto_navigation->current_target_wp_cnt;
         break;
-    case MIX_MODE:
-        break;
     case RTL_MODE:
         ptr_auto_navigation->current_target_wp_cnt = 0;
-        gcs2ap_radio_all.cte_p=0.0;
-        gcs2ap_radio_all.cte_i=0.0;
-        gcs2ap_radio_all.cte_d=0.0;
+        gcs2ap_all_udp.cte_p=0.0;
+        gcs2ap_all_udp.cte_i=0.0;
+        gcs2ap_all_udp.cte_d=0.0;
 
         if (ptr_auto_navigation->current_target_wp_cnt >= ptr_auto_navigation->total_wp_num)
         {
@@ -270,9 +268,9 @@ float get_command_heading_NED(struct T_LOCATION *previous_target_loc,  struct T_
 	float CTE_i=0.0;
 	float CTE_d=0.0;
     // 可以选择用反正切的
-	CTE_p=(float)gcs2ap_radio_all.cte_p * 0.1;
-	CTE_i=(float)gcs2ap_radio_all.cte_i *   0.01;
-	CTE_d=(float)gcs2ap_radio_all.cte_d * 0.1;
+	CTE_p=(float)gcs2ap_all_udp.cte_p * 0.1;
+	CTE_i=(float)gcs2ap_all_udp.cte_i *   0.01;
+	CTE_d=(float)gcs2ap_all_udp.cte_d * 0.1;
 	//printf("CTE_i = %f\n",CTE_i);
 	//printf("CTE_d = %f\n",CTE_d);// 20180207已测试
 

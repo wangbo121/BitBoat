@@ -33,7 +33,7 @@
 #include "all_external_device.h"
 #include "SIM_Vehicle.h"
 #include "global.h"
-#include "boatlink.h"
+//#include "boatlink.h"
 #include "control.h"
 #include "navigation.h"
 #include "boatlink_udp.h"

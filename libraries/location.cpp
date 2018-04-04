@@ -10,7 +10,7 @@
 
 #include "global.h"
 #include "pid.h"
-#include "boatlink.h"
+#include "boatlink_udp.h"
 
 #include "location.h"
 
@@ -266,7 +266,7 @@ float get_cross_track_error_correct_radian_NED_PID(struct T_LOCATION *last_targe
 	gamma_CTE = pid->get_pid(atan_cte, 20, 1);
 	//printf("gamma_CTE=%f\n",gamma_CTE);//20170508已测试
 
-	gamma_CTE_max_radian=convert_degree_to_radian((float)gcs2ap_radio_all.cte_max_degree);
+	gamma_CTE_max_radian=convert_degree_to_radian((float)gcs2ap_all_udp.cte_max_degree);
 	if(gamma_CTE_max_radian>=MAX_CTE_CORRECT_RADIAN)
 	{
 		gamma_CTE_max_radian=MAX_CTE_CORRECT_RADIAN;

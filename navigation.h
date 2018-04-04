@@ -8,7 +8,7 @@
 #ifndef HEADERS_NAVIGATION_H_
 #define HEADERS_NAVIGATION_H_
 
-#include "boatlink.h"
+//#include "boatlink.h"
 #include "global.h"
 #include "gps.h"
 

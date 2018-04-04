@@ -38,6 +38,7 @@ void Boat::setup( void )
         printf("可以读取航点或者创建航点文件 fd = %d\n",fd_waypoint);
     }
 
+#if 0
     /*
      * 载入配置文件config
      */
@@ -57,8 +58,8 @@ void Boat::setup( void )
         gcs2ap_radio_all.cte_p=boatpilot_config.cte_p;
         gcs2ap_radio_all.cte_i=boatpilot_config.cte_i;
         gcs2ap_radio_all.cte_d=boatpilot_config.cte_d;
-        gcs2ap_radio_all.rudder_setup_reverse=boatpilot_config.rudder_setup_reverse;
-        gcs2ap_radio_all.thruster_setup_reverse=boatpilot_config.thruster_setup_reverse;
+//        gcs2ap_radio_all.rudder_setup_reverse=boatpilot_config.rudder_setup_reverse;
+//        gcs2ap_radio_all.thruster_setup_reverse=boatpilot_config.thruster_setup_reverse;
         gcs2ap_radio_all.cruise_throttle_percent=boatpilot_config.cruise_throttle_percent;
         gcs2ap_radio_all.throttle_change_time=boatpilot_config.throttle_change_time;
         gcs2ap_radio_all.arrive_radius=boatpilot_config.arrive_radius;
@@ -67,17 +68,19 @@ void Boat::setup( void )
         gcs2ap_radio_all.rudder_right_pos=boatpilot_config.rudder_right_pos;
         gcs2ap_radio_all.rudder_mid_pos=boatpilot_config.rudder_mid_pos;
 
-        gcs2ap_radio_all.set_switch_channel=boatpilot_config.set_switch_channel;
-        gcs2ap_radio_all.set_switch_low_limit=boatpilot_config.set_switch_low_limit;
-        gcs2ap_radio_all.set_switch_high_limit=boatpilot_config.set_switch_high_limit;
-        gcs2ap_radio_all.set_charge_channel=boatpilot_config.set_charge_channel;
-        gcs2ap_radio_all.set_charge_voltage=boatpilot_config.set_charge_voltage;
-        gcs2ap_radio_all.set_charge_current=boatpilot_config.set_charge_current;
-        gcs2ap_radio_all.rudder_dead_zone_angle_degree=boatpilot_config.rudder_dead_zone_angle_degree;
+//        gcs2ap_radio_all.set_switch_channel=boatpilot_config.set_switch_channel;
+//        gcs2ap_radio_all.set_switch_low_limit=boatpilot_config.set_switch_low_limit;
+//        gcs2ap_radio_all.set_switch_high_limit=boatpilot_config.set_switch_high_limit;
+//        gcs2ap_radio_all.set_charge_channel=boatpilot_config.set_charge_channel;
+//        gcs2ap_radio_all.set_charge_voltage=boatpilot_config.set_charge_voltage;
+//        gcs2ap_radio_all.set_charge_current=boatpilot_config.set_charge_current;
+//        gcs2ap_radio_all.rudder_dead_zone_angle_degree=boatpilot_config.rudder_dead_zone_angle_degree;
 
         global_bool_boatpilot.wp_next=boatpilot_config.current_target_wp_num;
         global_bool_boatpilot.wp_total_num=boatpilot_config.total_wp_num;
+
     }
+#endif
 
 #ifdef __RADIO_
     radio_uart_init();
@@ -99,22 +102,42 @@ void Boat::setup( void )
      * 控制量的限幅参数，
      * 这些参数都是unsigned char 8位无符号
      */
-    gcs2ap_radio_all.rud_p=20;//rud_p单位是[0.1]所以一开始要赋值大一些
-    gcs2ap_radio_all.arrive_radius=10;//单位是[10米]，初始到达半径设置为100米
-    gcs2ap_radio_all.mmotor_off_pos=0;
-    gcs2ap_radio_all.mmotor_on_pos=255;
-    gcs2ap_radio_all.rudder_left_pos=0;
-    gcs2ap_radio_all.rudder_right_pos=255;
-    gcs2ap_radio_all.rudder_mid_pos=127;
-    gcs2ap_radio_all.rc_thruster=0;
-    gcs2ap_radio_all.rc_rudder=127;
-    gcs2ap_radio_all.cruise_throttle_percent=50;//初始巡航油门设置为百分之50
-    gcs2ap_radio_all.cte_max_degree=5;/*初始化偏航距的最大修正角度*/
-    gcs2ap_radio_all.throttle_change_time=5;/*油门改变10%所消耗的时间[秒]*/
-    gcs2ap_radio_all.navigation_mode=NAVIGATION_COURSE_ANGLE;
-    gcs2ap_radio_all.rudder_dead_zone_angle_degree=3;
-    gcs2ap_radio_all.diffspd_coef=100;
-    gcs2ap_radio_all.diffspd_lim=10;
+//    gcs2ap_radio_all.rud_p=20;//rud_p单位是[0.1]所以一开始要赋值大一些
+//    gcs2ap_radio_all.arrive_radius=10;//单位是[10米]，初始到达半径设置为100米
+//    gcs2ap_radio_all.mmotor_off_pos=0;
+//    gcs2ap_radio_all.mmotor_on_pos=255;
+//    gcs2ap_radio_all.rudder_left_pos=0;
+//    gcs2ap_radio_all.rudder_right_pos=255;
+//    gcs2ap_radio_all.rudder_mid_pos=127;
+//    gcs2ap_radio_all.rc_thruster=0;
+//    gcs2ap_radio_all.rc_rudder=127;
+//    gcs2ap_radio_all.cruise_throttle_percent=50;//初始巡航油门设置为百分之50
+//    gcs2ap_radio_all.cte_max_degree=5;/*初始化偏航距的最大修正角度*/
+//    gcs2ap_radio_all.throttle_change_time=5;/*油门改变10%所消耗的时间[秒]*/
+//    gcs2ap_radio_all.navigation_mode=NAVIGATION_COURSE_ANGLE;
+//    gcs2ap_radio_all.rudder_dead_zone_angle_degree=3;
+//    gcs2ap_radio_all.diffspd_coef=100;
+//    gcs2ap_radio_all.diffspd_lim=10;
+
+    /*
+     * gcs2ap_radio_all修改为gcs2ap_all_udp
+     */
+    gcs2ap_all_udp.rud_p=20;//rud_p单位是[0.1]所以一开始要赋值大一些
+	gcs2ap_all_udp.arrive_radius=10;//单位是[10米]，初始到达半径设置为100米
+	gcs2ap_all_udp.mmotor_off_pos=0;
+	gcs2ap_all_udp.mmotor_on_pos=255;
+	gcs2ap_all_udp.rudder_left_pos=0;
+	gcs2ap_all_udp.rudder_right_pos=255;
+	gcs2ap_all_udp.rudder_mid_pos=127;
+	gcs2ap_all_udp.rc_thruster=0;
+	gcs2ap_all_udp.rc_rudder=127;
+	gcs2ap_all_udp.cruise_throttle_percent=50;//初始巡航油门设置为百分之50
+	gcs2ap_all_udp.cte_max_degree=5;/*初始化偏航距的最大修正角度*/
+	gcs2ap_all_udp.throttle_change_time=5;/*油门改变10%所消耗的时间[秒]*/
+	gcs2ap_all_udp.navigation_mode=NAVIGATION_COURSE_ANGLE;
+	gcs2ap_all_udp.rudder_dead_zone_angle_degree=3;
+	gcs2ap_all_udp.diffspd_coef=100;
+	gcs2ap_all_udp.diffspd_lim=10;
 
     /*
      * 下面是全局变量global_bool_boatpilot的初始化
@@ -142,15 +165,10 @@ void Boat::setup( void )
     pid_CTE.set_kD(0);
     pid_CTE.set_imax(0.174*3);//30度
 
-
-
     /*
      * 20180306通过udp发送实时数据
      */
-	//open_udp_dev(IP_SEND_TO, PORT_SENT_TO, PORT_RECEIVE);//发送fdm飞行动力模型给flightgear，从而能够呈现姿态等
-	//open_socket_udp_dev(&fd_socket_generic,"127.0.0.1",5056);//发送generic的协议给flightgear，从而能够螺旋桨能够旋转
-    open_socket_udp_dev(&fd_socket_generic,"10.108.16.182",4000);//发送generic的协议给flightgear，从而能够螺旋桨能够旋转
-
+    open_socket_udp_dev(&fd_socket_generic,"10.108.16.182",4000);
 }
 
 void Boat::send_ap2gcs_cmd_boatlink()
@@ -162,7 +180,7 @@ void Boat::send_ap2gcs_cmd_boatlink()
         if(global_bool_boatpilot.ap2gcs_cmd_cnt_previous!=global_bool_boatpilot.ap2gcs_cmd_cnt)
         {
             //发送/回传命令给地面站
-            send_ap2gcs_cmd();
+           // send_ap2gcs_cmd();
 
             global_bool_boatpilot.ap2gcs_cmd_cnt_previous=global_bool_boatpilot.ap2gcs_cmd_cnt;
             global_bool_boatpilot.send_ap2gcs_cmd_req=FALSE;
@@ -179,13 +197,13 @@ void Boat::send_ap2gcs_wp_boatlink()
 
         if(global_bool_boatpilot.ap2gcs_wp_cnt_previous!=global_bool_boatpilot.ap2gcs_wp_cnt)
         {
-            ap2gcs_wp.pack_func_info3=global_bool_boatpilot.ap2gcs_wp_cnt;
+            //ap2gcs_wp.pack_func_info3=global_bool_boatpilot.ap2gcs_wp_cnt;
 
             if(global_bool_boatpilot.send_ap2gcs_wp_end_num>=global_bool_boatpilot.wp_total_num-1)
             {
                 global_bool_boatpilot.send_ap2gcs_wp_end_num=global_bool_boatpilot.wp_total_num-1;
             }
-            send_ap2gcs_waypoint_num(global_bool_boatpilot.send_ap2gcs_wp_start_num,global_bool_boatpilot.send_ap2gcs_wp_end_num-global_bool_boatpilot.send_ap2gcs_wp_start_num+1);
+            //send_ap2gcs_waypoint_num(global_bool_boatpilot.send_ap2gcs_wp_start_num,global_bool_boatpilot.send_ap2gcs_wp_end_num-global_bool_boatpilot.send_ap2gcs_wp_start_num+1);
 
             global_bool_boatpilot.ap2gcs_wp_cnt_previous=global_bool_boatpilot.ap2gcs_wp_cnt;
             global_bool_boatpilot.send_ap2gcs_wp_req=FALSE;
@@ -203,7 +221,7 @@ void Boat::send_ap2gcs_realtime_data_boatlink()
 		{
 			//发送实时数据
 			//DEBUG_PRINTF("发送实时数据\n");
-			send_ap2gcs_real();
+			//send_ap2gcs_real();
 
 			global_bool_boatpilot.ap2gcs_real_cnt_previous=global_bool_boatpilot.ap2gcs_real_cnt;
 			global_bool_boatpilot.send_ap2gcs_real_req=FALSE;
@@ -213,6 +231,7 @@ void Boat::send_ap2gcs_realtime_data_boatlink()
 
 void Boat::record_config()
 {
+#if 0
     if(global_bool_boatpilot.assign_config_req)
     {
     	//printf("更新config fd_config = %d \n",fd_config);
@@ -271,6 +290,7 @@ void Boat::record_config()
         boatpilot_config_previous=boatpilot_config;
         global_bool_boatpilot.save_config_req=FALSE;
     }
+#endif
 }
 
 void Boat::record_wp()
@@ -290,6 +310,7 @@ void Boat::record_log()
 	global_bool_boatpilot.save_boatpilot_log_req = TRUE;
     if(global_bool_boatpilot.save_boatpilot_log_req)
     {
+#if 0
         /*时间戳*/
         boatpilot_log.year=datetime_now.year;
         boatpilot_log.month=datetime_now.month;
@@ -314,6 +335,7 @@ void Boat::record_log()
         save_data_to_binary_log(fd_boatpilot_log,&boatpilot_log,sizeof(boatpilot_log));
 
         global_bool_boatpilot.save_boatpilot_log_req=FALSE;
+#endif
     }
 }
 
@@ -345,6 +367,14 @@ void Boat::update_all_external_device_input( void )
 	 */
 
 	/*
+	* 上面的all_external_device_input其实应该是由外部设备有数据更新后把数据
+	* 赋值给all_external_device_input，而我的飞控只是从这里获取数据，不用管数据是否更新
+	* 而且我只是从这里读取数据，应该不会出现同时写某一个变量的情况吧
+	* 但是这种方式有可能出现这边在写内存，而另一边在读内存，这个概率有多大又会造成什么影响呢
+	* 上面的这些赋值应该是由王正阳从设备驱动那里获取数据值
+	*/
+
+	/*
 	 * 这里是获取遥控器的信号
 	 */
 	all_external_device_input.rc_raw_in_0 = 1500;
@@ -356,18 +386,6 @@ void Boat::update_all_external_device_input( void )
 	all_external_device_input.rc_raw_in_6 = 1500;
 	all_external_device_input.rc_raw_in_7 = 1500;
 	all_external_device_input.rc_raw_in_8 = 1500;
-
-
-	/*
-	* 上面的all_external_device_input其实应该是由外部设备有数据更新后把数据
-	* 赋值给all_external_device_input，而我的飞控只是从这里获取数据，不用管数据是否更新
-	* 而且我只是从这里读取数据，应该不会出现同时写某一个变量的情况吧
-	* 但是这种方式有可能出现这边在写内存，而另一边在读内存，这个概率有多大又会造成什么影响呢
-	* 上面的这些赋值应该是由王正阳从设备驱动那里获取数据值
-	* 实际使用时，上面的需要删除掉我这里并不需要
-	* 我需要的是下面的从all_external_device_input获取数据
-	*/
-
 
 	/*
 	 * 这里使用仿真sim_water_craft的数据

@@ -5,9 +5,6 @@
  *      Author: wangbo
  */
 
-#include "global.h"
-#if 1
-
 #include<stdio.h>
 #include <stdint.h>
 #include<sys/types.h>
@@ -29,15 +26,12 @@
 #include<stdarg.h>
 #include<string.h>
 #include<math.h>
-
 /*转换int或者short的字节顺序，该程序arm平台为大端模式，地面站x86架构为小端模式*/
 #include <byteswap.h>
 
-
-#include "udp.h"
-
 #include "global.h"
-
+#include "boatlink_udp.h"
+#include "udp.h"
 
 uint64_t htonll(uint64_t n) {
 return (((uint64_t)htonl(n)) << 32) | htonl(n >> 32);
@@ -55,20 +49,21 @@ return *((double *) &host_int64);
 double hton_double(double host_double) {
 uint64_t net_int64;
 net_int64 = htonll(*((uint64_t *) &host_double));
+
 return *((double *) &net_int64);
 }
 
 float ntoh_float(float net_float) {
 	uint32_t host_int32;
 	host_int32 = ntohl(*((uint32_t *) &net_float));
-	return *((double *) &host_int32);
 
+	return *((double *) &host_int32);
 }
 float hton_float(float host_float) {
 	uint32_t net_int32;
 	net_int32 = htonl(*((uint32_t *) &host_float));
-	return *((double *) &net_int32);
 
+	return *((double *) &net_int32);
 }
 
 double htond (double x)
@@ -88,57 +83,59 @@ float htonf (float x)
     return x;
 }
 
+/*
+ * 按照udp通信的要求
+ * 每个socket按道理都应该绑定ip和端口的，
+ * 但是当用某个socket发送的时候，这个socket不需要绑定端口，系统会自动分配一个端口，
+ * 但是我们为了确定这个发送的socket到底用的哪个ip和端口，给他绑定一下
+ * 作为接收端，当你调用bind()函数绑定IP时使用INADDR_ANY，表明接收来自任意IP、任意网卡的发给指定端口的数据。一个电脑可能有多个网卡，从而有多个ip
+ * 作为发送端，当用调用bind()函数绑定IP时使用INADDR_ANY，表明使用网卡号最低的网卡进行发送数据，也就是UDP数据广播。
+ */
 int open_socket_udp_dev(int *ptr_fd_socket, char* ip, unsigned int port)
 {
-
-    /*
-     * 指定了发送目标的端口为port_sendto，也就是如果要发送给服务器，必须知道服务器哪个端口是会处理我的数据
-     * 指定了我这个程序的接收端口，既然服务器的端口是比如6789，那么我就也把我的接收端口设置为6789呗，从而统一个数据接收和发送
-     * 整体来说，发送时指定对方ip地址，接收来自任意ip的数据
-     * 发送时不需要绑定端口，系统会自动分配，当然了其实客户端也可以固定端口发送的
-     * 接收时绑定端口，作为服务器肯定是固定端口接收
-     */
-
 	int fd_socket;
-	struct sockaddr_in socket_udp_addr;//服务器用于发送的socket
+	struct sockaddr_in socket_udp_addr;//fd_socket是socket的描述符，socket_udp_addr表示socket的地址属性，需要绑定fd_socket文件描述符
     int sockaddr_size;
 
-    /*设置发送目标的ip地址和发送目标的端口*/
     sockaddr_size = sizeof(struct sockaddr_in);
     bzero((char*)&socket_udp_addr, sockaddr_size);
-    socket_udp_addr.sin_family = AF_INET;
+    socket_udp_addr.sin_family = AF_INET;//地址族，等价于协议族，AF_INET表示ipv4，AF_INET6表示ipv6
 
-    //socket_udp_addr.sin_addr.s_addr = inet_addr(ip);//这个ip地址肯定是创建socket本机的某个ip地址，比如我的电脑就有2个网卡，2个ip地址，再加上127.0.0.1就是3个地址
+    /*
+     * 某一个应用创建socket生成fd_socket，这个socket需要绑定ip把数据通过ip对应的网卡发出去
+     * 比如我的电脑就有2个网卡，2个ip地址，再加上127.0.0.1就是3个地址
+     * INADDR_ANY是任意地址，作为接收端，当你调用bind()函数绑定IP时使用INADDR_ANY，表明接收来自任意IP、任意网卡的发给指定端口的数据。一个电脑可能有多个网卡，从而有多个ip
+     *                                                 作为发送端，当用调用bind()函数绑定IP时使用INADDR_ANY，表明使用网卡号最低的网卡进行发送数据，也就是UDP数据广播。
+     */
+    //udp_sendto_addr.sin_addr.s_addr = INADDR_ANY;//
     inet_pton(AF_INET, ip, &socket_udp_addr.sin_addr);
-    //udp_sendto_addr.sin_addr.s_addr = INADDR_ANY;//INADDR_ANY是任意地址
 
     socket_udp_addr.sin_port = htons(port);
-//    printf("port_sendto=%d\n",port);
 
-    /*建立“发送”套接字*/
-    fd_socket = socket(AF_INET, SOCK_DGRAM, 0);
-    if (fd_sock_send == -1)
+    /*
+     * 利用socket函数创建socket，生成文件描述符fd_socket
+     */
+    if( (fd_socket = socket(AF_INET, SOCK_DGRAM, 0) ) < 0)
     {
-        printf("udp %s create socket failed",ip);
-        close(fd_socket );
-        return 0;
+    	printf("open_socket_udp_dev    :    udp %s create socket failed!!!\n",ip);
     }
     else
     {
-        printf("udp %s ini ok!\n",ip);
+        printf("open_socket_udp_dev    :    udp %s ini ok!!!\n",ip);
     }
 
     /*
      * 绑定端口
+     * 作为接收端，当你调用bind()函数绑定IP时使用INADDR_ANY，表明接收来自任意IP、任意网卡的发给指定端口的数据。一个电脑可能有多个网卡，从而有多个ip
+     * 作为发送端，当用调用bind()函数绑定IP时使用INADDR_ANY，表明使用网卡号最低的网卡进行发送数据，也就是UDP数据广播。
      */
 	if(-1 == (bind(fd_socket,(struct sockaddr*)&socket_udp_addr,sizeof(struct sockaddr_in))))
 	{
-		perror("Server Bind Failed:");
-		//exit(1);
+		perror("open_socket_udp_dev    :    bind failed!!!\n");
 	}
 	else
 	{
-		printf("bind success\n");
+		printf("open_socket_udp_dev    :    bind success!!!\n");
 		*ptr_fd_socket = fd_socket;
 	}
 
@@ -147,439 +144,200 @@ int open_socket_udp_dev(int *ptr_fd_socket, char* ip, unsigned int port)
 
 int send_socket_udp_data(int fd_socket, unsigned char *buf, unsigned int len, char *target_ip, unsigned int target_port)
 {
-	struct sockaddr_in udp_sendto_addr;//服务器用于发送的socket
+	if( fd_socket < 0)
+	{
+		printf("send_socket_udp_data    :    fd_socket is invalid!!!\n");
+		return 0;
+	}
 
+	struct sockaddr_in udp_sendto_addr;//想要把数据发送给对方，我们需要知道对方的socket对应的ip地址和端口
     int sockaddr_size;
 
     sockaddr_size = sizeof(struct sockaddr_in);
     bzero((char*)&udp_sendto_addr, sockaddr_size);
 
-    udp_sendto_addr.sin_family = AF_INET;//这个socket的协议类型
-    //udp_sendto_addr.sin_addr.s_addr = inet_addr(ip_sendto);
-    //inet_pton(AF_INET, "10.108.16.163", &udp_sendto_addr.sin_addr);
+    /*
+     * 3个要点，3句话，1协议族，2ip地址，3端口号
+     */
+    udp_sendto_addr.sin_family = AF_INET;
+    //udp_sendto_addr.sin_addr.s_addr = INADDR_ANY;//如果对方的ip地址写成了INADDR_ANY，那就意味着我们是广播出去的，不是给特定ip发送数据
     inet_pton(AF_INET, target_ip, &udp_sendto_addr.sin_addr);
-
     udp_sendto_addr.sin_port = htons(target_port);
-//    printf("port_sendto=%d\n",target_port);
 
 	int send_len;
 	unsigned char send_buf[2000];
 
 	memcpy(send_buf, buf, len);
 	send_len=len;
-
 	//printf("send len=%d\n",send_len);
 
-	//sendto(fd_sock_send, send_buf, send_len, 0, (struct sockaddr *)&udp_sendto_addr, sizeof(struct sockaddr_in));
 	sendto(fd_socket, send_buf, send_len, 0, (struct sockaddr *)&udp_sendto_addr, sizeof(struct sockaddr_in));
 
 	return 0;
 }
 
-int read_socket_udp_data(int fd_socket, unsigned char *buf, unsigned int len)
+//数据包中len是用len_byte_num个字节表示的，本协议用unsigned short表示的，是2个字节
+#define LEN_BYTE_NUM 2
+//命令包长度 实时数据包长度
+#define GCS2AP_CMD_REAL 76
+
+#define UDP_RECV_HEAD1           0
+#define UDP_RECV_HEAD2           1
+#define UDP_RECV_LEN                2
+#define UDP_RECV_TYPE               3
+#define UDP_RECV_DATA              4
+#define UDP_RECV_CHECKSUM   5
+#define UDP_RECV_WP                 6
+
+static int udp_recv_state=0;
+int decode_udp_data(char *buf, int len)
 {
+	static unsigned char _buffer[UDP_BUF_SIZE];
+
+	static unsigned char _pack_recv_len[4] = {0};
+	static int _pack_recv_real_len = 0;//表示收到的包中的数据包长度len这个short型数据
+	static unsigned char _pack_recv_buf[UDP_BUF_SIZE];
+	static int _pack_buf_len = 0;
+
+	int _length;
+	unsigned char c;
+
+	int i=0;
+	static int i_len=0;
+	static unsigned int checksum = 0;
+
+	memcpy(_buffer, buf, len);
+
+	_length=len;
+
+	for (i = 0; i<_length; i++)
+	{
+		c = _buffer[i];
+		switch (udp_recv_state)
+		{
+		case UDP_RECV_HEAD1:
+			if (c == 0xaa)
+			{
+				udp_recv_state = UDP_RECV_HEAD2;
+				checksum += c;
+			}
+			break;
+		case UDP_RECV_HEAD2:
+			if (c == 0x55)
+			{
+				udp_recv_state = UDP_RECV_LEN;
+				checksum += c;
+			}
+			else
+			{
+				udp_recv_state = UDP_RECV_HEAD1;
+				checksum = 0;
+			}
+			break;
+		case UDP_RECV_LEN:
+			_pack_recv_len[i_len] = c;
+			i_len++;
+			checksum += c;
+			if ( i_len >= LEN_BYTE_NUM)
+			{
+				_pack_recv_real_len = _pack_recv_len[1]*pow(2,4)+_pack_recv_len[0];
+				//printf("udp收到的有效数据长度为=%d\n",_pack_recv_real_len);
+				udp_recv_state = UDP_RECV_DATA;
+				i_len=0;
+			}
+			else
+			{
+				udp_recv_state = UDP_RECV_LEN;
+			}
+			_pack_buf_len = 4;//0xaa 0x55 len_low len_high 共4个字节
+			break;
+		case UDP_RECV_DATA:
+			_pack_recv_buf[0] = 0xaa;
+			_pack_recv_buf[1] = 0x55;
+			_pack_recv_buf[2] = _pack_recv_len[0];
+			_pack_recv_buf[3] = _pack_recv_len[1];
+			_pack_recv_buf[_pack_buf_len] = c;
+			_pack_buf_len++;
+			checksum += c;
+			if (_pack_buf_len >= _pack_recv_real_len)
+			{
+				if(_pack_recv_real_len == GCS2AP_CMD_REAL )
+				{
+					//收到的是命令包
+					udp_recv_state = UDP_RECV_CHECKSUM;
+				}
+				else if( _pack_recv_real_len >= 12)
+				{
+					//收到的是航点包
+					udp_recv_state = UDP_RECV_WP;
+				}
+			}
+			break;
+		case UDP_RECV_CHECKSUM:
+
+			unsigned int checksum_low;
+			unsigned int checksum_high;
+			unsigned int checksum_temp;//暂时默认校验和发过来的先是低字节
+			checksum_low = _pack_recv_buf[_pack_buf_len-2];
+			checksum_high = _pack_recv_buf[_pack_buf_len-1];
+			checksum_temp = checksum_high * pow(2,4)  + checksum_low;
+
+			if(checksum == checksum_temp)
+			{
+				udp_recv_state = 0;
+				/*
+				 * 收到了命令包，准备解析命令包数据
+				 */
+				global_bool_boatpilot.bool_get_gcs2ap_cmd = TRUE;
+				memcpy(&gcs2ap_cmd_udp, _pack_recv_buf, _pack_recv_real_len);
+			}
+			else
+			{
+				//校验和错误，重新接收数据
+				udp_recv_state = 0;
+			}
+			break;
+		case UDP_RECV_WP:
+			/*
+			 * 收到了航点数据，准备解析航点数据
+			 */
+			global_bool_boatpilot.bool_get_gcs2ap_waypoint = TRUE;
+			memcpy(wp_data, &_pack_recv_buf[12], _pack_recv_real_len - 12);
+			int wp_num;
+			wp_num = (_pack_recv_real_len - 12)/sizeof(WAY_POINT);
+			printf("decode_udp_data    :    wp_num = %ld \n",wp_num);
+			global_bool_boatpilot.wp_total_num = wp_num;
+
+			break;
+		}
+	}
 
 	return 0;
 }
 
-
-
-int fd_sock_send;
-int fd_sock_recv;
-
-struct T_UDP_DEVICE udp_device;
-
-static struct sockaddr_in udp_mysendto_addr;//服务器用于接收的socket
-
-static struct sockaddr_in udp_myrecv_addr;//服务器用于接收的socket
-//static struct sockaddr_in udp_sendto_addr;//服务器用于发送的socket
-struct sockaddr_in udp_sendto_addr;//服务器用于发送的socket
-static struct sockaddr_in client_addr;//服务器用来保存客户端的发送socket，把客户端的socket属性保存在client_addr
-
-int open_udp_dev(char* ip_sendto, unsigned int port_sendto, unsigned int port_myrecv)
+int read_socket_udp_data(int fd_socket)
 {
-    /*
-     * 指定了发送目标的端口为port_sendto，也就是如果要发送给服务器，必须知道服务器哪个端口是会处理我的数据
-     * 指定了我这个程序的接收端口，既然服务器的端口是比如6789，那么我就也把我的接收端口设置为6789呗，从而统一个数据接收和发送
-     * 整体来说，发送时指定对方ip地址，接收来自任意ip的数据
-     * 发送时不需要绑定端口，系统会自动分配，当然了其实客户端也可以固定端口发送的
-     * 接收时绑定端口，作为服务器肯定是固定端口接收
-     */
+	if( fd_socket < 0)
+	{
+		printf("read_socket_udp_data    :    fd_socket is invalid!!!\n");
+		return 0;
+	}
 
-    int sockaddr_size;
-    /*设置发送目标的ip地址和发送目标的端口*/
-    sockaddr_size = sizeof(struct sockaddr_in);
-    bzero((char*)&udp_sendto_addr, sockaddr_size);
-    udp_sendto_addr.sin_family = AF_INET;
-    //udp_sendto_addr.sin_addr.s_addr = inet_addr(ip_sendto);
-    //inet_pton(AF_INET, "10.108.16.163", &udp_sendto_addr.sin_addr);
-    inet_pton(AF_INET, ip_sendto, &udp_sendto_addr.sin_addr);
+	char recv_buf[256];
+	int recv_len;
 
+	struct sockaddr_in addr;
+	unsigned int addr_len = sizeof(struct sockaddr_in);
 
+	/*
+	 * 参数len为可接收数据的最大长度
+	 */
+	recv_len = recvfrom(fd_socket, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr, &addr_len);
 
-    //udp_sendto_addr.sin_addr.s_addr = inet_addr("10.108.16.163");
-    //udp_sendto_addr.sin_addr.s_addr = INADDR_ANY;
-    udp_sendto_addr.sin_port = htons(port_sendto);
-    printf("port_sendto=%d\n",port_sendto);
-    printf("udp_sendto_addr.sin_port=%d\n",udp_sendto_addr.sin_port);
+	if( recv_len > 0)
+	{
+		decode_udp_data(recv_buf, recv_len);
+	}
 
-    /*建立“发送”套接字*/
-    fd_sock_send = socket(AF_INET, SOCK_DGRAM, 0);
-    if (fd_sock_send == -1)
-    {
-        perror("udp send create socket failed");
-        close(fd_sock_send);
-        return 0;
-    }
-    else
-    {
-        printf("udp send ini ok!\n");
-    }
-
-    /*
-     * 绑定发送的端口
-     */
-#if 1
-	sockaddr_size = sizeof(struct sockaddr_in);
-	bzero((char*)&udp_mysendto_addr, sockaddr_size);
-	udp_mysendto_addr.sin_family = AF_INET;
-	udp_mysendto_addr.sin_addr.s_addr = inet_addr("10.108.16.163");
-	//udp_mysendto_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	//udp_mysendto_addr.sin_port = htons(49000);
-	udp_mysendto_addr.sin_port = htons(49000);//发送的端口跟目标ip地址的端口一致，我从49000发送，另一边也从49000接收
-
-#else
-    /* 绑定套接口 */
-     //if(-1 == (bind(fd_sock_send,(struct sockaddr*)&udp_sendto_addr,sizeof(struct sockaddr_in))))
-    if(-1 == (bind(fd_sock_send,(struct sockaddr*)&udp_mysendto_addr,sizeof(struct sockaddr_in))))
-     {
-      perror("Server Bind Failed:");
-      //exit(1);
-     }
-     else
-     {
-    	 printf("bind success\n");
-
-     }
-#endif
-
-
-
-
-    /*设置本机的接收ip地址和端口，但是接收的ip不指定，因为任何的ip都有可能给我发数据呀*/
-    sockaddr_size = sizeof(struct sockaddr_in);
-    bzero((char*)&udp_myrecv_addr, sockaddr_size);
-    udp_myrecv_addr.sin_family = AF_INET;
-    udp_myrecv_addr.sin_addr.s_addr = INADDR_ANY;//任意地址
-    //udp_myrecv_addr.sin_addr.s_addr = inet_addr("10.108.16.163");;//任意地址
-
-    //udp_myrecv_addr.sin_port = htons(port_myrecv);
-    udp_myrecv_addr.sin_port = htons(49005);
-    /*建立“接收”套接字*/
-    fd_sock_recv = socket(AF_INET, SOCK_DGRAM, 0);
-    if (fd_sock_recv == -1)
-    {
-        perror("udp recv create socket failed");
-        close(fd_sock_recv);
-        return 0;
-    }
-    else
-    {
-
-    }
-
-    /*
-     * 建立socket获取fd_sock文件描述符后，需要把这个文件描述符与某一个soucket绑定
-     * 因为socket函数只是建立了一个通用的针对某一地址族的文件描述符，但是该socket的属性还需要设置并且绑定
-     */
-    if (bind(fd_sock_recv, (struct sockaddr *)&udp_myrecv_addr, sizeof(struct sockaddr_in)) == -1)
-    {
-        perror("udp recv bind err");
-        close(fd_sock_recv);
-        return 0;
-    }
-    else
-    {
-        printf("udp recv ini ok!\n");
-    }
-
-    int ret=0;
-    udp_device.ptr_fun=read_udp_data;
-    /*udp_recvbuf_and_process函数中调用了fd_sock_recv来确定从哪个socket获取数据*/
-    ret = pthread_create (&udp_device.fd,            //线程标识符指针
-                          NULL,                            //默认属性
-                          udp_recvbuf_and_process,//运行函数
-                          &udp_device);                 //运行函数的参数
-    if (0 != ret)
-    {
-       perror ("pthread create error\n");
-    }
-
-    return 0;
+	return 0;
 }
-
-#define UDP_RCV_BUF_SIZE 2000
-#define UDP_PACKET_HEAD 0xa55a5aa5
-#define UDP_PACKET_END 0x12345678
-
-int send_udp_data(unsigned char *buf, unsigned int len)
-{
-    int m_tail;
-    int m_len;
-    unsigned char m_sendbuf[UDP_RCV_BUF_SIZE];
-
-    static unsigned int m_packcnt = 0;
-
-    /*
-     * 帧尾0x12345678 4个字节
-     * 没有帧尾
-     */
-    memcpy(m_sendbuf, buf, len);
-    m_len=len;
-
-#if 0
-    m_tail = htonl(UDP_PACKET_END);
-    memcpy(&m_sendbuf[len], &m_tail, 4);
-    m_len = 4 + len;
-#endif
-
-#if 0
-    int i=0;
-    for(i=0;i<m_len;i++)
-    {
-       printf("%02x ",m_sendbuf[i]);
-    }
-    printf("\n");
-#endif
-    printf("send len=%d\n",m_len);
-
-    sendto(fd_sock_send, m_sendbuf, m_len, 0, (struct sockaddr *)&udp_sendto_addr, sizeof(struct sockaddr_in));
-
-    return 0;
-}
-
-
-//#define UDP_PACKET_HEAD 0xa55a5aa5
-#define UDP_RECV_HEAD1  0
-#define UDP_RECV_HEAD2  1
-#define UDP_RECV_HEAD3  2
-#define UDP_RECV_HEAD4  3
-#define UDP_RECV_CNT  4
-#define UDP_RECV_LEN  5
-#define UDP_RECV_DATA 6
-#define UDP_RECV_CHECKSUM 7
-
-static int udp_recv_state=0;
-
-int read_udp_data(unsigned char *buf, unsigned int len)
-{
-    static unsigned char _buffer[UDP_RCV_BUF_SIZE];
-
-    static unsigned char _pack_recv_cnt[4] = {0};
-    static int _pack_recv_real_cnt=0;
-    static unsigned char _pack_recv_len[4] = {0};
-    static int _pack_recv_real_len = 0;
-    static unsigned char _pack_recv_buf[UDP_RCV_BUF_SIZE];
-    static int _pack_buf_len = 0;
-
-    int _length;
-    unsigned char c;
-
-    int i=0;
-    static int i_cnt=0;
-    static int i_len=0;
-
-#if 0
-    printf("wangbo 20170809 udp len=%d,udp data buf=\n",len);
-    for(i=0;i<len;i++)
-    {
-        printf("%x",buf[i]);
-    }
-    printf("\n");
-
-    printf("sizeof(fg2ap)=%d\n",sizeof(fg2ap));
-    printf("sizeof(uint64_t)=%d\n",sizeof(uint64_t));
-#endif
-
-#if 1
-
-    /*
-    memcpy(&fg2ap,buf,sizeof(fg2ap));
-    fg2ap.pitch_deg= ntoh_double(fg2ap.pitch_deg);
-    fg2ap.heading_deg= ntoh_double(fg2ap.heading_deg);
-    fg2ap.longitude_deg= ntoh_double(fg2ap.longitude_deg);
-    fg2ap.latitude_deg= ntoh_double(fg2ap.latitude_deg);
-*/
-
-
-	//fg2ap.pitch_deg=(double)(*((uint64_t*)(&fg2ap.pitch_deg)));
-	//fg2ap.heading_deg=(double)(*((uint64_t*)(&fg2ap.heading_deg)));
-	//fg2ap.longitude_deg=(double)(*(uint64_t*)&fg2ap.longitude_deg);
-	//fg2ap.latitude_deg=(double)(*(uint64_t*)&fg2ap.latitude_deg);
-	//fg2ap.pitch_deg=(double)__bswap_64(*(uint64_t*)&fg2ap.pitch_deg);
-	//fg2ap.heading_deg=(double)__bswap_64(*(uint64_t*)&fg2ap.heading_deg);
-	//fg2ap.longitude_deg=(double)__bswap_64(*(uint64_t*)&fg2ap.longitude_deg);
-	//fg2ap.latitude_deg=(double)__bswap_64(*(uint64_t*)&fg2ap.latitude_deg);
-
-
-
-    //printf("俯仰=%f，航向=%f\n",fg2ap.pitch_deg,fg2ap.heading_deg);
-   // printf("纬度=%f，经度=%f\n",fg2ap.latitude_deg,fg2ap.longitude_deg);
-#else
-    memcpy(&ap2fg_recv,buf,sizeof(ap2fg_recv));
-    ap2fg_recv.throttle0= ntoh_double(ap2fg_recv.throttle0);
-
-    printf("ap2fg_recv.throttle0=%f\n",ap2fg_recv.throttle0);
-
-#endif
-    return 0;
-
-    memcpy(_buffer, buf, len);
-
-    _length=len;
-
-    for (i = 0; i<_length; i++)
-    {
-        c = _buffer[i];
-        switch (udp_recv_state)
-        {
-        case UDP_RECV_HEAD1:
-            if (c == 0xa5)
-            {
-                udp_recv_state = UDP_RECV_HEAD2;
-            }
-
-            break;
-        case UDP_RECV_HEAD2:
-            if (c == 0x5a)
-            {
-                udp_recv_state = UDP_RECV_HEAD3;
-            }
-            else
-            {
-                udp_recv_state = UDP_RECV_HEAD1;
-            }
-
-            break;
-        case UDP_RECV_HEAD3:
-           if (c == 0x5a)
-           {
-               udp_recv_state = UDP_RECV_HEAD4;
-           }
-           else
-           {
-               udp_recv_state = UDP_RECV_HEAD1;
-           }
-
-           break;
-        case UDP_RECV_HEAD4:
-           if (c == 0xa5)
-           {
-               udp_recv_state = UDP_RECV_CNT;
-           }
-           else
-           {
-               udp_recv_state = UDP_RECV_HEAD1;
-           }
-
-           break;
-        case UDP_RECV_CNT:
-            _pack_recv_cnt[i_cnt] = c;
-            i_cnt++;
-
-            if ( i_cnt>= 4)
-            {
-                //低位在前
-                _pack_recv_real_cnt=_pack_recv_cnt[3]*pow(2,16)+_pack_recv_cnt[2]*pow(2,8)+_pack_recv_cnt[1]*pow(2,4)+_pack_recv_cnt[0];
-                udp_recv_state = UDP_RECV_LEN;
-                i_cnt=0;
-            }
-            else
-            {
-                udp_recv_state = UDP_RECV_CNT;
-            }
-            _pack_buf_len = 0;
-
-            break;
-        case UDP_RECV_LEN:
-            _pack_recv_len[i_len] = c;
-            i_len++;
-            if ( i_len>= 4)
-            {
-                _pack_recv_real_len=_pack_recv_len[3]*pow(2,16)+_pack_recv_len[2]*pow(2,8)+_pack_recv_len[1]*pow(2,4)+_pack_recv_len[0];
-                //printf("udp收到的有效数据长度为=%d\n",_pack_recv_real_len);
-                udp_recv_state = UDP_RECV_DATA;
-                i_len=0;
-            }
-            else
-            {
-                udp_recv_state = UDP_RECV_LEN;
-            }
-            _pack_buf_len = 0;
-
-            break;
-        case UDP_RECV_DATA:
-            _pack_recv_buf[_pack_buf_len] = c;
-            _pack_buf_len++;
-            if (_pack_buf_len >= _pack_recv_real_len)
-            {
-                udp_recv_state = UDP_RECV_CHECKSUM;
-            }
-
-            break;
-        case UDP_RECV_CHECKSUM:
-            //if (_checksum == c)
-            if (1)
-            {
-
-                udp_recv_state = 0;
-
-                /*
-                 * 收到udp传来的副控数据后，根据ack来决定，m2s的数据
-                 * 先放在这里测试，最后放在boatpilot.c文件中，接收线程中不要太多的判断
-                 */
-
-            }
-            else
-            {
-                udp_recv_state = 0;
-            }
-            break;
-        }
-    }
-
-    return 0;
-}
-
-void *udp_recvbuf_and_process(void * ptr_udp_device)
-{
-    char buf[UDP_RCV_BUF_SIZE] = { 0 };
-    unsigned int read_len;
-
-    struct T_UDP_DEVICE *ptr_udp;
-    ptr_udp=(struct T_UDP_DEVICE *)ptr_udp_device;
-
-    unsigned int client_addr_len=0;
-    client_addr_len=sizeof(struct sockaddr);
-
-    while(1)
-    {
-        if(-1!=(read_len=recvfrom(fd_sock_recv, buf, 2000, 0, (struct sockaddr *)&client_addr, &client_addr_len)))
-        {
-#if 0
-            printf("read_len=%d\n",read_len);
-            buf[read_len]='\0';
-            printf("%s\n",buf);
-#endif
-            if(read_len>0)
-            {
-                ptr_udp->ptr_fun((unsigned char*)buf,read_len);
-            }
-        }
-    }
-
-    pthread_exit(NULL);
-
-
-}
-#endif
