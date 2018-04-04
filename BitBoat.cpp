@@ -60,9 +60,6 @@ int main(int argc,char * const argv[])
 {
     DEBUG_PRINTF("Welcome to BitPilot \n");
 
-    //decode_binary_data();
-    //decode_binary_wp_data();
-
     // 初始化任务调度表
     boat.scheduler.init(&boat.scheduler_tasks[0], sizeof(boat.scheduler_tasks)/sizeof(boat.scheduler_tasks[0]));
     DEBUG_PRINTF(" sizeof(scheduler_tasks)/sizeof(scheduler_tasks[0]) = %d\n",sizeof(boat.scheduler_tasks)/sizeof(boat.scheduler_tasks[0]));
@@ -84,10 +81,6 @@ int main(int argc,char * const argv[])
 
 void Boat::loop( void )
 {
-	static uint8_t loop_cnt;
-
-	loop_cnt++;
-
     uint32_t timer = (uint32_t)gettimeofday_us();//当前系统运行时间精确到微秒
 
     loop_fast();//在无人机中是姿态控制内环，在无人船中是制导控制环
@@ -103,11 +96,6 @@ void Boat::loop( void )
      */
     uint32_t loop_us = micro_seconds;
     uint32_t time_available = loop_us - ( (uint32_t)gettimeofday_us() - timer );
-
-    if(loop_cnt > 100)
-	{
-		loop_cnt = 0;
-	}
 
     scheduler.run(time_available > loop_us ? 0u : time_available);
 }

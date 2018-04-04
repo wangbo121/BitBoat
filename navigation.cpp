@@ -39,6 +39,7 @@ void navigation_init(void)
 	auto_navigation.previous_target_loc=(struct T_LOCATION *)malloc(sizeof (struct T_LOCATION));
 }
 
+#define MIN_ARRIVE_RADIUS 5
 int navigation_loop( struct T_NAVIGATION *ptr_auto_navigation,\
 										struct WAY_POINT *ptr_wp_data,\
 										nmea_msg *ptr_gps_data)
@@ -244,6 +245,61 @@ static unsigned int get_next_wp_num(struct WAY_POINT *ptr_wp_data,\
 	}
 
 	return current_target_wp_cnt;
+}
+
+float get_command_course_radian_NED(struct T_LOCATION *previous_target_loc,  struct T_LOCATION *current_loc, struct T_LOCATION *target_loc)
+{
+    float current_to_target_radian = 0.0;//当前航点与目标航点方位角的弧度值
+    float command_course_radian = 0.0;//期望航向角heading或者说是yaw
+    float cross_track_error_correct_radian = 0.0;
+
+    current_to_target_radian = get_bearing_point_2_point_NED(current_loc, target_loc);
+    current_to_target_radian=wrap_PI(current_to_target_radian);//从当前位置直接冲向目标航点，从小圈也就是小于180的方向转
+
+    global_bool_boatpilot.current_to_target_radian=(short)current_to_target_radian*1000;
+    global_bool_boatpilot.dir_target_degree=(short)(convert_radian_to_degree(current_to_target_radian)*100);/*把这个目标航向返回给实时数据*/
+
+#if 0
+    20180207 勿删
+    cross_track_error_correct_radian = get_cross_track_error_correct_radian_NED(previous_target_loc, current_loc, target_loc);
+    //printf("cross_track_error_correct_radian=%f\n",cross_track_error_correct_radian);//20170410已测试
+#else
+	float CTE_p=0.0;
+	float CTE_i=0.0;
+	float CTE_d=0.0;
+    // 可以选择用反正切的
+	CTE_p=(float)gcs2ap_all_udp.cte_p * 0.1;
+	CTE_i=(float)gcs2ap_all_udp.cte_i *   0.01;
+	CTE_d=(float)gcs2ap_all_udp.cte_d * 0.1;
+	//printf("CTE_i = %f\n",CTE_i);
+	//printf("CTE_d = %f\n",CTE_d);// 20180207已测试
+
+	boat.pid_CTE.set_kP(CTE_p);
+	boat.pid_CTE.set_kI(CTE_i);
+	boat.pid_CTE.set_kD(CTE_d);
+	cross_track_error_correct_radian = get_cross_track_error_correct_radian_NED_PID(previous_target_loc, current_loc, target_loc, &boat.pid_CTE);
+#endif
+
+    /*
+     * 虽然经过偏航距离修正，但是还是要朝着当前位置到目标航点直接方位角的小于180度方向走
+     * 例如从当前位置直接到目标航点的角度为175度
+     * 如果经过偏航距离修正后，成为185度，wrap_PI函数会导致目标航向-175度，这不行，得还是朝着175的那个小圈走
+     */
+    //command_heading_radian = wrap_PI(command_heading_radian);/不需要这个wrap_PI函数，用了反而错误
+    command_course_radian = current_to_target_radian + cross_track_error_correct_radian;
+    if(command_course_radian>M_PI)
+    {
+        command_course_radian=M_PI;
+    }
+    else if(command_course_radian<-M_PI)
+    {
+        command_course_radian=-M_PI;
+    }
+
+    global_bool_boatpilot.dir_nav_degree=(short)(convert_radian_to_degree(command_course_radian)*100);
+    global_bool_boatpilot.command_radian=(short)command_course_radian*1000;
+
+    return command_course_radian;
 }
 
 float get_command_heading_NED(struct T_LOCATION *previous_target_loc,  struct T_LOCATION *current_loc, struct T_LOCATION *target_loc)

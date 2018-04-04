@@ -12,13 +12,23 @@
 #include "global.h"
 #include "gps.h"
 
-#define MIN_ARRIVE_RADIUS 5
-
 #define NAVIGATION_HEADING_ANGLE 0
 #define NAVIGATION_COURSE_ANGLE 1
 
 struct T_NAVIGATION
 {
+	/*
+	 * in表示需要从外部传输进navigation这个循环的参数
+	 */
+	unsigned int in_arrive_radius;
+	unsigned char in_total_wp_num;
+	unsigned char in_wp_guide_no;//引导模式时，指定的航点编号
+	unsigned char in_work_mode;//工作模式
+	float in_CTE_p;
+	float in_CTE_i;
+	float in_CTE_d;
+
+
 	struct T_LOCATION *previous_target_loc;
 	struct T_LOCATION *current_target_loc;
 	struct T_LOCATION *current_loc;
@@ -56,6 +66,17 @@ int navigation_loop(struct T_NAVIGATION *ptr_auto_navigation,\
 										nmea_msg *ptr_gps_data);
 
 float get_command_heading(struct T_LOCATION *previous_target_wp, struct T_LOCATION *target_wp, struct T_LOCATION *current_loc);
+
+/*
+ * 准确地说，get_command_heading_NED应该是get_command_course_radian_NED
+ * 是获取前进速度航向角course angle，真实的heading需要用course angle减去侧滑角slide angle
+ * 也就是heading加上侧滑角slide angle是速度航向角course angle
+ */
 float get_command_heading_NED(struct T_LOCATION *previous_target_loc,  struct T_LOCATION *current_loc, struct T_LOCATION *target_loc);
+
+/*
+ * 这个函数是获取期望的船的航向速度与正北的夹角
+ */
+float get_command_course_radian_NED(struct T_LOCATION *previous_target_loc,  struct T_LOCATION *current_loc, struct T_LOCATION *target_loc);
 
 #endif /* HEADERS_NAVIGATION_H_ */

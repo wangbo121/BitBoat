@@ -6,12 +6,11 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>/*exit(1)*/
+#include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
-
 #include <time.h>
 #include <sys/time.h>
 
@@ -29,7 +28,7 @@ int create_log_file(char *log_name)
 	time_of_file=localtime(&ptrtime);
 
 	sprintf(convert_to_string,"%d-%d-%d-%d-%d-%d",time_of_file->tm_year+1900,time_of_file->tm_mon+1,time_of_file->tm_mday,\
-			                            time_of_file->tm_hour,time_of_file->tm_min,time_of_file->tm_sec);
+			                                                                                 time_of_file->tm_hour,time_of_file->tm_min,time_of_file->tm_sec);
 	strcat(convert_to_string,log_name);
 
 	if(-1==(fd=open(convert_to_string,O_RDWR |O_CREAT |O_APPEND)))
@@ -39,8 +38,6 @@ int create_log_file(char *log_name)
 	}
 
 	chmod(convert_to_string,0666);//改变文件权限为 任何人都可以修改
-
-	//printf("create_log_file fd =%d\n",fd);// 20180208已测试
 
 	return fd;
 }
