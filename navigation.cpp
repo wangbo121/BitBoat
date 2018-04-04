@@ -10,7 +10,6 @@
 
 #include "radio.h"
 #include "global.h"
-//#include "boatlink.h"
 #include "gps.h"
 #include "control.h"
 #include "location.h"

@@ -35,11 +35,13 @@
 struct AP2GCS_REAL_UDP ap2gcs_real_udp;
 struct GCS2AP_CMD_UDP gcs2ap_cmd_udp;
 struct GCS2AP_ALL_UDP gcs2ap_all_udp;
+struct T_CONFIG_UDP boatpilot_config_udp;
 
+#define REAL_DATA_BUF_SIZE 256
 int send_ap2gcs_real_udp()
 {
-    unsigned char real[256];
-    unsigned char buf_packet[256];
+    unsigned char real[REAL_DATA_BUF_SIZE];
+    unsigned char buf_packet[REAL_DATA_BUF_SIZE];
     int ret;
     static unsigned int real_udp_cnt;
 
@@ -68,19 +70,15 @@ int send_ap2gcs_real_udp()
     ap2gcs_real_udp.pitch=(short)gps_data.pitch;
     ap2gcs_real_udp.yaw=(short)gps_data.yaw;
 
-    //ap2gcs_real_udp.wp_next=global_bool_boatpilot.wp_next;
-    ap2gcs_real_udp.wp_next = 8;
-    ap2gcs_real_udp.sail_mode = 1;
-    ap2gcs_real_udp.form_type = 0;
+    ap2gcs_real_udp.wp_next = global_bool_boatpilot.wp_next;
+    ap2gcs_real_udp.sail_mode = gcs2ap_all_udp.sail_mode;
+    ap2gcs_real_udp.form_type = gcs2ap_all_udp.formation_type;
     ap2gcs_real_udp.pilot_vessel = 0;
 
     printf("send_ap2gcs_real_udp    :    sizeof (struct AP2GCS_REAL_UDP) = %ld \n",sizeof (struct AP2GCS_REAL_UDP));
-    //printf("ap2gcs_real.toggle_state=%x\n",ap2gcs_real.toggle_state);
     memcpy(real, &ap2gcs_real_udp, sizeof (struct AP2GCS_REAL_UDP));
-
-    printf("send_ap2gcs_real_udp    :    ret = %d   fd_socket_generic = %d\n",ret,fd_socket_generic);
-    send_socket_udp_data(fd_socket_generic, buf_packet, ret,"10.108.16.151",4000 );
-    //send_socket_udp_data(fd_socket_generic, buf_packet, ret,"127.0.0.1",4006 );
+    ret = sizeof (struct AP2GCS_REAL_UDP);
+    send_socket_udp_data(fd_socket_generic, buf_packet, ret, AP_SENDTO_UDP_IP, AP_SENDTO_UDP_PORT );
 
     return 0;
 }
@@ -217,13 +215,16 @@ static int decode_gcs2ap_cmd_udp(struct GCS2AP_ALL_UDP *ptr_gcs2ap_all_udp, stru
 	switch(temp)
 	{
 	case FORMATION_SOLO:
+		ptr_gcs2ap_all_udp->formation_type = FORMATION_SOLO;
 		//单独航行
 		break;
 	case FORMATION_LEADER_FOLLOWER:
 		//领导跟随编队
+		ptr_gcs2ap_all_udp->formation_type = FORMATION_LEADER_FOLLOWER;
 		break;
 	case FORMATION_DISTRIBUTED:
 		//分布式编队
+		ptr_gcs2ap_all_udp->formation_type = FORMATION_DISTRIBUTED;
 		break;
 	default:
 		break;

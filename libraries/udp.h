@@ -59,6 +59,7 @@ double htond (double x);
 float htonf (float x);
 
 int open_socket_udp_dev(int *ptr_fd_socket, char* ip, unsigned int port);
+int read_socket_udp_data(int fd_socket);
 int send_socket_udp_data(int fd_socket, unsigned char *buf, unsigned int len, char *target_ip, unsigned int target_port);
 
 extern struct sockaddr_in udp_sendto_addr;//服务器用于发送的socket

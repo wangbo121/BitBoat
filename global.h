@@ -108,11 +108,13 @@
 #define AP_LISTEN_UDP_PORT     49000           //自驾仪监听地面站发送来的数据时用的端口号
 
 #define AP_SENDTO_UDP_IP         "127.0.0.1" //自驾仪向对方发送数据时，对方的socket或者网卡对应的ip地址
-#define AP_SENDTO_UDP_PORT   49005   //自驾仪向对方发送数据时，对方的socket或者网卡对应的端口号
+#define AP_SENDTO_UDP_PORT   49000   //自驾仪向对方发送数据时，对方的socket或者网卡对应的端口号
 
 #define CONTROLLER_TYPE_PID      0
 #define CONTROLLER_TYPE_ADRC  1
 #define CONTROLLER_TYPE_SMC    2
+
+#define UDP_RECVFROM_BLOCK_TIME 1000 //udp监听数据最大阻塞时间 1ms
 
 struct WAY_POINT
 {

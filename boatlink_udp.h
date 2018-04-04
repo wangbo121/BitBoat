@@ -190,6 +190,34 @@ struct GCS2AP_ALL_UDP
     unsigned char auto_work_mode;//自动模式下的工作模式，mission guide loiter
     unsigned char wp_guide_no;//设定的航点编号
 
+    unsigned char formation_type;//编队方式，0:独立航行 1领导跟随 2分布式
+};
+
+/*
+ * 一些通过地面站发送的参数需要记录在驾驶仪的flash中，
+ * 地面站只需要同步，不需要重新设置
+ */
+struct T_CONFIG_UDP
+{
+    unsigned char work_mode;
+    unsigned char rud_p;
+    unsigned char rud_i;
+    unsigned char rud_d;
+    unsigned char cte_p;
+    unsigned char cte_i;
+    unsigned char cte_d;
+    unsigned char rudder_setup_reverse;//8
+    unsigned char thruster_setup_reverse;
+    unsigned char cruise_throttle_percent;//[0-100%]巡航油门百分比数
+    unsigned char throttle_change_time;//[秒],油门改变百分之10所用的时间
+    unsigned char arrive_radius;//[10米],到达半径
+    unsigned char cte_max_degree;//[度],偏航距最大补偿角
+    unsigned char rudder_left_pos;
+    unsigned char rudder_right_pos;
+    unsigned char rudder_mid_pos;//16
+    unsigned char rudder_dead_zone_angle_degree;//[度]方向舵控制闭环时所用的死区角度数
+    unsigned char total_wp_num;//40字节
+    unsigned char current_target_wp_num;
 };
 
 /*
@@ -219,5 +247,7 @@ extern struct GCS2AP_CMD_UDP gcs2ap_cmd_udp;
  * 因为地面站传过来的数据有些是用位来表示的，需要翻译成bool型或者标志量
  */
 extern struct GCS2AP_ALL_UDP gcs2ap_all_udp;
+
+extern struct T_CONFIG_UDP boatpilot_config_udp;
 
 #endif /* BOATLINK_UDP_H_ */

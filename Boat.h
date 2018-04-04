@@ -123,6 +123,10 @@ public:
     Watercraft::sitl_fdm fdm;
     uint16_t servos_set_out[4];//这是驾驶仪计算的到的motor_out中的四个电机的转速，给电调的信号，1000～2000
 
+    /*
+     * 读取外围设备函数
+     */
+    void get_gcs_udp();//通过udp获取地面站发送给自驾仪的命令
 };
 
 extern Boat boat;

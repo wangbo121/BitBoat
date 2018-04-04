@@ -323,6 +323,14 @@ int read_socket_udp_data(int fd_socket)
 		return 0;
 	}
 
+	struct timeval timeout;
+	timeout.tv_sec = 0;//秒
+	timeout.tv_usec = UDP_RECVFROM_BLOCK_TIME;//微秒  等待100ms吧
+	if (setsockopt(fd_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1)
+	{
+		printf("read_socket_udp_data    :    setsockopt failed \n");
+	}
+
 	char recv_buf[256];
 	int recv_len;
 
@@ -332,10 +340,12 @@ int read_socket_udp_data(int fd_socket)
 	/*
 	 * 参数len为可接收数据的最大长度
 	 */
+	//printf("read_socket_udp_data    :    ready to receive \n");
 	recv_len = recvfrom(fd_socket, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr, &addr_len);
 
 	if( recv_len > 0)
 	{
+		printf("read_socket_udp_data    :    recv_len = %d \n",recv_len);
 		decode_udp_data(recv_buf, recv_len);
 	}
 

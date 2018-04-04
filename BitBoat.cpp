@@ -30,26 +30,28 @@ Watercraft sim_water_craft("32.68436,117.05525,10,0","+");//+型机架，起始�
 
 const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 {
-      { SCHED_TASK(update_GPS),                                                  10,     900 },
+      { SCHED_TASK(update_GPS),                                                  10,     100 },
       { SCHED_TASK(set_rc_out),                                                    100,     100 },
 
-      { SCHED_TASK(send_ap2gcs_cmd_boatlink),                          1,    1000 },
-      { SCHED_TASK(send_ap2gcs_wp_boatlink),                            1,    1000 },
-      { SCHED_TASK(send_ap2gcs_realtime_data_boatlink),    100,    1000 },
+//      { SCHED_TASK(send_ap2gcs_cmd_boatlink),                          1,    1000 },
+//      { SCHED_TASK(send_ap2gcs_wp_boatlink),                            1,    1000 },
+//      { SCHED_TASK(send_ap2gcs_realtime_data_boatlink),    100,    1000 },
       { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),    100,    1000 },
 
-      { SCHED_TASK(record_log),                                                   100,    1100 },
-      { SCHED_TASK(record_wp),                                                   100,    1100 },
-      { SCHED_TASK(record_config),                                                   100,    1100 },
-      { SCHED_TASK(get_timedata_now),                                     100,    1100 },
-      { SCHED_TASK(loop_slow),                                                    100,    1100 },
+//      { SCHED_TASK(record_log),                                                   100,    1100 },
+//      { SCHED_TASK(record_wp),                                                   100,    1100 },
+//      { SCHED_TASK(record_config),                                                   100,    1100 },
+      { SCHED_TASK(get_timedata_now),                                     100,    1000 },
+      { SCHED_TASK(loop_slow),                                                    100,    1000 },
 
-      { SCHED_TASK(end_of_task),                                               1000,    1100 }
+      { SCHED_TASK(get_gcs_udp),                                                    10,    1000 },
+
+      { SCHED_TASK(end_of_task),                                               1000,    1000 }
 };
 
 #define MAINTASK_TICK_TIME_MS 10//这个设置为10ms，对应每个循环100hz
 int seconds=0;
-int micro_seconds=MAINTASK_TICK_TIME_MS*(1e3);/*每个tick为20毫秒，也就是20000微秒*/
+int micro_seconds=MAINTASK_TICK_TIME_MS*(1e3);/*每个tick对应的微秒数*/
 struct timeval maintask_tick;
 
 struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
@@ -63,7 +65,7 @@ int main(int argc,char * const argv[])
 
     // 初始化任务调度表
     boat.scheduler.init(&boat.scheduler_tasks[0], sizeof(boat.scheduler_tasks)/sizeof(boat.scheduler_tasks[0]));
-    //printf(" sizeof(scheduler_tasks)/sizeof(scheduler_tasks[0]) = %d\n",sizeof(boat.scheduler_tasks)/sizeof(boat.scheduler_tasks[0]));
+    DEBUG_PRINTF(" sizeof(scheduler_tasks)/sizeof(scheduler_tasks[0]) = %d\n",sizeof(boat.scheduler_tasks)/sizeof(boat.scheduler_tasks[0]));
 
     //初始化步骤，初始化一些设备或者参数等
     boat.setup();
@@ -151,6 +153,7 @@ void Boat::loop_fast()
 void Boat::loop_slow()
 {
     //DEBUG_PRINTF("Hello loop_slow\n");
+    //printf("gcs2ap_all_udp.workmode    :    %d \n", gcs2ap_all_udp.workmode);
 }
 
 void Boat::end_of_task()
@@ -161,4 +164,9 @@ void Boat::end_of_task()
 void Boat::send_ap2gcs_realtime_data_boatlink_by_udp()
 {
 	send_ap2gcs_real_udp();
+}
+
+void Boat::get_gcs_udp()
+{
+	read_socket_udp_data( fd_socket_generic);
 }
