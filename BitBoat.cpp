@@ -120,7 +120,21 @@ void Boat::loop_fast()
     decode_gcs2ap_udp();
 
     /*2. navigation*/
+    auto_navigation.in_arrive_radius = gcs2ap_all_udp.arrive_radius;
+    auto_navigation.in_total_wp_num = global_bool_boatpilot.wp_total_num;
+    auto_navigation.in_wp_guide_no = gcs2ap_all_udp.wp_guide_no;
+    auto_navigation.in_work_mode = gcs2ap_all_udp.workmode;
+    auto_navigation.in_auto_work_mode = gcs2ap_all_udp.auto_work_mode;
+    auto_navigation.in_CTE_p = (float)gcs2ap_all_udp.cte_p * 0.1;
+    auto_navigation.in_CTE_i = (float)gcs2ap_all_udp.cte_i * 0.01;
+    auto_navigation.in_CTE_d = (float)gcs2ap_all_udp.cte_d * 0.1;
+
     navigation_loop(&auto_navigation,wp_data,&gps_data);
+
+    global_bool_boatpilot.current_to_target_radian = (short)(auto_navigation.out_current_to_target_radian * 1000.0);
+    //global_bool_boatpilot.current_to_target_degree = auto_navigation.out_current_to_target_degree;
+    global_bool_boatpilot.command_course_radian = (short)(auto_navigation.out_command_course_radian);
+    //global_bool_boatpilot.command_course_degree = auto_navigation.out_command_course_degree;
 
     /*3 control*/
     control_loop();

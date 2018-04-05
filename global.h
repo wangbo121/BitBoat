@@ -203,10 +203,18 @@ struct T_GLOBAL_BOOL_BOATPILOT
     short right_motor_voltage;//单位[0.1伏特]
     short rudder_angle_degree;//单位[度] 范围[-45-+45度]这是通过码盘读回来的真实的方向舵的角度值，通过实时数据返回给地面站
     short cte_error_check_radian;//psi_r根据偏航距得到的修正方向舵角[-3.14*1000-+3.14*1000]
-    short current_to_target_radian;//[-180*1000-+180*1000][0.001弧度]
-    short command_radian;//[-180*1000-+180*1000][0.001弧度]
     short dir_target_degree;//[0.01度]当前位置与目标航点位置的方位角bearing angle
     short dir_nav_degree;//80字节//[0.01度]制导算法得到的导航目标航迹角course angle或者航向角heading angle
+
+    short current_to_target_radian;//[-180*1000-+180*1000][0.001弧度]
+    short current_to_target_degree;
+	short command_course_radian;//[-180*1000-+180*1000][0.001弧度]
+	short command_course_degree;
+
+
+
+
+
 
     int cte_distance_error;//84字节//[0.01米]
 
