@@ -258,7 +258,7 @@ float get_cross_track_error_correct_radian_NED_PID(struct T_LOCATION *last_targe
 
 	CTE_m=get_cross_track_error_NED(last_target_loc, current_loc, target_loc);
 	//printf("偏航距离是 NED=%f[m]\n",CTE_m);//20170508已测试
-	global_bool_boatpilot.cte_distance_error=(short)fabs(CTE_m)*100;//这个是为了距离扩大100倍发送到地面站
+	//global_bool_boatpilot.cte_distance_error=(short)fabs(CTE_m)*100;//这个是为了距离扩大100倍发送到地面站
 
 	float atan_cte=0.0;
 	atan_cte = 0.5 * atan(CTE_m);// 2/pi*arctan(CTE_m) 限制幅度是pi/4

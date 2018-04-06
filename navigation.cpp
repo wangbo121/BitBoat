@@ -165,11 +165,7 @@ static int get_navigation_output(struct T_NAVIGATION *ptr_auto_navigation,\
 																					  ptr_auto_navigation->current_target_loc,\
 																					  &guidance_ctrl);
 		   ptr_auto_navigation->gps_course_angle_radian=ptr_gps_data->course;
-
-		   ptr_auto_navigation->gps_heading_angle_degree=((float)ptr_gps_data->yaw)*GPS_DIRECTION_INT_TO_REAL;
-		   ptr_auto_navigation->gps_heading_angle_radian=convert_degree_to_radian(ptr_auto_navigation->gps_heading_angle_degree);
 		}
-		//global_bool_boatpilot.wp_next=ptr_auto_navigation->current_target_wp_cnt;
 		ptr_auto_navigation->out_current_target_wp_cnt = ptr_auto_navigation->current_target_wp_cnt;
 		ptr_auto_navigation->out_current_to_target_radian = guidance_ctrl.out_current_to_target_radian;
 		ptr_auto_navigation->out_current_to_target_degree = guidance_ctrl.out_current_to_target_radian;
@@ -219,9 +215,6 @@ static int get_navigation_output(struct T_NAVIGATION *ptr_auto_navigation,\
 																					   ptr_auto_navigation->current_target_loc,\
 																					   &guidance_ctrl);
 			ptr_auto_navigation->gps_course_angle_radian=ptr_gps_data->course;
-
-			ptr_auto_navigation->gps_heading_angle_degree=((float)ptr_gps_data->yaw)*GPS_DIRECTION_INT_TO_REAL;
-			ptr_auto_navigation->gps_heading_angle_radian=convert_degree_to_radian(ptr_auto_navigation->gps_heading_angle_degree);
 		}
 		ptr_auto_navigation->out_current_target_wp_cnt = ptr_auto_navigation->current_target_wp_cnt;
 		ptr_auto_navigation->out_current_to_target_radian = guidance_ctrl.out_current_to_target_radian;

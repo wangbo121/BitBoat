@@ -69,7 +69,7 @@ int read_gps_data(unsigned char *buf, unsigned int len)
      */
     if(len > valid_len)
     {
-        global_bool_boatpilot.gps_wait_time=0;
+        //global_bool_boatpilot.gps_wait_time=0;
     }
 
 	gps_analysis(&gpsx, (unsigned char*)buf);

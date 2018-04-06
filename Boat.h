@@ -33,7 +33,6 @@
 #include "all_external_device.h"
 #include "SIM_Vehicle.h"
 #include "global.h"
-//#include "boatlink.h"
 #include "control.h"
 #include "navigation.h"
 #include "boatlink_udp.h"
@@ -56,12 +55,10 @@
 #define LAND 9                          // AUTO control
 #define OF_LOITER 10            // Hold a single location using optical flow
 
-
-
 class Boat
 {
 public:
-    friend class GCS_MAVLINK;
+//    friend class GCS_MAVLINK;
 
     BIT_PID pid_yaw;
     BIT_PID pid_CTE;
@@ -72,6 +69,7 @@ public:
 		* 在构造函数的开始就初始化一些内部变量
 		*/
 		control_mode            = STABILIZE;
+		loop_cnt = 0;
     }
 
     // main loop scheduler
@@ -81,53 +79,53 @@ public:
     void setup();
     void loop();
 
-//    static int 				   fd_boatpilot_log;
-//    static  int				   fd_waypoint;
-
-
-    private:
+private:
     uint8_t          control_mode;
     uint32_t        loop_cnt;
 
-//    int 				   fd_boatpilot_log;
-//    int				   fd_waypoint;
-    //int				   fd_config;
+private:
+    void get_timedata_now();//获取当前的时间，包含年月日时分秒的
 
-    // Global parameters are all contained within the 'g' class. 勿删保留
-    //Parameters g;
-
-    private:
     void loop_fast();
-    void loop_slow();
+    void loop_one_second();
     void end_of_task();
 
-    void send_ap2gcs_cmd_boatlink();
-    void send_ap2gcs_wp_boatlink();
-    void send_ap2gcs_realtime_data_boatlink();
-
+    void get_gcs_udp(); // 通过udp获取地面站发送给自驾仪的命令
+    void get_gcs_radio(); // 通过无线电radio获取地面站发送给自驾仪的命令
     void send_ap2gcs_realtime_data_boatlink_by_udp();
+
+    void update_all_external_device_input( void );
+    /*
+     * update_GPS update_mpu6050都是假的获取传感器数据，是从all_external_device_input这个结构中获取想要的数据
+     * 真正的读取传感器的函数是read_device_...，这些函数把从传感器读取的数据存入到all_external_device_input中
+     */
+    void update_GPS();//
+    void update_mpu6050();// 从all_external_device_input 获取 acc/gyo/姿态
+
+    //  //自驾仪虚拟地输出数据，把控制量啥的输出到all_external_device_output
+    void out_execute_ctrloutput();
 
     void record_config();//记录配置文件
     void record_wp();//记录航点文件
     void record_log();//记录日志
 
-    void set_rc_out();//这给用来设置舵机和电机所使用的pwm波，频率是50hz
-    void set_gpio();//设置gpio，
-    void set_analogs();//设置模拟量
-    void set_relays();//设置继电器开关量
-
-    void get_timedata_now();//获取当前的时间，包含年月日时分秒的
-    void update_all_external_device_input( void );
-    void update_GPS();
-
-    Watercraft::sitl_input input;//这个是4个电机的输入，然后用于multi_copter.update(input)更新出飞机的飞行状态
-    Watercraft::sitl_fdm fdm;
-    uint16_t servos_set_out[4];//这是驾驶仪计算的到的motor_out中的四个电机的转速，给电调的信号，1000～2000
+    /*
+     * 读取和设置外围设备函数
+     * 这些是真正的读取硬件设备的函数
+     */
+    void read_device_gps();
+    void read_device_mpu6050();
+    void set_device_rc_out();//这给用来设置舵机和电机所使用的pwm波，频率是50hz
+    void set_device_gpio();//设置gpio
+    void set_device_analog();//设置模拟量
+    void set_device_relays();//设置继电器开关量
 
     /*
-     * 读取外围设备函数
+     * 航行器的物理数学模型
      */
-    void get_gcs_udp();//通过udp获取地面站发送给自驾仪的命令
+    Watercraft::sitl_input input;// 是rudder 和 thruster输入，然后用于更新出航行器的航行状态
+    Watercraft::sitl_fdm fdm;
+    uint16_t servos_set_out[4];//这是驾驶仪计算的到的motor_out中的四个电机的转速，给电调的信号，1000～2000
 };
 
 extern Boat boat;

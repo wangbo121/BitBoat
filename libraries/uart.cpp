@@ -30,11 +30,10 @@
 #define UART_DEV_TOTAL 12
 #define UART_BUF_SIZE  512
 
-static char *uart_dev[UART_DEV_TOTAL]={"/dev/ttyO0","/dev/ttyO1","/dev/ttyO2","/dev/ttyO3","/dev/ttyO4","/dev/ttyO5",\
+static const char *uart_dev[UART_DEV_TOTAL]={"/dev/ttyO0","/dev/ttyO1","/dev/ttyO2","/dev/ttyO3","/dev/ttyO4","/dev/ttyO5",\
                                                                              "/dev/ttyUSB0","/dev/ttyUSB1","/dev/ttyUSB2","/dev/ttyUSB3","/dev/ttyUSB4","/dev/ttyUSB5",\
                                                                             };
 static int uart_fd[UART_DEV_TOTAL]={0};
-static pthread_t uart_pthrd[UART_DEV_TOTAL]={0};
 
 static int get_uart_num(char *uart_name)
 {
@@ -141,6 +140,7 @@ struct serial_t
     int    startbit;
     struct termios    options;
 };
+
 int serial_set_speci_baud(struct serial_t *tty,int baud)
 {
    struct serial_struct ss,ss_set;
@@ -220,6 +220,18 @@ int set_uart_opt(char *uart_name, int speed, int bits, char event, int stop)
 
     switch (speed)
     {
+    case 300:
+        cfsetispeed(&newtio, B300);
+        cfsetospeed(&newtio, B300);
+        break;
+    case 600:
+        cfsetispeed(&newtio, B600);
+        cfsetospeed(&newtio, B600);
+        break;
+    case 1200:
+        cfsetispeed(&newtio, B1200);
+        cfsetospeed(&newtio, B1200);
+        break;
     case 2400:
         cfsetispeed(&newtio, B2400);
         cfsetospeed(&newtio, B2400);
@@ -232,20 +244,29 @@ int set_uart_opt(char *uart_name, int speed, int bits, char event, int stop)
         cfsetispeed(&newtio, B9600);
         cfsetospeed(&newtio, B9600);
         break;
-    case 57600:
-        cfsetispeed(&newtio, B57600);
-        cfsetospeed(&newtio, B57600);
+    case 19200:
+		cfsetispeed(&newtio, B19200);
+		cfsetospeed(&newtio, B19200);
+		break;
+    case 38400:
+        cfsetispeed(&newtio, B38400);
+        cfsetospeed(&newtio, B38400);
         break;
-    case 100000:
-    	struct serial_t tty;
-    	tty.fd = fd;
-    	tty.baud = 100000;
-    	serial_set_speci_baud(&tty, 100000);
-    	return 0;
+    case 57600:
+		cfsetispeed(&newtio, B57600);
+		cfsetospeed(&newtio, B57600);
+		break;
     case 115200:
         cfsetispeed(&newtio, B115200);
         cfsetospeed(&newtio, B115200);
         break;
+
+    case 100000:
+    	struct serial_t tty;
+    	tty.fd = fd;
+    	tty.baud = 100000; //读取sbus串口数据
+    	serial_set_speci_baud(&tty, 100000);
+    	return 0;
     default:
         cfsetispeed(&newtio, B9600);
         cfsetospeed(&newtio, B9600);
@@ -321,7 +342,7 @@ int read_uart_data(char *uart_name, char *rcv_buf, int time_out_ms, int buf_len)
         }
 
         //retval = select(FD_SETSIZE, &rfds, NULL, NULL, &tv);
-        retval = select(fd + 1, &rfds, NULL, NULL, &tv);
+        retval = select(fd + 1, &rfds, NULL, NULL, &tv);//非堵塞模式读取串口数据
 
         if (retval == -1)
         {
@@ -357,7 +378,7 @@ int read_uart_data_one_byte(char *uart_name)
     int retval;
     static fd_set rfds;
     struct timeval tv;
-    int ret, pos;
+    int ret;
 
     tv.tv_sec = 0;  //set the rcv wait time
     tv.tv_usec = 20 * 1000;  //100000us = 0.1s  2毫秒
@@ -366,8 +387,6 @@ int read_uart_data_one_byte(char *uart_name)
     struct stat temp_stat;
 
     fd=get_uart_fd(uart_name);
-
-    char ret_char;
 
     while (1)
     {
@@ -379,7 +398,6 @@ int read_uart_data_one_byte(char *uart_name)
             printf("fstat %d error:%s",fd,strerror(errno));
         }
 
-        //retval = select(FD_SETSIZE, &rfds, NULL, NULL, &tv);
         retval = select(fd + 1, &rfds, NULL, NULL, &tv);
 
         if (retval == -1)
@@ -411,64 +429,13 @@ int read_uart_data_one_byte(char *uart_name)
     }
 }
 
-void *uart_recvbuf_and_process(void * ptr_pthread_arg)
-{
-    char buf[UART_BUF_SIZE] = { 0 };
-    unsigned int read_len;
-
-    struct T_UART_DEVICE *ptr_uart;
-
-    ptr_uart=(struct T_UART_DEVICE *)ptr_pthread_arg;
-
-    while(1)
-    {
-       if(-1!=(read_len=read_uart_data(ptr_uart->uart_name, buf, 200, sizeof(buf)-1)))
-       {
-#if 0
-       printf("read_len=%d\n",read_len);
-       buf[read_len]='\0';
-       printf("%s\n",buf);
-#endif
-           if(read_len>0)
-           {
-               ptr_uart->ptr_fun((unsigned char*)buf,read_len);
-           }
-       }
-    }
-}
-
-int create_uart_pthread(struct T_UART_DEVICE *ptr_uart)
-{
-    int ret=0;
-    int uart_no;
-
-    //20171124这个temp_device必须是静态的或者在程序永久存在的，因为pthread_create函数会循环调用这参数，勿删
-    static struct T_UART_DEVICE temp_device;
-
-    memcpy(&temp_device,ptr_uart,sizeof(struct T_UART_DEVICE));
-
-    uart_no=ptr_uart->uart_num;
-    printf("线程uart_no=%d,ptr_uart->uart_num=%d\n",uart_no,ptr_uart->uart_num);
-
-    ret = pthread_create (&uart_pthrd[uart_no],            //线程标识符指针
-                              NULL,                            //默认属性
-                              uart_recvbuf_and_process,//运行函数
-                              (void *)&temp_device);                 //运行函数的参数
-    if (0 != ret)
-    {
-       perror ("pthread create error\n");
-    }
-
-    return 0;
-}
-
 int close_uart_dev(char *uart_name)
 {
     int fd=0;
 
     fd=get_uart_fd(uart_name);
 
-    if(fd!=-1)
+    if(fd != -1)
     {
         close(fd);
     }

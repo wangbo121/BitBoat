@@ -10,7 +10,7 @@
 
 /*
  * 适用范围
- * 波特率:   2400 4800 9600 57600 115200
+ * 波特率:   300 600 1200 2400 4800 9600 19200 38400 57600 115200 100000(读取sbus)
  * 设备:       "/dev/ttyO0","/dev/ttyO1","/dev/ttyO2","/dev/ttyO3","/dev/ttyO4","/dev/ttyO5"
  *                 "/dev/ttyUSB0","/dev/ttyUSB1","/dev/ttyUSB2","/dev/ttyUSB3","/dev/ttyUSB4","/dev/ttyUSB5"
  */
@@ -60,6 +60,6 @@ int close_uart_dev(char *uart_name);
  * 而这个设备是什么样的协议就需要修改这个ptr_fun函数的具体实现，
  * 在使用时只需要把接收该设备的数据的函数的地址赋给ptr_uart_device就可以了
  */
-int create_uart_pthread(struct T_UART_DEVICE *ptr_uart_device);
+//int create_uart_pthread(struct T_UART_DEVICE *ptr_uart_device);
 
 #endif /* UART_H_ */

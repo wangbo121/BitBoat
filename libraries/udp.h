@@ -20,7 +20,7 @@
  * 其实htonl这些函数最后调用的还是__bswap
  */
 
-#define UDP_BUF_SIZE 2048
+#define UDP_RECV_BUF_SIZE 2048
 
 #define IP_SEND_TO "127.0.0.1"
 //#define IP_SEND_TO "10.108.17.250"
@@ -36,7 +36,7 @@ struct T_UDP_DEVICE
     int (*ptr_fun)(unsigned char *buf,unsigned int len);
 };
 
-extern unsigned char udp_recvbuf[UDP_BUF_SIZE];
+extern unsigned char udp_recvbuf[UDP_RECV_BUF_SIZE];
 
 int open_udp_dev(char* ip_sendto, unsigned int port_sendto,unsigned int port_myrecv);
 int read_udp_data(unsigned char *buf, unsigned int len);

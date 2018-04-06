@@ -53,18 +53,28 @@ template float wrap_PI<double>(const double radian);
 
 Watercraft::Watercraft(const char *home_str, const char *frame_str)
 {
+	math_heading = 0.0;
+	math_omega_z = 0.0;
+
+	position_x = 0.0;
+	position_y = 0.0;
+	velocity_x = 0.0;
+	velocity_y = 0.0;
+
 	char *saveptr=NULL;
 	char *s = strdup(home_str);
 	char *lat_s = strtok_r(s, ",", &saveptr);
 	char *lon_s = strtok_r(NULL, ",", &saveptr);
 	char *alt_s = strtok_r(NULL, ",", &saveptr);
-	char *yaw_s = strtok_r(NULL, ",", &saveptr);
+	//char *yaw_s = strtok_r(NULL, ",", &saveptr);
 
 	memset(&home, 0, sizeof(home));
 	home.lat = atof(lat_s) * 1.0e7;
 	home.lng = atof(lon_s) * 1.0e7;
 	home.alt = atof(alt_s) * 1.0e2;
 	location = home;
+
+
 }
 
 /*

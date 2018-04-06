@@ -30,9 +30,19 @@ Watercraft sim_water_craft("32.68436,117.05525,10,0","+");//+型机架，起始�
 
 const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 {
+		// 自驾仪虚拟地获取传感器数据，从all_external_device_input 虚拟获取
       { SCHED_TASK(update_GPS),                                                  10,     100 },
-      { SCHED_TASK(set_rc_out),                                                    100,     100 },
+      { SCHED_TASK(update_mpu6050),                                                  10,     100 },
 
+      //自驾仪虚拟地输出数据，把控制量啥的输出到all_external_device_output
+
+      //真正读取传感器函数
+      { SCHED_TASK(read_device_gps),                                                  10,     100 },
+
+      //真正设置外部设备函数，比如设置继电器让方向舵切换左右转
+      { SCHED_TASK(set_device_rc_out),                                                    100,     100 },
+
+      { SCHED_TASK(get_gcs_udp),                                                    10,    1000 },
 //      { SCHED_TASK(send_ap2gcs_cmd_boatlink),                          1,    1000 },
 //      { SCHED_TASK(send_ap2gcs_wp_boatlink),                            1,    1000 },
 //      { SCHED_TASK(send_ap2gcs_realtime_data_boatlink),    100,    1000 },
@@ -41,11 +51,9 @@ const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 //      { SCHED_TASK(record_log),                                                   100,    1100 },
 //      { SCHED_TASK(record_wp),                                                   100,    1100 },
 //      { SCHED_TASK(record_config),                                                   100,    1100 },
+
       { SCHED_TASK(get_timedata_now),                                     100,    1000 },
-      { SCHED_TASK(loop_slow),                                                    100,    1000 },
-
-      { SCHED_TASK(get_gcs_udp),                                                    10,    1000 },
-
+      { SCHED_TASK(loop_one_second),                                                    100,    1000 },
       { SCHED_TASK(end_of_task),                                               1000,    1000 }
 };
 
@@ -53,8 +61,6 @@ const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 int seconds=0;
 int micro_seconds=MAINTASK_TICK_TIME_MS*(1e3);/*每个tick对应的微秒数*/
 struct timeval maintask_tick;
-
-struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
 
 int main(int argc,char * const argv[])
 {
@@ -110,12 +116,10 @@ void Boat::loop_fast()
     update_all_external_device_input();
 
     /*1. decode_gcs2ap_radio*/
-    //decode_gcs2ap_radio();
     decode_gcs2ap_udp();
 
     /*2. navigation*/
     navigation_loop();
-
     global_bool_boatpilot.current_to_target_radian = (short)(auto_navigation.out_current_to_target_radian * 1000.0);
     //global_bool_boatpilot.current_to_target_degree = auto_navigation.out_current_to_target_degree;
     global_bool_boatpilot.command_course_radian = (short)(auto_navigation.out_command_course_radian);
@@ -123,7 +127,6 @@ void Boat::loop_fast()
 
     /*3 control*/
     control_loop();
-
 
     /*
      * 下面是把驾驶仪计算得到的电机或者舵机的输出给到simulator模拟器中
@@ -134,25 +137,4 @@ void Boat::loop_fast()
     memcpy(input.servos,servos_set_out,sizeof(servos_set_out));
     sim_water_craft.update(input);
     sim_water_craft.fill_fdm(fdm);
-}
-
-void Boat::loop_slow()
-{
-    //DEBUG_PRINTF("Hello loop_slow\n");
-    //printf("gcs2ap_all_udp.workmode    :    %d \n", gcs2ap_all_udp.workmode);
-}
-
-void Boat::end_of_task()
-{
-	//DEBUG_PRINTF("Hello end_of_task\n");
-}
-
-void Boat::send_ap2gcs_realtime_data_boatlink_by_udp()
-{
-	send_ap2gcs_real_udp();
-}
-
-void Boat::get_gcs_udp()
-{
-	read_socket_udp_data( fd_socket_generic);
 }

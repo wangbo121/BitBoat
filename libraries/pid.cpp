@@ -8,17 +8,20 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "pid.h"
 #include "utility.h"
-
-#ifndef  M_PI
-# define M_PI		3.14159265358979323846	/* pi */
-# define M_PI_2		1.57079632679489661923	/* pi/2 */
-#endif
+#include "pid.h"
 
 BIT_PID::BIT_PID()
 {
-
+	_kp = 0.0;
+	_ki = 0.0;
+	_kd = 0.0;
+	_integrator = 0.0;
+	_last_error = 0.0;
+	_last_derivative = 0.0;
+	_output = 0.0;
+	_derivative = 0.0;
+	_imax = 0.0;
 }
 const float        BIT_PID::_filter = 7.9577e-3; // Set to  "1 / ( 2 * PI * f_cut )";
 
@@ -136,11 +139,9 @@ float BIT_PID::get_pi(float error, float dt)
 
 /***************************/
 /*
- * 下面是为了论文中添加有限时间控制器
+ * 下面是有限时间控制器
  */
-/*
- * 这个函数还是有点问题，这个dt我现在是固定的为20ms
- */
+
 float sig(float x, float alpha)
 {
 	if(x > 0)
@@ -148,7 +149,6 @@ float sig(float x, float alpha)
 	else
 		return - pow(- x, alpha);
 }
-
 
 float BIT_PID::get_pid_finite(float error, float dt, float scaler)
 {
@@ -160,7 +160,6 @@ float BIT_PID::get_pid_finite(float error, float dt, float scaler)
  	float alpha2 = 0.75;
 
  	float error_finite_time = sig(error, alpha1);
-	//output += error * _kp;
  	output += error_finite_time * _kp;
 
 	// Compute derivative component if time has elapsed
@@ -180,27 +179,10 @@ float BIT_PID::get_pid_finite(float error, float dt, float scaler)
 
 		float derivative_finite_time = sig(derivative, alpha2);
 		output 				+= _kd * derivative_finite_time;
-		// add in derivative component
-		//output 				+= _kd * derivative;
 	}
 
 	// scale the P and D components
 	output *= scaler;
-
-//	// Compute integral component if time has elapsed
-//	if ((fabs(_ki) > 0) && (dt > 0))
-//	{
-//		_integrator 		+= (error * _ki) * scaler * delta_time;
-//		if (_integrator < -_imax)
-//		{
-//			_integrator = -_imax;
-//		}
-//		else if (_integrator > _imax)
-//		{
-//			_integrator = _imax;
-//		}
-//		output 				+= _integrator;
-//	}
 
 	return output;
 }

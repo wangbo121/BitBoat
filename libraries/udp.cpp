@@ -192,11 +192,11 @@ int send_socket_udp_data(int fd_socket, unsigned char *buf, unsigned int len, ch
 static int udp_recv_state=0;
 int decode_udp_data(char *buf, int len)
 {
-	static unsigned char _buffer[UDP_BUF_SIZE];
+	static unsigned char _buffer[UDP_RECV_BUF_SIZE];
 
 	static unsigned char _pack_recv_len[4] = {0};
 	static int _pack_recv_real_len = 0;//表示收到的包中的数据包长度len这个short型数据
-	static unsigned char _pack_recv_buf[UDP_BUF_SIZE];
+	static unsigned char _pack_recv_buf[UDP_RECV_BUF_SIZE];
 	static int _pack_buf_len = 0;
 
 	int _length;

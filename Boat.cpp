@@ -9,11 +9,6 @@
 
 Boat boat;
 
-int fd_boatpilot_log;
-int fd_waypoint;
-int fd_config;
-int fd_socket_generic;
-
 void Boat::setup( void )
 {
 
@@ -21,7 +16,6 @@ void Boat::setup( void )
      * 创建要保存的二进制日志文件boatpilot_log
      */
     fd_boatpilot_log=create_log_file(BOATPILOT_LOG_FILE);
-    //printf("Boat::setup    :    fd =%d\n",fd_boatpilot_log);
 
     /*
      * 载入航点文件waypoint
@@ -64,7 +58,6 @@ void Boat::setup( void )
         gcs2ap_all_udp.rudder_mid_pos=boatpilot_config_udp.rudder_mid_pos;
         global_bool_boatpilot.wp_next=boatpilot_config_udp.current_target_wp_num;
         global_bool_boatpilot.wp_total_num=boatpilot_config_udp.total_wp_num;
-
     }
 
 #ifdef __RADIO_
@@ -84,8 +77,7 @@ void Boat::setup( void )
      * 初始化自驾仪控制量输入以及参数的初始值，
      * 下面所有的设置都是从地面站获取后使用
      * 尤其注意初始的方向舵和油门量值
-     * 控制量的限幅参数，
-     * 这些参数都是unsigned char 8位无符号
+     * 控制量的限幅参数
      */
     gcs2ap_all_udp.rud_p=20;//rud_p单位是[0.1]所以一开始要赋值大一些
 	gcs2ap_all_udp.arrive_radius=10;//单位是[10米]，初始到达半径设置为100米
@@ -106,29 +98,25 @@ void Boat::setup( void )
 
     /*
      * 下面是全局变量global_bool_boatpilot的初始化
-     * global_bool_boatpilot和gcs2ap_radio_all的区别在于后者是从地面站发送过来的参数
-     * 但是一些标志量用global_bool_boatpilot中的bool表示
+     * global_bool_boatpilot和gcs2ap_all_udp的区别在于后者是从地面站发送过来的参数，
+     * 而global_bool_boatpilot是驾驶仪内部需要的全局计算量
+     * 一些标志量用global_bool_boatpilot中的bool表示
      */
-    global_bool_boatpilot.radio_send_time=clock_gettime_s();/*从系统开启的到当前的时间，作为程序运行时间的开始计时*/
-    global_bool_boatpilot.rudder_middle_position=368.0;
-    global_bool_boatpilot.rudder_left_limit_position=368.0*0.5;
-    global_bool_boatpilot.rudder_right_limit_position=368.0*0.5;
     global_bool_boatpilot.turn_mode=1;////转弯方式，0:方向舵，1:差速 2:方向舵和差速同时混合转弯
-
     global_bool_boatpilot.save_boatpilot_log_req = TRUE;
 
     /*
      * 设置PID控制器的参数
      */
-    pid_yaw.set_kP(2);
-    pid_yaw.set_kI(0);
-    pid_yaw.set_kD(0);
-    pid_yaw.set_imax(0.174*3);//30度
+    pid_yaw.set_kP( 2 );
+    pid_yaw.set_kI( 0 );
+    pid_yaw.set_kD( 0 );
+    pid_yaw.set_imax( 0.174 * 3 );//30度
 
-    pid_CTE.set_kP(2);
-    pid_CTE.set_kI(0);
-    pid_CTE.set_kD(0);
-    pid_CTE.set_imax(0.174*3);//30度
+    pid_CTE.set_kP( 2 );
+    pid_CTE.set_kI( 0 );
+    pid_CTE.set_kD( 0 );
+    pid_CTE.set_imax( 0.174 * 3 );//30度
 
     /*
      * 有1个网卡是用来监听地面站向自驾仪发送数据的
@@ -136,174 +124,6 @@ void Boat::setup( void )
      */
     printf("Boat::setup    :    fd_socket_generic = %d \n",fd_socket_generic);
     open_socket_udp_dev(&fd_socket_generic, "AP_LISTEN_UDP_IP", AP_LISTEN_UDP_PORT);
-}
-
-void Boat::send_ap2gcs_cmd_boatlink()
-{
-    if(global_bool_boatpilot.send_ap2gcs_cmd_req)
-    {
-        //printf("电台--请求发送命令数据给地面站\n");//20170410已测试，地面站能够接收所有回传命令
-        global_bool_boatpilot.ap2gcs_cmd_cnt++;
-        if(global_bool_boatpilot.ap2gcs_cmd_cnt_previous!=global_bool_boatpilot.ap2gcs_cmd_cnt)
-        {
-            //发送/回传命令给地面站
-           // send_ap2gcs_cmd();
-
-            global_bool_boatpilot.ap2gcs_cmd_cnt_previous=global_bool_boatpilot.ap2gcs_cmd_cnt;
-            global_bool_boatpilot.send_ap2gcs_cmd_req=FALSE;
-        }
-    }
-}
-
-void Boat::send_ap2gcs_wp_boatlink()
-{
-    if(global_bool_boatpilot.send_ap2gcs_wp_req)
-    {
-        printf("电台--请求发送航点数据给地面站\n");
-        global_bool_boatpilot.ap2gcs_wp_cnt++;
-
-        if(global_bool_boatpilot.ap2gcs_wp_cnt_previous!=global_bool_boatpilot.ap2gcs_wp_cnt)
-        {
-            //ap2gcs_wp.pack_func_info3=global_bool_boatpilot.ap2gcs_wp_cnt;
-
-            if(global_bool_boatpilot.send_ap2gcs_wp_end_num>=global_bool_boatpilot.wp_total_num-1)
-            {
-                global_bool_boatpilot.send_ap2gcs_wp_end_num=global_bool_boatpilot.wp_total_num-1;
-            }
-            //send_ap2gcs_waypoint_num(global_bool_boatpilot.send_ap2gcs_wp_start_num,global_bool_boatpilot.send_ap2gcs_wp_end_num-global_bool_boatpilot.send_ap2gcs_wp_start_num+1);
-
-            global_bool_boatpilot.ap2gcs_wp_cnt_previous=global_bool_boatpilot.ap2gcs_wp_cnt;
-            global_bool_boatpilot.send_ap2gcs_wp_req=FALSE;
-        }
-    }
-}
-
-void Boat::send_ap2gcs_realtime_data_boatlink()
-{
-    if( (!global_bool_boatpilot.send_ap2gcs_wp_req) && (!global_bool_boatpilot.send_ap2gcs_cmd_req) )
-    {
-    	//printf("电台--请求发送实时数据给地面站\n");//20170410已测试，地面站能够接收所有实时数据
-		global_bool_boatpilot.ap2gcs_real_cnt++;
-		if(global_bool_boatpilot.ap2gcs_real_cnt_previous!=global_bool_boatpilot.ap2gcs_real_cnt)
-		{
-			//发送实时数据
-			//DEBUG_PRINTF("发送实时数据\n");
-			//send_ap2gcs_real();
-
-			global_bool_boatpilot.ap2gcs_real_cnt_previous=global_bool_boatpilot.ap2gcs_real_cnt;
-			global_bool_boatpilot.send_ap2gcs_real_req=FALSE;
-		}
-    }
-}
-
-void Boat::record_config()
-{
-#if 0
-    if(global_bool_boatpilot.assign_config_req)
-    {
-    	//printf("更新config fd_config = %d \n",fd_config);
-        global_bool_boatpilot.assign_config_cnt++;
-        if(global_bool_boatpilot.assign_config_cnt_previous!=global_bool_boatpilot.assign_config_cnt)
-        {
-            boatpilot_config.work_mode=gcs2ap_radio_all.workmode;
-            boatpilot_config.rud_p=gcs2ap_radio_all.rud_p;
-            boatpilot_config.rud_i=gcs2ap_radio_all.rud_i;
-            boatpilot_config.rud_d=gcs2ap_radio_all.rud_d;
-            boatpilot_config.cte_p=gcs2ap_radio_all.cte_p;
-            boatpilot_config.cte_i=gcs2ap_radio_all.cte_i;
-            boatpilot_config.cte_d=gcs2ap_radio_all.cte_d;
-            boatpilot_config.rudder_setup_reverse=gcs2ap_radio_all.rudder_setup_reverse;
-            boatpilot_config.thruster_setup_reverse=gcs2ap_radio_all.thruster_setup_reverse;
-            boatpilot_config.cruise_throttle_percent=gcs2ap_radio_all.cruise_throttle_percent;
-            boatpilot_config.throttle_change_time=gcs2ap_radio_all.throttle_change_time;
-            boatpilot_config.arrive_radius=gcs2ap_radio_all.arrive_radius;
-            boatpilot_config.cte_max_degree=gcs2ap_radio_all.cte_max_degree;
-            boatpilot_config.rudder_left_pos=gcs2ap_radio_all.rudder_left_pos;
-            boatpilot_config.rudder_right_pos=gcs2ap_radio_all.rudder_right_pos;
-            boatpilot_config.rudder_mid_pos=gcs2ap_radio_all.rudder_mid_pos;
-
-            boatpilot_config.set_switch_channel=gcs2ap_radio_all.set_switch_channel;
-            boatpilot_config.set_switch_low_limit=gcs2ap_radio_all.set_switch_low_limit;
-            boatpilot_config.set_switch_high_limit=gcs2ap_radio_all.set_switch_high_limit;
-            boatpilot_config.set_charge_channel=gcs2ap_radio_all.set_charge_channel;
-            boatpilot_config.set_charge_voltage=gcs2ap_radio_all.set_charge_voltage;
-            boatpilot_config.set_charge_current=gcs2ap_radio_all.set_charge_current;
-            boatpilot_config.rudder_dead_zone_angle_degree=gcs2ap_radio_all.rudder_dead_zone_angle_degree;
-
-            boatpilot_config.current_target_wp_num=global_bool_boatpilot.wp_next;
-            boatpilot_config.total_wp_num=global_bool_boatpilot.wp_total_num;
-
-            global_bool_boatpilot.assign_config_cnt_previous=global_bool_boatpilot.assign_config_cnt;
-            global_bool_boatpilot.assign_config_req=FALSE;
-        }
-    }
-
-    if(memcmp(&boatpilot_config_previous,&boatpilot_config,sizeof(boatpilot_config))==0)
-    {
-        //printf("config没有变化，不保存\n");
-    }
-    else
-    {
-        printf("config发生了变化，需要重新保存\n");//20170413已测试，可以在参数更改后保存boatpilot_config
-        global_bool_boatpilot.save_config_req=TRUE;
-    }
-    if(global_bool_boatpilot.save_config_req)
-    {
-        int write_len;
-
-        write_len=write(fd_config,&boatpilot_config,sizeof(struct T_CONFIG));
-        printf("config写入了%d个字节的数据\n",write_len);
-
-        boatpilot_config_previous=boatpilot_config;
-        global_bool_boatpilot.save_config_req=FALSE;
-    }
-#endif
-}
-
-void Boat::record_wp()
-{
-	int write_len;
-
-	if(global_bool_boatpilot.save_wp_req)
-	{
-		write_len=write(fd_waypoint,(char *)wp_data,sizeof(struct WAY_POINT)*MAX_WAYPOINT_NUM);
-		global_bool_boatpilot.save_wp_req = FALSE;
-	}
-}
-
-void Boat::record_log()
-{
-	//DEBUG_PRINTF("记录日志\n");
-	global_bool_boatpilot.save_boatpilot_log_req = TRUE;
-    if(global_bool_boatpilot.save_boatpilot_log_req)
-    {
-#if 0
-        /*时间戳*/
-        boatpilot_log.year=datetime_now.year;
-        boatpilot_log.month=datetime_now.month;
-        boatpilot_log.day=datetime_now.day;
-        boatpilot_log.hour=datetime_now.hour;
-        boatpilot_log.minute=datetime_now.minute;
-        boatpilot_log.second=datetime_now.second;
-        boatpilot_log.stuffing=datetime_now.stuffing;
-
-        memcpy(&boatpilot_log.ap2gcs_real,&ap2gcs_real,sizeof(ap2gcs_real));
-        memcpy(&boatpilot_log.gcs2ap_radio,&gcs2ap_radio_all,sizeof(gcs2ap_radio_all));
-        memcpy(&boatpilot_log.global,&global_bool_boatpilot.bool_get_gcs2ap_cmd,sizeof(boatpilot_log.global));
-
-        /*
-         * 保存日志文件到二进制文件boatpilot_log
-         * 尽量把sizeof(boatpilot_log)作为4字节对齐
-         * 别删除！！20170508 sizeof(boatpilot_log)=244 sizeof(boatpilot_log.global)=92
-         *
-         */
-        //printf("sizeof(boatpilot_log)=%d,sizeof(boatpilot_log.global)=%d\n",sizeof(boatpilot_log),sizeof(boatpilot_log.global));
-        //printf("fd_boatpilot_log = %d\n",fd_boatpilot_log);
-        save_data_to_binary_log(fd_boatpilot_log,&boatpilot_log,sizeof(boatpilot_log));
-
-        global_bool_boatpilot.save_boatpilot_log_req=FALSE;
-#endif
-    }
 }
 
 T_DATETIME datetime_now;//当前的日期和时间，精确到秒。在主线程中每秒更新一次，其它程序直接使用即可。
@@ -367,7 +187,102 @@ void Boat::update_all_external_device_input( void )
 	all_external_device_input.heading = fdm.heading;
 }
 
-void Boat::set_rc_out()
+void Boat::get_gcs_udp()
+{
+	read_socket_udp_data( fd_socket_generic);
+}
+
+void Boat::get_gcs_radio()
+{
+	read_radio_data();
+}
+
+void Boat::send_ap2gcs_realtime_data_boatlink_by_udp()
+{
+	send_ap2gcs_real_udp();
+}
+
+void Boat::update_GPS()
+{
+	gps_data.latitude =(int)( all_external_device_input.latitude * 1e5);
+	gps_data.longitude = (int)(all_external_device_input.longitude * 1e5);
+
+	gps_data.course = all_external_device_input.heading * DEG_TO_RAD;
+	gps_data.yaw = (int)(all_external_device_input.heading * 1e2);
+
+	gps_data.velocity_north = (int)(all_external_device_input.v_north *1e3);
+	gps_data.velocity_east = (int)(all_external_device_input.v_east * 1e3);
+}
+
+void Boat::update_mpu6050()
+{
+
+}
+
+void Boat::out_execute_ctrloutput()
+{
+	execute_ctrloutput(&ctrloutput);
+}
+
+void Boat::record_wp()
+{
+	int write_len;
+
+	if(global_bool_boatpilot.save_wp_req)
+	{
+		//write_len=write(fd_waypoint,(char *)wp_data,sizeof(struct WAY_POINT)*MAX_WAYPOINT_NUM);
+		write_len = save_data_to_binary_log(fd_waypoint, &wp_data, sizeof(wp_data));
+		printf("Boat::record_wp()    :    write_len = %d \n",write_len);
+		global_bool_boatpilot.save_wp_req = FALSE;
+	}
+}
+
+void Boat::record_log()
+{
+    /*
+     * 保存日志文件到二进制文件boatpilot_log
+     * 尽量把sizeof(boatpilot_log)作为4字节对齐，勿删
+     */
+
+	//DEBUG_PRINTF("记录日志\n");
+	global_bool_boatpilot.save_boatpilot_log_req = TRUE;
+    if(global_bool_boatpilot.save_boatpilot_log_req)
+    {
+        /*时间戳*/
+        boatpilot_log.data_time.year=datetime_now.year;
+        boatpilot_log.data_time.month=datetime_now.month;
+        boatpilot_log.data_time.day=datetime_now.day;
+        boatpilot_log.data_time.hour=datetime_now.hour;
+        boatpilot_log.data_time.minute=datetime_now.minute;
+        boatpilot_log.data_time.second=datetime_now.second;
+        boatpilot_log.data_time.stuffing=datetime_now.stuffing;
+
+        memcpy(&boatpilot_log.global_bool_boatpilot, &global_bool_boatpilot, sizeof(global_bool_boatpilot));
+
+        //printf("sizeof(boatpilot_log)=%d,sizeof(boatpilot_log.global)=%d\n",sizeof(boatpilot_log),sizeof(boatpilot_log.global));
+        //printf("fd_boatpilot_log = %d\n",fd_boatpilot_log);
+        save_data_to_binary_log(fd_boatpilot_log, &boatpilot_log, sizeof(boatpilot_log));
+
+        global_bool_boatpilot.save_boatpilot_log_req=FALSE;
+    }
+}
+
+void Boat::record_config()
+{
+
+}
+
+void Boat::read_device_gps()
+{
+
+}
+
+void Boat::read_device_mpu6050()
+{
+
+}
+
+void Boat::set_device_rc_out()
 {
     float rc_raw_out_0;
     float rc_raw_out_1;
@@ -391,14 +306,18 @@ void Boat::set_rc_out()
     //然后把rc_raw_out_0输出给舵机或者电机，频率是50hz，勿删
 }
 
-void Boat::update_GPS()
+void Boat::set_device_gpio()
 {
-	gps_data.latitude =(int)( all_external_device_input.latitude * 1e5);
-	gps_data.longitude = (int)(all_external_device_input.longitude * 1e5);
 
-	gps_data.course = all_external_device_input.heading * DEG_TO_RAD;
-	gps_data.yaw = (int)(all_external_device_input.heading * 1e2);
+}
 
-	gps_data.velocity_north = (int)(all_external_device_input.v_north *1e3);
-	gps_data.velocity_east = (int)(all_external_device_input.v_east * 1e3);
+void Boat::loop_one_second()
+{
+    //DEBUG_PRINTF("Hello loop_slow\n");
+    //printf("gcs2ap_all_udp.workmode    :    %d \n", gcs2ap_all_udp.workmode);
+}
+
+void Boat::end_of_task()
+{
+	//DEBUG_PRINTF("Hello end_of_task\n");
 }

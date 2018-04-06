@@ -28,7 +28,7 @@ int radio_uart_init();
  *                        如果要增加地面站与驾驶仪的通信包的类型，则需要修改这个源文件
  *                        传输过来的数据尽量每个都是unsigned char型，否则就要考虑大小端，然后在实现中交换位置
  */
-int read_radio_data(unsigned char *buf, unsigned int len);
+int read_radio_data();
 
 /*
  * Function:       send_radio_data

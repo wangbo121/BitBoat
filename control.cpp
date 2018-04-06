@@ -293,7 +293,7 @@ static float cal_rudder_control(float command_heading,float current_track_headin
 	error_head_track = wrap_PI(error_head_track);
 
 	/*再由-pi--+pi转化为-1--+1*/
-	error_head_track=error_head_track * M_PI_RECIPROCAL;/*M_PI_RECIPROCAL=1/pi*/
+	error_head_track=error_head_track * M_1_PI; /*M_1_PI = 1/pi*/
 
 	pid_yaw.set_kP(pid.p);
 	pid_yaw.set_kI(pid.i);

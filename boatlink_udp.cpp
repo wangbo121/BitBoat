@@ -56,15 +56,15 @@ int send_ap2gcs_real_udp()
 
     ap2gcs_real_udp.cnt = real_udp_cnt;
     ap2gcs_real_udp.pack_func_flag=0;
-    ap2gcs_real_udp.pack_func_info1=global_bool_boatpilot.gcs2ap_cmd_cnt;
-    ap2gcs_real_udp.pack_func_info2=global_bool_boatpilot.gcs2ap_wp_cnt;;
+    ap2gcs_real_udp.pack_func_info1 = 0;
+    ap2gcs_real_udp.pack_func_info2 = 0;
     ap2gcs_real_udp.lng = gps_data.longitude;
     ap2gcs_real_udp.lat = gps_data.latitude;
     ap2gcs_real_udp.spd = gps_data.speed;
     ap2gcs_real_udp.dir_gps=(short)(convert_radian_to_degree(gps_data.course))*100;
     ap2gcs_real_udp.dir_heading=(short)gps_data.yaw;
-    ap2gcs_real_udp.dir_target=global_bool_boatpilot.dir_target_degree;
-    ap2gcs_real_udp.dir_nav=global_bool_boatpilot.dir_nav_degree;
+    ap2gcs_real_udp.dir_target=global_bool_boatpilot.current_to_target_degree;
+    ap2gcs_real_udp.dir_nav=global_bool_boatpilot.command_course_degree;
 
     ap2gcs_real_udp.roll=(short)gps_data.roll;
     ap2gcs_real_udp.pitch=(short)gps_data.pitch;
