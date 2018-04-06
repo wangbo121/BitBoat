@@ -37,6 +37,7 @@
 #include "control.h"
 #include "navigation.h"
 #include "boatlink_udp.h"
+#include "gps.h"
 
 #include "udp.h"
 

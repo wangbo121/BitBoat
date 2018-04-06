@@ -10,9 +10,13 @@
 
 struct CTRL_PARA
 {
-	unsigned char rudder_p;
-	unsigned char rudder_i;
-	unsigned char rudder_d;
+//	unsigned char rudder_p;
+//	unsigned char rudder_i;
+//	unsigned char rudder_d;
+
+	float rudder_p;
+	float rudder_i;
+	float rudder_d;
 
 	unsigned char cte_max_correct_degree;//单位[度] 利用偏航距离计算算得到的补偿的最大补偿航向角 补偿目标course angle
     unsigned char cruise_throttle;
@@ -29,6 +33,9 @@ struct CTRL_PARA
 	unsigned char rudder_left_pos;
 	unsigned char rudder_right_pos;
 	unsigned char rudder_mid_pos;
+
+	unsigned char work_mode;
+	float throttle_change_time;
 };
 
 struct T_PID

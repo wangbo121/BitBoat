@@ -103,12 +103,6 @@ void Boat::loop( void )
 void Boat::loop_fast()
 {
     /*
-     * 这个loop_fast如果针对于飞机来说就是控制姿态的内环控制，
-     * 无人机的导航控制环节在scheduler数组的执行中。
-     * 如果对于无人船来说，暂时作为导航和控制环
-     */
-
-    /*
      * 如果全部传感器都是硬件在环的，那么这里就不需要这个update_all_external_device_input
      * 如果传感器都硬件在环，那么就在数据有更新的时候，把数据填在这个结构中
      * 相当于在传感器和控制循环中间又添加了一层
@@ -120,16 +114,7 @@ void Boat::loop_fast()
     decode_gcs2ap_udp();
 
     /*2. navigation*/
-    auto_navigation.in_arrive_radius = gcs2ap_all_udp.arrive_radius * 10;//gcs2ap_all中的5其实表示的是50米，要扩大10倍
-    auto_navigation.in_total_wp_num = global_bool_boatpilot.wp_total_num;
-    auto_navigation.in_wp_guide_no = gcs2ap_all_udp.wp_guide_no;
-    auto_navigation.in_work_mode = gcs2ap_all_udp.workmode;
-    auto_navigation.in_auto_work_mode = gcs2ap_all_udp.auto_work_mode;
-    auto_navigation.in_CTE_p = (float)gcs2ap_all_udp.cte_p * 0.1;
-    auto_navigation.in_CTE_i = (float)gcs2ap_all_udp.cte_i * 0.01;
-    auto_navigation.in_CTE_d = (float)gcs2ap_all_udp.cte_d * 0.1;
-
-    navigation_loop(&auto_navigation,wp_data,&gps_data);
+    navigation_loop();
 
     global_bool_boatpilot.current_to_target_radian = (short)(auto_navigation.out_current_to_target_radian * 1000.0);
     //global_bool_boatpilot.current_to_target_degree = auto_navigation.out_current_to_target_degree;
@@ -147,7 +132,6 @@ void Boat::loop_fast()
     servos_set_out[1] = (uint16_t)(ctrloutput.mmotor_onoff_pwm);
 
     memcpy(input.servos,servos_set_out,sizeof(servos_set_out));
-
     sim_water_craft.update(input);
     sim_water_craft.fill_fdm(fdm);
 }
