@@ -48,7 +48,6 @@ int navigation_loop( struct T_NAVIGATION *ptr_auto_navigation,\
     static struct T_GUIDANCE_CONTROLLER guidance_ctrl;//局部变量
 
     //到达半径
-	ptr_auto_navigation->arrive_radius = ptr_auto_navigation->in_arrive_radius * 10;//gcs2ap_all中的5其实表示的是50米，要扩大10倍
 	if(ptr_auto_navigation->arrive_radius < MIN_ARRIVE_RADIUS)
 	{
 		ptr_auto_navigation->arrive_radius = MIN_ARRIVE_RADIUS;
@@ -64,9 +63,9 @@ int navigation_loop( struct T_NAVIGATION *ptr_auto_navigation,\
 	ptr_auto_navigation->work_mode = ptr_auto_navigation->in_work_mode;
 	ptr_auto_navigation->auto_work_mode = ptr_auto_navigation->in_auto_work_mode;
 
-	ptr_auto_navigation->CTE_p = ptr_auto_navigation->in_CTE_p * 0.1;//协议的cte_p需要缩小10倍
-	ptr_auto_navigation->CTE_i = ptr_auto_navigation->in_CTE_i * 0.01;
-	ptr_auto_navigation->CTE_d = ptr_auto_navigation->in_CTE_d * 0.1;
+	ptr_auto_navigation->CTE_p = ptr_auto_navigation->in_CTE_p;
+	ptr_auto_navigation->CTE_i = ptr_auto_navigation->in_CTE_i;
+	ptr_auto_navigation->CTE_d = ptr_auto_navigation->in_CTE_d;
 	guidance_ctrl.in_CTE_p = ptr_auto_navigation->CTE_p;
 	guidance_ctrl.in_CTE_i = ptr_auto_navigation->CTE_i;
 	guidance_ctrl.in_CTE_d = ptr_auto_navigation->CTE_d;
@@ -368,7 +367,7 @@ float get_command_heading_NED(struct T_LOCATION *previous_target_loc,  struct T_
     }
 
     global_bool_boatpilot.dir_nav_degree=(short)(convert_radian_to_degree(command_heading_radian)*100);
-    global_bool_boatpilot.command_radian=(short)command_heading_radian*1000;
+   // global_bool_boatpilot.command_radian=(short)command_heading_radian*1000;
 
     return command_heading_radian;
 }

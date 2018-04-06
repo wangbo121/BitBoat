@@ -120,7 +120,7 @@ void Boat::loop_fast()
     decode_gcs2ap_udp();
 
     /*2. navigation*/
-    auto_navigation.in_arrive_radius = gcs2ap_all_udp.arrive_radius;
+    auto_navigation.in_arrive_radius = gcs2ap_all_udp.arrive_radius * 10;//gcs2ap_all中的5其实表示的是50米，要扩大10倍
     auto_navigation.in_total_wp_num = global_bool_boatpilot.wp_total_num;
     auto_navigation.in_wp_guide_no = gcs2ap_all_udp.wp_guide_no;
     auto_navigation.in_work_mode = gcs2ap_all_udp.workmode;

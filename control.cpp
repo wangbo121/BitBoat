@@ -278,6 +278,11 @@ static int get_ctrlpara(struct CTRL_PARA *ptr_ctrlpara, struct GCS2AP_ALL_UDP *p
 	return 0;
 }
 
+
+
+
+
+
 /*
  * Function:       get_ctrlinput
  * Description:  把从地面站传输过来的手控方向舵和油门量（unsigned char数值）转换为标准的1000-2000（浮点数值）
