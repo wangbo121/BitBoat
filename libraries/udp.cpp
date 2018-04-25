@@ -325,7 +325,7 @@ int read_socket_udp_data(int fd_socket)
 
 	struct timeval timeout;
 	timeout.tv_sec = 0;//秒
-	timeout.tv_usec = UDP_RECVFROM_BLOCK_TIME;//微秒  等待100ms吧
+	timeout.tv_usec = UDP_RECVFROM_BLOCK_TIME;//微秒
 	if (setsockopt(fd_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1)
 	{
 		printf("read_socket_udp_data    :    setsockopt failed \n");

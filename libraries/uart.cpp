@@ -325,6 +325,7 @@ int read_uart_data(char *uart_name, char *rcv_buf, int time_out_ms, int buf_len)
     int ret, pos;
     tv.tv_sec = time_out_ms / 1000;  //set the rcv wait time
     tv.tv_usec = (time_out_ms % 1000) * 1000;  //100000us = 0.1s
+    //tv.tv_usec = 100;  //100000us = 0.1s
 
     struct stat temp_stat;
 

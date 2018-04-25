@@ -47,8 +47,10 @@
 #define XW_GPFPD_GPS //GPS的型号
 //#define NMEA_GPS
 
-#define UART_RADIO          "/dev/ttyUSB0"
-#define UART_GPS               "/dev/ttyO2"
+//#define UART_RADIO          "/dev/ttyUSB0"
+#define UART_RADIO          "/dev/ttyO3"
+#define UART_GPS               "/dev/ttyO1"
+#define UART_GPS_Y901               "/dev/ttyO2"
 
 /*
  * 因为从导航姿态模块读回来的gps数据和航向数据都是经过 扩大倍数 转为int整型的，
@@ -111,7 +113,8 @@
 #define CONTROLLER_TYPE_ADRC  1
 #define CONTROLLER_TYPE_SMC    2
 
-#define UDP_RECVFROM_BLOCK_TIME 1000 //udp监听数据最大阻塞时间 1ms
+//#define UDP_RECVFROM_BLOCK_TIME 1000 //udp监听数据最大阻塞时间 1ms
+#define UDP_RECVFROM_BLOCK_TIME 200 //udp监听数据最大阻塞时间 200us
 
 struct WAY_POINT
 {

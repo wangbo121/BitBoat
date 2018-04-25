@@ -25,36 +25,40 @@ Watercraft sim_water_craft("32.68436,117.05525,10,0","+");//+型机架，起始�
   4 = 25hz
   10 = 10hz
   100 = 1hz
+  每个函数的执行时间必须小于最大允许的时间，单位是微秒，否则就会出现Scheduler overrun task
+  因此需要特别注意串口读取 udp读取等阻塞式的读取方式，阻塞等待的时间需要小于这个任务调度允许的最大时间
+  gps_Y901我给的最大允许是3000微秒，而gps_Y901是在10hz循环中的，因此该10hz循环中最多能有3个gps_Y901这种
+  读取函数，否则就会把10ms全部占用了
  */
 #define SCHED_TASK(func) (void (*)())&Boat::func
 
 const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 {
 		// 自驾仪虚拟地获取传感器数据，从all_external_device_input 虚拟获取
-      { SCHED_TASK(update_GPS),                                                  10,     100 },
-      { SCHED_TASK(update_mpu6050),                                                  10,     100 },
+   //   { SCHED_TASK(update_GPS),                                                  10,     100 },
+     // { SCHED_TASK(update_mpu6050),                                                  10,     100 },
 
       //自驾仪虚拟地输出数据，把控制量啥的输出到all_external_device_output
 
       //真正读取传感器函数
-      { SCHED_TASK(read_device_gps),                                                  10,     100 },
+      { SCHED_TASK(read_device_gps),                                                  10,     3000 },
 
       //真正设置外部设备函数，比如设置继电器让方向舵切换左右转
-      { SCHED_TASK(set_device_rc_out),                                                    100,     100 },
+    //  { SCHED_TASK(set_device_rc_out),                                                    100,     100 },
 
-      { SCHED_TASK(get_gcs_udp),                                                    10,    1000 },
+     // { SCHED_TASK(get_gcs_udp),                                                    10,    1000 },
 //      { SCHED_TASK(send_ap2gcs_cmd_boatlink),                          1,    1000 },
 //      { SCHED_TASK(send_ap2gcs_wp_boatlink),                            1,    1000 },
 //      { SCHED_TASK(send_ap2gcs_realtime_data_boatlink),    100,    1000 },
-      { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),    100,    1000 },
+     // { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),    100,    1000 },
 
 //      { SCHED_TASK(record_log),                                                   100,    1100 },
 //      { SCHED_TASK(record_wp),                                                   100,    1100 },
 //      { SCHED_TASK(record_config),                                                   100,    1100 },
 
-      { SCHED_TASK(get_timedata_now),                                     100,    1000 },
-      { SCHED_TASK(loop_one_second),                                                    100,    1000 },
-      { SCHED_TASK(end_of_task),                                               1000,    1000 }
+      { SCHED_TASK(get_timedata_now),                                     100,     100 },
+      { SCHED_TASK(loop_one_second),                                      1000,    100 },
+     // { SCHED_TASK(end_of_task),                                          1000,    100 }
 };
 
 #define MAINTASK_TICK_TIME_MS 10//这个设置为10ms，对应每个循环100hz
@@ -102,6 +106,7 @@ void Boat::loop( void )
      */
     uint32_t loop_us = micro_seconds;
     uint32_t time_available = loop_us - ( (uint32_t)gettimeofday_us() - timer );
+    //printf("time_available = %d \n",time_available);
 
     scheduler.run(time_available > loop_us ? 0u : time_available);
 }

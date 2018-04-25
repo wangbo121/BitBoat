@@ -65,7 +65,8 @@ void Boat::setup( void )
 #endif
 
 #ifdef __GPS_
-    gps_uart_init();
+    //gps_uart_init();
+    gps_uart_init_Y901();
 #endif
 
     /*
@@ -274,7 +275,7 @@ void Boat::record_config()
 
 void Boat::read_device_gps()
 {
-
+    read_gps_data_Y901();
 }
 
 void Boat::read_device_mpu6050()
@@ -315,6 +316,8 @@ void Boat::loop_one_second()
 {
     //DEBUG_PRINTF("Hello loop_slow\n");
     //printf("gcs2ap_all_udp.workmode    :    %d \n", gcs2ap_all_udp.workmode);
+
+    print_data_gps_Y901();
 }
 
 void Boat::end_of_task()
