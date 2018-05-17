@@ -107,7 +107,7 @@ void Boat::setup( void )
     global_bool_boatpilot.save_boatpilot_log_req = TRUE;
 
     /*
-     * 设置PID控制器的参数
+     * 设置PID控制器的参数 下面的这个pid_yaw还没有开始使用
      */
     pid_yaw.set_kP( 2 );
     pid_yaw.set_kI( 0 );
@@ -125,6 +125,41 @@ void Boat::setup( void )
      */
     printf("Boat::setup    :    fd_socket_generic = %d \n",fd_socket_generic);
     open_socket_udp_dev(&fd_socket_generic, "AP_LISTEN_UDP_IP", AP_LISTEN_UDP_PORT);
+
+#ifdef TEST
+    unsigned int lng_start = 116.31574 * 1e5;
+    unsigned int lat_start = 39.95635 * 1e5;
+    unsigned char wp_total_num_test =5;
+    for(int i=0; i< wp_total_num_test; i++)
+    {
+        wp_data[i].no = i;
+        wp_data[i].type = 0;
+        wp_data[i].spd = 50;
+        wp_data[i].alt = 12;
+
+        wp_data[i].lng = lng_start + 2e4 * i;
+        //wp_data[i].lat = lat_start + 1e5;
+        wp_data[i].lat = lat_start;
+
+        printf("wp_data[%d].lng = %d \n",i,wp_data[i].lng);
+        printf("wp_data[%d].lat = %d \n",i,wp_data[i].lat);
+    }
+    global_bool_boatpilot.wp_total_num = wp_total_num_test;
+
+
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 T_DATETIME datetime_now;//当前的日期和时间，精确到秒。在主线程中每秒更新一次，其它程序直接使用即可。
@@ -275,7 +310,8 @@ void Boat::record_config()
 
 void Boat::read_device_gps()
 {
-    read_gps_data_Y901();
+    //read_gps_data_Y901();
+
 }
 
 void Boat::read_device_mpu6050()
@@ -317,7 +353,10 @@ void Boat::loop_one_second()
     //DEBUG_PRINTF("Hello loop_slow\n");
     //printf("gcs2ap_all_udp.workmode    :    %d \n", gcs2ap_all_udp.workmode);
 
-    print_data_gps_Y901();
+    //print_data_gps_Y901();
+    DEBUG_PRINTF("GPS_DATA: \n");
+    DEBUG_PRINTF("gps_data.gps_data.longitude: %d\n",gps_data.longitude);
+    DEBUG_PRINTF("gps_data.gps_data.latitude: %d\n",gps_data.latitude);
 }
 
 void Boat::end_of_task()

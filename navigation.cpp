@@ -77,6 +77,7 @@ static int get_navigation_output(struct T_NAVIGATION *ptr_auto_navigation,\
 	unsigned int target_wp_num = 0;
 	static struct T_GUIDANCE_CONTROLLER guidance_ctrl;//局部变量
 
+	ptr_auto_navigation->arrive_radius = ptr_auto_navigation->in_arrive_radius;
 	//到达半径
 	if(ptr_auto_navigation->arrive_radius < MIN_ARRIVE_RADIUS)
 	{
@@ -168,7 +169,7 @@ static int get_navigation_output(struct T_NAVIGATION *ptr_auto_navigation,\
 		}
 		ptr_auto_navigation->out_current_target_wp_cnt = ptr_auto_navigation->current_target_wp_cnt;
 		ptr_auto_navigation->out_current_to_target_radian = guidance_ctrl.out_current_to_target_radian;
-		ptr_auto_navigation->out_current_to_target_degree = guidance_ctrl.out_current_to_target_radian;
+		ptr_auto_navigation->out_current_to_target_degree = guidance_ctrl.out_current_to_target_degree;
 		ptr_auto_navigation->out_command_course_radian = guidance_ctrl.out_command_course_radian;
 		ptr_auto_navigation->out_command_course_degree = guidance_ctrl.out_command_course_degree;
 		break;
@@ -218,7 +219,7 @@ static int get_navigation_output(struct T_NAVIGATION *ptr_auto_navigation,\
 		}
 		ptr_auto_navigation->out_current_target_wp_cnt = ptr_auto_navigation->current_target_wp_cnt;
 		ptr_auto_navigation->out_current_to_target_radian = guidance_ctrl.out_current_to_target_radian;
-		ptr_auto_navigation->out_current_to_target_degree = guidance_ctrl.out_current_to_target_radian;
+		ptr_auto_navigation->out_current_to_target_degree = guidance_ctrl.out_current_to_target_degree;
 		ptr_auto_navigation->out_command_course_radian = guidance_ctrl.out_command_course_radian;
 		ptr_auto_navigation->out_command_course_degree = guidance_ctrl.out_command_course_degree;
 		break;

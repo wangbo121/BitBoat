@@ -15,7 +15,7 @@ struct AP2GCS_REAL_UDP
 {
 	unsigned char head1;
 	unsigned char head2;
-	unsigned short len;//注意这个是short型，                                                              //到此4个字节
+	unsigned char len;      //到此4个字节
 	unsigned char type;
 	unsigned char vessel;
 	unsigned char master_ap_link_ack;
@@ -24,6 +24,7 @@ struct AP2GCS_REAL_UDP
     unsigned char pack_func_flag;//包功能标志，暂时固定为0
     unsigned char pack_func_info1;//接收到的命令包计数
     unsigned char pack_func_info2;//接收到的航点包计数                                       //到此12个字节
+    unsigned char pack_func_info3;//接收到的航点包计数
 
     unsigned int lng;//[度*0.00001]，GPS经度坐标，整型，精确到米
     unsigned int lat;//[度*0.00001]，GPS纬度坐标，整型，精确到米                      //到此20个字节

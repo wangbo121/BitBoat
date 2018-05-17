@@ -41,6 +41,10 @@
 /*
  * 下面是与控制相关的
  */
+#define TEST 1
+
+
+
 #define __RADIO_
 
 #define __GPS_
@@ -106,8 +110,10 @@
 #define AP_LISTEN_UDP_IP           "127.0.0.1"   //自驾仪监听地面站发送来的数据时用的网卡ip地址
 #define AP_LISTEN_UDP_PORT     49000           //自驾仪监听地面站发送来的数据时用的端口号
 
-#define AP_SENDTO_UDP_IP         "127.0.0.1" //自驾仪向对方发送数据时，对方的socket或者网卡对应的ip地址
-#define AP_SENDTO_UDP_PORT   49000   //自驾仪向对方发送数据时，对方的socket或者网卡对应的端口号
+//#define AP_SENDTO_UDP_IP         "127.0.0.1" //自驾仪向对方发送数据时，对方的socket或者网卡对应的ip地址
+//#define AP_SENDTO_UDP_PORT   49000   //自驾仪向对方发送数据时，对方的socket或者网卡对应的端口号
+#define AP_SENDTO_UDP_IP         "192.168.0.10" //自驾仪向对方发送数据时，对方的socket或者网卡对应的ip地址
+#define AP_SENDTO_UDP_PORT   1000   //自驾仪向对方发送数据时，对方的socket或者网卡对应的端口号
 
 #define CONTROLLER_TYPE_PID      0
 #define CONTROLLER_TYPE_ADRC  1
@@ -151,9 +157,9 @@ struct T_GLOBAL_BOOL_BOATPILOT
 	short left_motor_voltage;// 单位[0.1伏特]
 	short right_motor_voltage;// 单位[0.1伏特]
 
-	short current_to_target_radian;// [-180*1000-+180*1000][0.001弧度]
+	short current_to_target_radian;// [-180*100-+180*100][0.01弧度]
 	short current_to_target_degree;// [0.01度]当前位置与目标航点位置的方位角bearing angle
-	short command_course_radian;// [-180*1000-+180*1000][0.001弧度]
+	short command_course_radian;// [-180*100-+180*100][0.01弧度]
 	short command_course_degree;// [0.01度]制导算法得到的导航目标航迹角course angle或者航向角heading angle
 
 	short cte_error_check_radian;// psi_r根据偏航距得到的修正方向舵角[-3.14*1000-+3.14*1000]

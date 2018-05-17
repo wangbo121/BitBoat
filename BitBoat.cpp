@@ -10,7 +10,8 @@
 /*
  * 仿真测试使用
  */
-Watercraft sim_water_craft("32.68436,117.05525,10,0","+");//+型机架，起始高度为10，yaw是0
+//Watercraft sim_water_craft("32.68436,117.05525,10,0","+");//+型机架，起始高度为10，yaw是0
+Watercraft sim_water_craft("39.95635,116.31574,10,0","+");//+型机架，起始高度为10，yaw是0
 
 /*
  * 这是任务调度表，除了fast_loop中的任务，其他任务都在这里执行
@@ -35,13 +36,13 @@ Watercraft sim_water_craft("32.68436,117.05525,10,0","+");//+型机架，起始�
 const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 {
 		// 自驾仪虚拟地获取传感器数据，从all_external_device_input 虚拟获取
-   //   { SCHED_TASK(update_GPS),                                                  10,     100 },
+      { SCHED_TASK(update_GPS),                                                  10,     100 },
      // { SCHED_TASK(update_mpu6050),                                                  10,     100 },
 
       //自驾仪虚拟地输出数据，把控制量啥的输出到all_external_device_output
 
       //真正读取传感器函数
-      { SCHED_TASK(read_device_gps),                                                  10,     3000 },
+    //  { SCHED_TASK(read_device_gps),                                                  10,     3000 },
 
       //真正设置外部设备函数，比如设置继电器让方向舵切换左右转
     //  { SCHED_TASK(set_device_rc_out),                                                    100,     100 },
@@ -50,7 +51,7 @@ const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 //      { SCHED_TASK(send_ap2gcs_cmd_boatlink),                          1,    1000 },
 //      { SCHED_TASK(send_ap2gcs_wp_boatlink),                            1,    1000 },
 //      { SCHED_TASK(send_ap2gcs_realtime_data_boatlink),    100,    1000 },
-     // { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),    100,    1000 },
+      { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),    100,    1000 },
 
 //      { SCHED_TASK(record_log),                                                   100,    1100 },
 //      { SCHED_TASK(record_wp),                                                   100,    1100 },
@@ -122,13 +123,28 @@ void Boat::loop_fast()
 
     /*1. decode_gcs2ap_radio*/
     decode_gcs2ap_udp();
+#ifdef TEST
+    gcs2ap_all_udp.rud_p = 2.0;
+    gcs2ap_all_udp.rud_i = 0.0;
+    gcs2ap_all_udp.rud_d = 0.0;
+    gcs2ap_all_udp.cte_p = 2.0;
+    gcs2ap_all_udp.cte_i = 0.0;
+    gcs2ap_all_udp.cte_d = 0.0;
+    gcs2ap_all_udp.arrive_radius = 5;
+    gcs2ap_all_udp.cruise_throttle_percent = 100;
+    gcs2ap_all_udp.workmode = AUTO_MODE;
+    gcs2ap_all_udp.auto_work_mode = AUTO_MISSION_MODE;
+
+
+#endif
 
     /*2. navigation*/
     navigation_loop();
-    global_bool_boatpilot.current_to_target_radian = (short)(auto_navigation.out_current_to_target_radian * 1000.0);
-    //global_bool_boatpilot.current_to_target_degree = auto_navigation.out_current_to_target_degree;
+    global_bool_boatpilot.current_to_target_radian = (short)(auto_navigation.out_current_to_target_radian * 100.0);
+    global_bool_boatpilot.current_to_target_degree = (short)(auto_navigation.out_current_to_target_degree * 100);
     global_bool_boatpilot.command_course_radian = (short)(auto_navigation.out_command_course_radian);
-    //global_bool_boatpilot.command_course_degree = auto_navigation.out_command_course_degree;
+    global_bool_boatpilot.command_course_degree = (short)(auto_navigation.out_command_course_degree * 100);
+    global_bool_boatpilot.wp_next = auto_navigation.out_current_target_wp_cnt;
 
     /*3 control*/
     control_loop();

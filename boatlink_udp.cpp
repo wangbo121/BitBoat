@@ -41,7 +41,6 @@ struct T_CONFIG_UDP boatpilot_config_udp;
 int send_ap2gcs_real_udp()
 {
     unsigned char real[REAL_DATA_BUF_SIZE];
-    unsigned char buf_packet[REAL_DATA_BUF_SIZE];
     int ret;
     static unsigned int real_udp_cnt;
 
@@ -78,7 +77,7 @@ int send_ap2gcs_real_udp()
     printf("send_ap2gcs_real_udp    :    sizeof (struct AP2GCS_REAL_UDP) = %ld \n",sizeof (struct AP2GCS_REAL_UDP));
     memcpy(real, &ap2gcs_real_udp, sizeof (struct AP2GCS_REAL_UDP));
     ret = sizeof (struct AP2GCS_REAL_UDP);
-    send_socket_udp_data(fd_socket_generic, buf_packet, ret, AP_SENDTO_UDP_IP, AP_SENDTO_UDP_PORT );
+    send_socket_udp_data(fd_socket_generic, real, ret, AP_SENDTO_UDP_IP, AP_SENDTO_UDP_PORT );
 
     return 0;
 }

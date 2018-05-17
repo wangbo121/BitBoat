@@ -140,6 +140,15 @@ static int get_ctrlpara()
 	ctrlpara.rudder_p = (float)gcs2ap_all_udp.rud_p * 0.1;
 	ctrlpara.rudder_i = (float)gcs2ap_all_udp.rud_i * 0.01;
 	ctrlpara.rudder_d = (float)gcs2ap_all_udp.rud_d * 0.1;
+
+	ctrlpara.rudder_p = (float)gcs2ap_all_udp.rud_p * 0.1;
+    ctrlpara.rudder_i = (float)gcs2ap_all_udp.rud_i * 0.01;
+    ctrlpara.rudder_d = (float)gcs2ap_all_udp.rud_d * 0.1;
+
+
+
+
+
 	ctrlpara.cruise_throttle=gcs2ap_all_udp.cruise_throttle_percent;
 
 	ctrlpara.mmotor_on_pos=gcs2ap_all_udp.mmotor_on_pos;
@@ -178,7 +187,8 @@ static int get_ctrlinput()
     /*
      * 1. 获取期望航迹角course angle 或者 期望航向角heading angle
      */
-    ctrlinput.command_course_angle_radian = auto_navigation.command_course_angle_radian;
+    //ctrlinput.command_course_angle_radian = auto_navigation.command_course_angle_radian;
+	ctrlinput.command_course_angle_radian = auto_navigation.out_command_course_radian;
     //ctrlinput.command_heading_angle_radian = auto_navigation.command_heading_angle_radian;
 
     /*

@@ -169,8 +169,15 @@ int send_socket_udp_data(int fd_socket, unsigned char *buf, unsigned int len, ch
 
 	memcpy(send_buf, buf, len);
 	send_len=len;
-	//printf("send len=%d\n",send_len);
-
+#if 0
+	printf("send len=%d\n",send_len);
+	printf("udp send : \n");
+	for(int i=0; i<len; i++)
+	{
+	    printf("%x  ",send_buf[i]);
+	}
+	printf("\n");
+#endif
 	sendto(fd_socket, send_buf, send_len, 0, (struct sockaddr *)&udp_sendto_addr, sizeof(struct sockaddr_in));
 
 	return 0;
