@@ -164,6 +164,8 @@ struct T_GLOBAL_BOOL_BOATPILOT
 
 	short cte_error_check_radian;// psi_r根据偏航距得到的修正方向舵角[-3.14*1000-+3.14*1000]
 	int cte_distance_error; // [0.01米]
+
+	unsigned int cnt_test;
 };
 
 /*

@@ -57,8 +57,8 @@ const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 //      { SCHED_TASK(record_wp),                                                   100,    1100 },
 //      { SCHED_TASK(record_config),                                                   100,    1100 },
 
-      { SCHED_TASK(get_timedata_now),                                     100,     100 },
-      { SCHED_TASK(loop_one_second),                                      1000,    100 },
+      { SCHED_TASK(get_timedata_now),                                     100,     1000 },
+      { SCHED_TASK(loop_one_second),                                      1000,    10000 },
      // { SCHED_TASK(end_of_task),                                          1000,    100 }
 };
 
@@ -66,7 +66,7 @@ const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 int seconds=0;
 int micro_seconds=MAINTASK_TICK_TIME_MS*(1e3);/*每个tick对应的微秒数*/
 struct timeval maintask_tick;
-
+static unsigned int navigation_loop_cnt;
 int main(int argc,char * const argv[])
 {
     DEBUG_PRINTF("Welcome to BitPilot \n");
@@ -77,6 +77,8 @@ int main(int argc,char * const argv[])
 
     //初始化步骤，初始化一些设备或者参数等
     boat.setup();
+
+
 
     while (1)
     {
@@ -130,7 +132,7 @@ void Boat::loop_fast()
     gcs2ap_all_udp.cte_p = 2.0;
     gcs2ap_all_udp.cte_i = 0.0;
     gcs2ap_all_udp.cte_d = 0.0;
-    gcs2ap_all_udp.arrive_radius = 5;
+    gcs2ap_all_udp.arrive_radius = 50;
     gcs2ap_all_udp.cruise_throttle_percent = 100;
     gcs2ap_all_udp.workmode = AUTO_MODE;
     gcs2ap_all_udp.auto_work_mode = AUTO_MISSION_MODE;
@@ -138,13 +140,23 @@ void Boat::loop_fast()
 
 #endif
 
+
+
+    navigation_loop_cnt ++;
+
     /*2. navigation*/
-    navigation_loop();
+    //navigation_loop();
+    if( ! (navigation_loop_cnt % 100) )
+    {
+        navigation_loop();
+    }
+
     global_bool_boatpilot.current_to_target_radian = (short)(auto_navigation.out_current_to_target_radian * 100.0);
     global_bool_boatpilot.current_to_target_degree = (short)(auto_navigation.out_current_to_target_degree * 100);
     global_bool_boatpilot.command_course_radian = (short)(auto_navigation.out_command_course_radian);
     global_bool_boatpilot.command_course_degree = (short)(auto_navigation.out_command_course_degree * 100);
     global_bool_boatpilot.wp_next = auto_navigation.out_current_target_wp_cnt;
+
 
     /*3 control*/
     control_loop();

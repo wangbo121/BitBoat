@@ -57,7 +57,7 @@ int navigation_loop( void )
 
 static int get_navigation_input()
 {
-    auto_navigation.in_arrive_radius = gcs2ap_all_udp.arrive_radius * 10;//gcs2ap_all中的5其实表示的是50米，要扩大10倍
+    auto_navigation.in_arrive_radius = (unsigned int)gcs2ap_all_udp.arrive_radius * 10;//gcs2ap_all中的5其实表示的是50米，要扩大10倍
     auto_navigation.in_total_wp_num = global_bool_boatpilot.wp_total_num;
     auto_navigation.in_wp_guide_no = gcs2ap_all_udp.wp_guide_no;
     auto_navigation.in_work_mode = gcs2ap_all_udp.workmode;
@@ -144,6 +144,8 @@ static int get_navigation_output(struct T_NAVIGATION *ptr_auto_navigation,\
 
 		/*2. 更新上一航点，当前航点的信息*/
 		ptr_auto_navigation->current_target_wp_cnt = target_wp_num;
+
+		global_bool_boatpilot.wp_next = target_wp_num;
 		ptr_auto_navigation->current_target_loc->lng = ((float)ptr_wp_data[target_wp_num].lng)*GPS_LOCATION_SCALE;
 		ptr_auto_navigation->current_target_loc->lat = ((float)ptr_wp_data[target_wp_num].lat)*GPS_LOCATION_SCALE;
 
@@ -259,6 +261,9 @@ static unsigned int get_next_wp_num(struct WAY_POINT *ptr_wp_data,\
 	specific_loc->lng = ((float)ptr_wp_data[current_target_wp_cnt].lng)*GPS_LOCATION_SCALE;
 	specific_loc->lat = ((float)ptr_wp_data[current_target_wp_cnt].lat)*GPS_LOCATION_SCALE;
 
+	DEBUG_PRINTF("current_loc->lng = %f,  specific_loc->lng = %f  \n",current_loc->lng,specific_loc->lng);
+	DEBUG_PRINTF("current_loc->lat = %f,  specific_loc->lat = %f  \n",current_loc->lat,specific_loc->lat);
+
 	bool_arrive_point_radius = arrive_specific_location_radius(current_loc, specific_loc,arrive_radius);//这是利用  到达半径  判断
 	bool_arrive_point = arrive_specific_location_over_line_project_NED(&last_target,current_loc,specific_loc);//这是利用  过线  判断
 
@@ -281,6 +286,8 @@ static unsigned int get_next_wp_num(struct WAY_POINT *ptr_wp_data,\
 			auto_navigation.previous_target_loc->lat = (float)(ptr_wp_data[current_target_wp_cnt].lat)*GPS_LOCATION_SCALE;
 			current_target_wp_cnt++;
 		}
+
+		global_bool_boatpilot.cnt_test ++;
 	}
 
 	return current_target_wp_cnt;

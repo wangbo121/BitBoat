@@ -137,7 +137,8 @@ void Boat::setup( void )
         wp_data[i].spd = 50;
         wp_data[i].alt = 12;
 
-        wp_data[i].lng = lng_start + 2e4 * i;
+        wp_data[i].lng = lng_start + 3e3 * i;
+        //wp_data[i].lng = lng_start + 1e4 * i;
         //wp_data[i].lat = lat_start + 1e5;
         wp_data[i].lat = lat_start;
 
@@ -354,9 +355,15 @@ void Boat::loop_one_second()
     //printf("gcs2ap_all_udp.workmode    :    %d \n", gcs2ap_all_udp.workmode);
 
     //print_data_gps_Y901();
-    DEBUG_PRINTF("GPS_DATA: \n");
-    DEBUG_PRINTF("gps_data.gps_data.longitude: %d\n",gps_data.longitude);
-    DEBUG_PRINTF("gps_data.gps_data.latitude: %d\n",gps_data.latitude);
+    //DEBUG_PRINTF("GPS_DATA: \n");
+    //DEBUG_PRINTF("gps_data.gps_data.longitude: %d\n",gps_data.longitude);
+    //DEBUG_PRINTF("gps_data.gps_data.latitude: %d\n",gps_data.latitude);
+
+
+    DEBUG_PRINTF("global_bool_boatpilot.wp_next: %d\n",global_bool_boatpilot.wp_next);
+    DEBUG_PRINTF("global_bool_boatpilot.cnt_test : %d\n",global_bool_boatpilot.cnt_test );
+
+
 }
 
 void Boat::end_of_task()

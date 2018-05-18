@@ -70,6 +70,7 @@ int send_ap2gcs_real_udp()
     ap2gcs_real_udp.yaw=(short)gps_data.yaw;
 
     ap2gcs_real_udp.wp_next = global_bool_boatpilot.wp_next;
+    //ap2gcs_real_udp.wp_next = 99;
     ap2gcs_real_udp.sail_mode = gcs2ap_all_udp.sail_mode;
     ap2gcs_real_udp.form_type = gcs2ap_all_udp.formation_type;
     ap2gcs_real_udp.pilot_vessel = 0;

@@ -39,7 +39,8 @@ struct T_NAVIGATION
 	float CTE_i;
 	float CTE_d;
 
-	unsigned int current_target_wp_cnt;//当前第几个目标航点
+	//unsigned int current_target_wp_cnt;//当前第几个目标航点
+	unsigned char current_target_wp_cnt;//当前第几个目标航点
 
 	int gps_lng;/*[度*0.00001]*/
 	int gps_lat;/*[度*0.00001]*/
