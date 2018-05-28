@@ -48,7 +48,7 @@ int radio_uart_init()
 
 //数据包中len是用len_byte_num个字节表示的，本协议用unsigned short表示的，是2个字节
 #define LEN_BYTE_NUM 2
-//命令包长度 实时数据包长度
+//命令包长度 实时数据包长度, 命令包和实时数据包长度都是固定的76个字节，航点包不限制长度
 #define GCS2AP_CMD_REAL 76
 
 #define RADIO_RECV_HEAD1           0

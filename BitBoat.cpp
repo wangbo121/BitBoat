@@ -47,7 +47,7 @@ const BIT_Scheduler::Task Boat::scheduler_tasks[] =
       //真正设置外部设备函数，比如设置继电器让方向舵切换左右转
     //  { SCHED_TASK(set_device_rc_out),                                                    100,     100 },
 
-     // { SCHED_TASK(get_gcs_udp),                                                    10,    1000 },
+      { SCHED_TASK(get_gcs_udp),                                                    10,    1000 },
 //      { SCHED_TASK(send_ap2gcs_cmd_boatlink),                          1,    1000 },
 //      { SCHED_TASK(send_ap2gcs_wp_boatlink),                            1,    1000 },
 //      { SCHED_TASK(send_ap2gcs_realtime_data_boatlink),    100,    1000 },

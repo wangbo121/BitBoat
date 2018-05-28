@@ -261,8 +261,8 @@ static unsigned int get_next_wp_num(struct WAY_POINT *ptr_wp_data,\
 	specific_loc->lng = ((float)ptr_wp_data[current_target_wp_cnt].lng)*GPS_LOCATION_SCALE;
 	specific_loc->lat = ((float)ptr_wp_data[current_target_wp_cnt].lat)*GPS_LOCATION_SCALE;
 
-	DEBUG_PRINTF("current_loc->lng = %f,  specific_loc->lng = %f  \n",current_loc->lng,specific_loc->lng);
-	DEBUG_PRINTF("current_loc->lat = %f,  specific_loc->lat = %f  \n",current_loc->lat,specific_loc->lat);
+	//DEBUG_PRINTF("current_loc->lng = %f,  specific_loc->lng = %f  \n",current_loc->lng,specific_loc->lng);
+	//DEBUG_PRINTF("current_loc->lat = %f,  specific_loc->lat = %f  \n",current_loc->lat,specific_loc->lat);
 
 	bool_arrive_point_radius = arrive_specific_location_radius(current_loc, specific_loc,arrive_radius);//这是利用  到达半径  判断
 	bool_arrive_point = arrive_specific_location_over_line_project_NED(&last_target,current_loc,specific_loc);//这是利用  过线  判断

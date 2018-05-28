@@ -10,7 +10,9 @@
 
 #define COMMAND_AP2GCS_REAL_UDP      0x01
 #define COMMAND_GCS2AP_CMD_UDP      0x02
+#define COMMAND_GCS2AP_WP_UDP      0x03
 
+#if 0
 struct AP2GCS_REAL_UDP_OLD
 {
     //unsigned char len;  //len 占用1个字节的
@@ -58,7 +60,7 @@ struct AP2GCS_REAL_UDP_OLD
 	unsigned char check1;
 	unsigned char check2;
 };
-
+#endif
 
 
 struct AP2GCS_REAL_UDP
@@ -155,12 +157,12 @@ struct GCS2AP_CMD_UDP
 	unsigned int spare8;
 	unsigned int spare9;
 	unsigned int spare10;
-	unsigned int spare11;
+	unsigned int spare11;// 到此72个字节
 
 	unsigned char check_spare0;
 	unsigned char check_spare1;
 	unsigned char check1;
-	unsigned char check2;
+	unsigned char check2;// 到此76个字节
 };
 
 struct GCS2AP_ALL_UDP

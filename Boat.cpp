@@ -360,8 +360,10 @@ void Boat::loop_one_second()
     //DEBUG_PRINTF("gps_data.gps_data.latitude: %d\n",gps_data.latitude);
 
 
-    DEBUG_PRINTF("global_bool_boatpilot.wp_next: %d\n",global_bool_boatpilot.wp_next);
-    DEBUG_PRINTF("global_bool_boatpilot.cnt_test : %d\n",global_bool_boatpilot.cnt_test );
+    //DEBUG_PRINTF("global_bool_boatpilot.wp_next: %d\n",global_bool_boatpilot.wp_next);
+    //DEBUG_PRINTF("global_bool_boatpilot.cnt_test : %d\n",global_bool_boatpilot.cnt_test );
+
+    DEBUG_PRINTF("gcs2ap_cmd_udp.func_info2    :    =%d \n", gcs2ap_cmd_udp.func_info2);
 
 
 }

@@ -76,7 +76,7 @@ int send_ap2gcs_real_udp()
     ap2gcs_real_udp.form_type = gcs2ap_all_udp.formation_type;
     ap2gcs_real_udp.pilot_vessel = 0;
 
-    printf("send_ap2gcs_real_udp    :    sizeof (struct AP2GCS_REAL_UDP) = %ld \n",sizeof (struct AP2GCS_REAL_UDP));
+    //printf("send_ap2gcs_real_udp    :    sizeof (struct AP2GCS_REAL_UDP) = %ld \n",sizeof (struct AP2GCS_REAL_UDP));
     memcpy(real, &ap2gcs_real_udp, sizeof (struct AP2GCS_REAL_UDP));
     ret = sizeof (struct AP2GCS_REAL_UDP);
     send_socket_udp_data(fd_socket_generic, real, ret, AP_SENDTO_UDP_IP, AP_SENDTO_UDP_PORT );

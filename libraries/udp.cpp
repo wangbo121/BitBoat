@@ -213,6 +213,8 @@ int decode_udp_data(char *buf, int len)
 	static int i_len=0;
 	static unsigned int checksum = 0;
 
+	static unsigned char data_type = 0;
+
 	memcpy(_buffer, buf, len);
 
 	_length=len;
@@ -248,7 +250,7 @@ int decode_udp_data(char *buf, int len)
 			if ( i_len >= LEN_BYTE_NUM)
 			{
 				_pack_recv_real_len = _pack_recv_len[1]*pow(2,4)+_pack_recv_len[0];
-				//printf("udp收到的有效数据长度为=%d\n",_pack_recv_real_len);
+				printf("udp收到的有效数据长度为=%d\n",_pack_recv_real_len);
 				udp_recv_state = UDP_RECV_DATA;
 				i_len=0;
 			}
@@ -259,12 +261,16 @@ int decode_udp_data(char *buf, int len)
 			_pack_buf_len = 4;//0xaa 0x55 len_low len_high 共4个字节
 			break;
 		case UDP_RECV_DATA:
+
+		    _pack_recv_buf[_pack_buf_len++] = c;
+            data_type = _pack_recv_buf[4];
+            //printf("UDP_RECV_DATA: = %d \n", data_type);
+
 			_pack_recv_buf[0] = 0xaa;
 			_pack_recv_buf[1] = 0x55;
 			_pack_recv_buf[2] = _pack_recv_len[0];
 			_pack_recv_buf[3] = _pack_recv_len[1];
-			_pack_recv_buf[_pack_buf_len] = c;
-			_pack_buf_len++;
+			//_pack_buf_len++;
 			checksum += c;
 			if (_pack_buf_len >= _pack_recv_real_len)
 			{
@@ -273,10 +279,30 @@ int decode_udp_data(char *buf, int len)
 					//收到的是命令包
 					udp_recv_state = UDP_RECV_CHECKSUM;
 				}
-				else if( _pack_recv_real_len >= 12)
+				else if( (data_type == COMMAND_GCS2AP_WP_UDP) )
+				//else if( _pack_recv_real_len >= 12 )
 				{
 					//收到的是航点包
+				    printf("收到航点包\n");
 					udp_recv_state = UDP_RECV_WP;
+
+
+					global_bool_boatpilot.bool_get_gcs2ap_waypoint = TRUE;
+                    memcpy(wp_data, &_pack_recv_buf[12], _pack_recv_real_len - 12);
+                    int wp_num;
+                    wp_num = (_pack_recv_real_len - 12)/sizeof(WAY_POINT);
+                    printf("decode_udp_data    :    wp_num = %ld \n",wp_num);
+                    global_bool_boatpilot.wp_total_num = wp_num;
+
+                    for(int wp_i = 0; wp_i < 3 ; wp_i++)
+                    {
+                        printf("wp_data(%d).lat = %d, wp_data(%d).lng = %d \n", wp_i, wp_data[wp_i].lat, wp_i, wp_data[wp_i].lng);
+
+                    }
+
+                    udp_recv_state = UDP_RECV_HEAD1;
+
+
 				}
 			}
 			break;
@@ -288,7 +314,7 @@ int decode_udp_data(char *buf, int len)
 			checksum_low = _pack_recv_buf[_pack_buf_len-2];
 			checksum_high = _pack_recv_buf[_pack_buf_len-1];
 			checksum_temp = checksum_high * pow(2,4)  + checksum_low;
-
+#if 0
 			if(checksum == checksum_temp)
 			{
 				udp_recv_state = 0;
@@ -303,18 +329,32 @@ int decode_udp_data(char *buf, int len)
 				//校验和错误，重新接收数据
 				udp_recv_state = 0;
 			}
+#else
+			//因为地面站还没有加校验，所以先不管校验了
+			global_bool_boatpilot.bool_get_gcs2ap_cmd = TRUE;
+            memcpy(&gcs2ap_cmd_udp, _pack_recv_buf, _pack_recv_real_len);
+
+            udp_recv_state = UDP_RECV_HEAD1;
+#endif
 			break;
 		case UDP_RECV_WP:
 			/*
 			 * 收到了航点数据，准备解析航点数据
 			 */
-			global_bool_boatpilot.bool_get_gcs2ap_waypoint = TRUE;
-			memcpy(wp_data, &_pack_recv_buf[12], _pack_recv_real_len - 12);
-			int wp_num;
-			wp_num = (_pack_recv_real_len - 12)/sizeof(WAY_POINT);
-			printf("decode_udp_data    :    wp_num = %ld \n",wp_num);
-			global_bool_boatpilot.wp_total_num = wp_num;
 
+            global_bool_boatpilot.bool_get_gcs2ap_waypoint = TRUE;
+            memcpy(wp_data, &_pack_recv_buf[12], _pack_recv_real_len - 12);
+            int wp_num;
+            wp_num = (_pack_recv_real_len - 12)/sizeof(WAY_POINT);
+            printf("decode_udp_data    :    wp_num = %ld \n",wp_num);
+            global_bool_boatpilot.wp_total_num = wp_num;
+
+            for(int wp_i = 0; wp_i<3 ; wp_i++)
+            {
+                printf("wp_data[i].lat = %d, wp_data[i].lng = %d \n", wp_data[i].lat, wp_data[i].lng);
+
+            }
+            udp_recv_state = UDP_RECV_HEAD1;
 			break;
 		}
 	}
