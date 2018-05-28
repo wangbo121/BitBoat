@@ -41,6 +41,8 @@
 
 #include "udp.h"
 
+#include "II2C.h"
+
 /*
  * 控制模式的宏定义
  */
@@ -120,6 +122,9 @@ private:
     void set_device_gpio();//设置gpio
     void set_device_analog();//设置模拟量
     void set_device_relays();//设置继电器开关量
+
+
+    void write_device_II2C();
 
     /*
      * 航行器的物理数学模型

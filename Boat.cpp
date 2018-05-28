@@ -74,6 +74,9 @@ void Boat::setup( void )
      */
     navigation_init();
 
+
+    II2C_init();
+
     /*
      * 初始化自驾仪控制量输入以及参数的初始值，
      * 下面所有的设置都是从地面站获取后使用
@@ -367,6 +370,47 @@ void Boat::loop_one_second()
 
 
 }
+
+
+void Boat::write_device_II2C()
+{
+    unsigned char send_buf[256];
+    float voltage;
+
+    send_buf[0] = 0xfa;
+    PFC8574_DO(PCF8574_DO1_ADDR, send_buf[0]);
+
+    send_buf[0] = 0x0f;
+    PFC8574_DO(PCF8574_DO2_ADDR, send_buf[0]);
+
+    voltage = 3.0f;
+    DAC7574_DA(DAC7574_DA1_ADDR, DA_CHANNEL_0, voltage);
+
+    voltage = 4.0f;
+    DAC7574_DA(DAC7574_DA1_ADDR, DA_CHANNEL_1, voltage);
+
+    voltage = 3.0f;
+    DAC7574_DA(DAC7574_DA1_ADDR, DA_CHANNEL_2, voltage);
+
+    voltage = 3.0f;
+    DAC7574_DA(DAC7574_DA1_ADDR, DA_CHANNEL_3, voltage);
+
+
+    voltage = 4.5f;
+    DAC7574_DA(DAC7574_DA2_ADDR, DA_CHANNEL_0, voltage);
+
+    voltage = 4.5f;
+    DAC7574_DA(DAC7574_DA2_ADDR, DA_CHANNEL_1, voltage);
+
+
+    voltage = 4.5f;
+    DAC7574_DA(DAC7574_DA2_ADDR, DA_CHANNEL_2, voltage);
+
+    voltage = 4.5f;
+    DAC7574_DA(DAC7574_DA2_ADDR, DA_CHANNEL_3, voltage);
+
+}
+
 
 void Boat::end_of_task()
 {
