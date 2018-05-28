@@ -113,6 +113,8 @@
 //#define AP_SENDTO_UDP_IP         "127.0.0.1" //自驾仪向对方发送数据时，对方的socket或者网卡对应的ip地址
 //#define AP_SENDTO_UDP_PORT   49000   //自驾仪向对方发送数据时，对方的socket或者网卡对应的端口号
 #define AP_SENDTO_UDP_IP         "192.168.0.10" //自驾仪向对方发送数据时，对方的socket或者网卡对应的ip地址
+//#define AP_SENDTO_UDP_IP         "192.168.14.172"
+//#define AP_SENDTO_UDP_PORT   1000   //自驾仪向对方发送数据时，对方的socket或者网卡对应的端口号
 #define AP_SENDTO_UDP_PORT   1000   //自驾仪向对方发送数据时，对方的socket或者网卡对应的端口号
 
 #define CONTROLLER_TYPE_PID      0

@@ -50,7 +50,8 @@ int send_ap2gcs_real_udp()
     ap2gcs_real_udp.len = 76;
     ap2gcs_real_udp.type = COMMAND_AP2GCS_REAL_UDP;
     ap2gcs_real_udp.vessel = 1;  //发送数据的船的ID编号，从1开始，最多到100,0为无效船
-    ap2gcs_real_udp.master_ap_link_ack = 0x10;//D7:主/备自驾仪(1主,0备);D6~4:自驾仪编号(0..7);D3~1:链路编号(0:局域网;1:北斗;2:串口数传电台);D0:是否需要返回确认包(1:需要;0:不需)
+    //ap2gcs_real_udp.master_ap_link_ack = 0x10;//D7:主/备自驾仪(1主,0备);D6~4:自驾仪编号(0..7);D3~1:链路编号(0:局域网;1:北斗;2:串口数传电台);D0:是否需要返回确认包(1:需要;0:不需)
+    ap2gcs_real_udp.master_ap_link_ack = 0x90;//D7:主/备自驾仪(1主,0备);D6~4:自驾仪编号(0..7);D3~1:链路编号(0:局域网;1:北斗;2:串口数传电台);D0:是否需要返回确认包(1:需要;0:不需)
     ap2gcs_real_udp.plan_id = 0;//采用的航线编号，从1开始，最大为10，0表示没有航线
 
     ap2gcs_real_udp.cnt = real_udp_cnt;

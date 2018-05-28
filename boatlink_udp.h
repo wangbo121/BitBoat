@@ -11,8 +11,10 @@
 #define COMMAND_AP2GCS_REAL_UDP      0x01
 #define COMMAND_GCS2AP_CMD_UDP      0x02
 
-struct AP2GCS_REAL_UDP
+struct AP2GCS_REAL_UDP_OLD
 {
+    //unsigned char len;  //len 占用1个字节的
+
 	unsigned char head1;
 	unsigned char head2;
 	unsigned char len;      //到此4个字节
@@ -55,6 +57,55 @@ struct AP2GCS_REAL_UDP
 	unsigned char check_spare1;
 	unsigned char check1;
 	unsigned char check2;
+};
+
+
+
+struct AP2GCS_REAL_UDP
+{
+    unsigned char head1;
+    unsigned char head2;
+    unsigned short len;      //到此4个字节
+
+    unsigned char type;
+    unsigned char vessel;
+    unsigned char master_ap_link_ack;
+    unsigned char plan_id;
+    unsigned char cnt;
+    unsigned char pack_func_flag;//包功能标志，暂时固定为0
+    unsigned char pack_func_info1;//接收到的命令包计数
+    unsigned char pack_func_info2;//接收到的航点包计数                                       //到此12个字节
+    //unsigned char pack_func_info3;//接收到的航点包计数
+
+    unsigned int lng;//[度*0.00001]，GPS经度坐标，整型，精确到米
+    unsigned int lat;//[度*0.00001]，GPS纬度坐标，整型，精确到米                      //到此20个字节
+    unsigned short spd;//[Knot*0.01]，实时航速
+    short dir_gps;//[度*0.01]，地速航向，GPS航向
+    short dir_heading;//[度*0.01]，机头朝向
+    short dir_target;//[度*0.01]，目标点朝向
+    short dir_nav;//[度*0.01]，导航航向
+    short roll;//[度*0.01]，滚转
+    short pitch;//[度*0.01]，俯仰
+    short yaw;//[度*0.01]，偏航                                                                                       //到此36个字节
+
+    unsigned char wp_next;
+    unsigned char sail_mode;//遥控 自驾 驻航 返航
+    unsigned char form_type;
+    unsigned char pilot_vessel;                                                                                //到此40给字节
+
+    unsigned int spare1;
+    unsigned int spare2;
+    unsigned int spare3;
+    unsigned int spare4;
+    unsigned int spare5;
+    unsigned int spare6;
+    unsigned int spare7;
+    unsigned int spare8;                                                                                         //到此72个字节
+
+    unsigned char check_spare0;
+    unsigned char check_spare1;
+    unsigned char check1;
+    unsigned char check2;
 };
 
 struct GCS2AP_CMD_UDP
