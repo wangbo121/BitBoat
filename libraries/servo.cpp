@@ -9,8 +9,8 @@
 #include <time.h>
 #include <sys/time.h>
 
-//#include "boatlink.h"
 #include "utility.h"
+#include "II2C.h"
 
 #include "servo.h"
 
@@ -120,63 +120,49 @@ int set_rudder_off()
     return 0;
 }
 
-int set_throttle_left_right(float pwm_left, float pwm_right, int throttle_num)
+int set_throttle_left_right(float pwm_left, float pwm_right, int device_num)
 {
-#if 0
     float pwm_left_normalize=0.0;
     float pwm_right_normalize=0.0;
 
-    //printf("设置左油门= %f\n",pwm_left);
-    //printf("设置右油门= %f\n",pwm_right);
-    if(pwm_left<1000.0)
+    if(pwm_left < 1000.0)
     {
-        pwm_left=1000.0;
+        pwm_left = 1000.0;
     }
-    else if(pwm_left>2000.0)
+    else if(pwm_left > 2000.0)
     {
-        pwm_left=2000.0;
+        pwm_left = 2000.0;
     }
 
-    if(pwm_right<1000.0)
+    if(pwm_right < 1000.0)
     {
-        pwm_right=1000.0;
+        pwm_right = 1000.0;
     }
-    else if(pwm_right>2000.0)
+    else if(pwm_right > 2000.0)
     {
-        pwm_right=2000.0;
+        pwm_right = 2000.0;
     }
 
     /*pwm within 1000-2000 to 0-1000 to 0--+1*/
     pwm_left_normalize=((float)pwm_left-1000)/1000;
     pwm_right_normalize=((float)pwm_right-1000)/1000;
 
-    /*
-     * default throttle num =1
-     * 默认通道VOUT0 和 VOUT2
-     */
-    switch(throttle_num)
+    float voltage;
+    switch(device_num)
     {
-    case DEFAULT_THROTTLE_NUM:
-        set_analog.chan0_voltage=pwm_right_normalize*MAX_THROTTLE;
-        set_analog.chan1_voltage=pwm_right_normalize*MAX_THROTTLE;
-        set_analog.chan2_voltage=pwm_left_normalize*MAX_THROTTLE;
-        set_analog.chan3_voltage=pwm_left_normalize*MAX_THROTTLE;
-        global_bool_modbus.send_request_analog_cnt++;
+    case DEFAULT_DEVICE_NUM:
+        voltage = pwm_left_normalize * MAX_THROTTLE;
+        DAC7574_DA(DAC7574_DA1_ADDR, DA_CHANNEL_0, voltage); // left motor
 
+        voltage = pwm_right_normalize * MAX_THROTTLE;
+        DAC7574_DA(DAC7574_DA1_ADDR, DA_CHANNEL_1, voltage); // right motor
         break;
-    case SPARE_THROTTLE_NUM:
-        set_analog.chan0_voltage=pwm_right_normalize*MAX_THROTTLE;
-        set_analog.chan1_voltage=pwm_right_normalize*MAX_THROTTLE;
-        set_analog.chan2_voltage=pwm_left_normalize*MAX_THROTTLE;
-        set_analog.chan3_voltage=pwm_left_normalize*MAX_THROTTLE;
-        global_bool_modbus.send_request_analog_cnt++;
-
+    case SPARE_DEVICE_NUM:
         break;
     default:
-
         break;
     }
-#endif
+
     return 0;
 }
 

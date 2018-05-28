@@ -22,8 +22,8 @@
  */
 #define RUDDER_DEAD_ZONE 0.022*3
 
-#define DEFAULT_THROTTLE_NUM 1 //默认的推进器通道
-#define SPARE_THROTTLE_NUM 2 // 冗余的推进器通道
+#define DEFAULT_DEVICE_NUM 1 //默认的推进器通道
+#define SPARE_DEVICE_NUM   2 // 冗余的推进器通道
 
 #ifndef TRUE
 #define TRUE 1
@@ -47,7 +47,10 @@ int set_rudder(float pwm,int rudder_num);
 int set_rudder_off(); // 停止方向舵，方向舵不再动作
 
 /*左右推进器的差控制*/
-int set_throttle_left_right(float pwm_left, float pwm_right, int throttle_num);
+/*
+ * device_num is for redundance
+ */
+int set_throttle_left_right(float pwm_left, float pwm_right, int device_num);
 
 int set_motor_forward();
 int set_motor_backward();

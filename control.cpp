@@ -10,7 +10,6 @@
 #include <math.h>
 #include <stdlib.h>
 
-//#include "boatlink.h"
 #include "global.h"
 #include "location.h"
 #include "navigation.h"
@@ -27,9 +26,10 @@
 #ifndef M_PI
 #define M_PI       3.14159265358979323846
 #endif
+//
+//#define TURN_MODE_DIFFSPD 1
+//#define TURN_MODE_RUDDER  2
 
-#define TURN_MODE_RUDDER 0
-#define TURN_MODE_DIFFSPD 1
 
 #define OFF_LMT 1000.0
 #define ON_LMT 2000.0
@@ -61,12 +61,6 @@ int control_loop(void)
 	return 0;
 }
 
-/*
- * Function:     execute_ctrloutput
- * Description:  利用ctrlinput，navigation，ctrlpara，gpsdata的数据，
- *               control_loop 只是计算出控制的量，但是并不输出，execute_ctrloutput才是输出
- *               二者的频率可以相同，也可以不同
- */
 int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput)
 {
 	float motor_left_pwm_out=0.0;
@@ -75,57 +69,54 @@ int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput)
 	ptr_ctrloutput->mmotor_onoff_pwm = constrain_pwm(ptr_ctrloutput->mmotor_onoff_pwm, 1000.0, 2000.0);
 	ptr_ctrloutput->rudder_pwm = constrain_pwm(ptr_ctrloutput->rudder_pwm, 1000.0, 2000.0);
 
-	/*
-	 * 1. 最终输出方向舵
-	 */
-    if( global_bool_boatpilot.turn_mode==TURN_MODE_RUDDER )
-    {
-        set_rudder(ptr_ctrloutput->rudder_pwm,DEFAULT_RUDDER_NUM);
-    }
+	DEBUG_PRINTF("wwwww  ptr_ctrloutput->rudder_pwm = %f \n",ptr_ctrloutput->rudder_pwm);
 
-	/*
-	 * 2个推进器分别输出，差速控制方向，也就是“以车代舵”
-	 */
+	unsigned char turn_mode = global_bool_boatpilot.turn_mode;
     float rudder2motor=0.0;
     int delta_rudder=0;
-
-    if( global_bool_boatpilot.turn_mode==TURN_MODE_DIFFSPD )
-    {
+	switch(turn_mode)
+	{
+	case TURN_MODE_DIFFSPD:
         /*
          * 增加差速，在油门的基础上，添加舵效，分为5个档位
          */
-        rudder2motor=ptr_ctrloutput->rudder_pwm-1500;
+        motor_left_pwm_out  = ptr_ctrloutput->mmotor_onoff_pwm;
+        motor_right_pwm_out = ptr_ctrloutput->mmotor_onoff_pwm;
 
-        if(rudder2motor>50)
+
+        rudder2motor = ptr_ctrloutput->rudder_pwm-1500;
+        DEBUG_PRINTF("ptr_ctrloutput->rudder_pwm = %f \n",ptr_ctrloutput->rudder_pwm);
+        if(rudder2motor > 50)
         {
             //右舵
-            //printf("右舵，左推进器增加\n");
-            delta_rudder=(int)rudder2motor;
-            delta_rudder=fabs(delta_rudder);
-            motor_left_pwm_out=motor_left_pwm_out+(delta_rudder/100)*100;
-            motor_right_pwm_out=motor_right_pwm_out-(delta_rudder/100)*100;
+            delta_rudder        =   (int)rudder2motor;
+            delta_rudder        =   fabs(delta_rudder);
+            motor_left_pwm_out  =   motor_left_pwm_out  + (delta_rudder / 100) * 100;
+            motor_right_pwm_out =   motor_right_pwm_out - (delta_rudder / 100) * 100;
         }
-        else if(rudder2motor<-50)
+        else if(rudder2motor < -50)
         {
             //左舵
-            //printf("左舵，右推进器增加\n");
-            delta_rudder=(int)rudder2motor;
-            delta_rudder=fabs(delta_rudder);
-            motor_left_pwm_out=motor_left_pwm_out-(delta_rudder/100)*100;
-            motor_right_pwm_out=motor_right_pwm_out+(delta_rudder/100)*100;
+            delta_rudder        =   (int)rudder2motor;
+            delta_rudder        =   fabs(delta_rudder);
+            motor_left_pwm_out  =   motor_left_pwm_out  - (delta_rudder / 100) * 100;
+            motor_right_pwm_out =   motor_right_pwm_out + (delta_rudder / 100) * 100;
         }
+        motor_left_pwm_out  = constrain_pwm(motor_left_pwm_out,  1000.0, 2000.0);
+        motor_right_pwm_out = constrain_pwm(motor_right_pwm_out, 1000.0, 2000.0);
 
-		//如果只是差速控制，那就把方向舵关掉
-		set_rudder_off();
-    }
-
-    motor_left_pwm_out = constrain_pwm(motor_left_pwm_out, 1000.0, 2000.0);
-    motor_right_pwm_out = constrain_pwm(motor_right_pwm_out, 1000.0, 2000.0);
-
-    /*
-     * 2. 最终输出左右推进器
-     */
-    set_throttle_left_right(motor_left_pwm_out,motor_right_pwm_out,DEFAULT_THROTTLE_NUM);
+        /*
+         * 最终输出左右推进器
+         */
+        DEBUG_PRINTF("motor_left_pwm_out = %f, motor_right_pwm_out = %f \n", motor_left_pwm_out, motor_right_pwm_out);
+        set_throttle_left_right(motor_left_pwm_out, motor_right_pwm_out, DEFAULT_DEVICE_NUM);
+	    break;
+	case TURN_MODE_RUDDER:
+	    set_rudder(ptr_ctrloutput->rudder_pwm, DEFAULT_RUDDER_NUM);
+	    break;
+	default:
+	    break;
+	}
 
 	return 0;
 }
@@ -140,14 +131,6 @@ static int get_ctrlpara()
 	ctrlpara.rudder_p = (float)gcs2ap_all_udp.rud_p * 0.1;
 	ctrlpara.rudder_i = (float)gcs2ap_all_udp.rud_i * 0.01;
 	ctrlpara.rudder_d = (float)gcs2ap_all_udp.rud_d * 0.1;
-
-	ctrlpara.rudder_p = (float)gcs2ap_all_udp.rud_p * 0.1;
-    ctrlpara.rudder_i = (float)gcs2ap_all_udp.rud_i * 0.01;
-    ctrlpara.rudder_d = (float)gcs2ap_all_udp.rud_d * 0.1;
-
-
-
-
 
 	ctrlpara.cruise_throttle=gcs2ap_all_udp.cruise_throttle_percent;
 

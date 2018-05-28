@@ -61,18 +61,16 @@
 class Boat
 {
 public:
-//    friend class GCS_MAVLINK;
-
     BIT_PID pid_yaw;
     BIT_PID pid_CTE;
 
-    Boat(void)
+    Boat(void):sim_water_craft("39.95635,116.31574,10,0","+")
     {
 		/*
-		* 在构造函数的开始就初始化一些内部变量
+		* 在构造函数的开始，必须初始化私有变量，因为私有变量外部函数无法更改
 		*/
-		control_mode            = STABILIZE;
-		loop_cnt = 0;
+		control_mode        =       STABILIZE;
+		fastloop_cnt        =       0;
     }
 
     // main loop scheduler
@@ -83,30 +81,37 @@ public:
     void loop();
 
 private:
-    uint8_t          control_mode;
-    uint32_t        loop_cnt;
+    uint8_t     control_mode;
+    uint32_t    fastloop_cnt;
 
 private:
     void get_timedata_now();//获取当前的时间，包含年月日时分秒的
 
     void loop_fast();
-    void loop_one_second();
-    void end_of_task();
+    static void loop_one_second();
+    static void end_of_task();
 
-    void get_gcs_udp(); // 通过udp获取地面站发送给自驾仪的命令
-    void get_gcs_radio(); // 通过无线电radio获取地面站发送给自驾仪的命令
-    void send_ap2gcs_realtime_data_boatlink_by_udp();
+    static void get_gcs_udp(); // 通过udp获取地面站发送给自驾仪的命令
+    static void get_gcs_radio(); // 通过无线电radio获取地面站发送给自驾仪的命令
+    static void send_ap2gcs_realtime_data_boatlink_by_udp();
 
     void update_all_external_device_input( void );
     /*
      * update_GPS update_mpu6050都是假的获取传感器数据，是从all_external_device_input这个结构中获取想要的数据
      * 真正的读取传感器的函数是read_device_...，这些函数把从传感器读取的数据存入到all_external_device_input中
      */
-    void update_GPS();//
+    static void update_GPS();//
+    static void update_IMU();
     void update_mpu6050();// 从all_external_device_input 获取 acc/gyo/姿态
 
     //  //自驾仪虚拟地输出数据，把控制量啥的输出到all_external_device_output
     void out_execute_ctrloutput();
+
+    void arm_motros_check();
+    void motors_output();
+
+    void relay_switch_init();
+
 
     void record_config();//记录配置文件
     void record_wp();//记录航点文件
@@ -124,11 +129,18 @@ private:
     void set_device_relays();//设置继电器开关量
 
 
+    void static read_device_gps_JY901();
+
     void write_device_II2C();
 
+    void update_sim_water_craft();
+
+
+public:
     /*
      * 航行器的物理数学模型
      */
+    Watercraft sim_water_craft;//+型机架，起始高度为10，yaw是0
     Watercraft::sitl_input input;// 是rudder 和 thruster输入，然后用于更新出航行器的航行状态
     Watercraft::sitl_fdm fdm;
     uint16_t servos_set_out[4];//这是驾驶仪计算的到的motor_out中的四个电机的转速，给电调的信号，1000～2000

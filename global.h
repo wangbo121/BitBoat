@@ -126,6 +126,9 @@
 #define UDP_RECVFROM_BLOCK_TIME 1000 //udp监听数据最大阻塞时间 1ms
 //#define UDP_RECVFROM_BLOCK_TIME 200 //udp监听数据最大阻塞时间 200us
 
+#define TURN_MODE_DIFFSPD 0
+#define TURN_MODE_RUDDER  1
+
 struct WAY_POINT
 {
     unsigned char no;

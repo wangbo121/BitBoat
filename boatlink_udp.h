@@ -241,7 +241,7 @@ struct GCS2AP_ALL_UDP
 	unsigned char rudder_right_pos;//方向舵处于最右边时，遥控器的数值，
 	unsigned char rudder_mid_pos;//方向舵处于中间时，遥控器的数值，
 
-    unsigned char auto_work_mode;//自动模式下的工作模式，mission guide loiter
+    unsigned char auto_workmode;//自动模式下的工作模式，mission guide loiter
     unsigned char wp_guide_no;//设定的航点编号
 
     unsigned char formation_type;//编队方式，0:独立航行 1领导跟随 2分布式

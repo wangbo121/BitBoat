@@ -57,14 +57,14 @@ int navigation_loop( void )
 
 static int get_navigation_input()
 {
-    auto_navigation.in_arrive_radius = (unsigned int)gcs2ap_all_udp.arrive_radius * 10;//gcs2ap_all中的5其实表示的是50米，要扩大10倍
-    auto_navigation.in_total_wp_num = global_bool_boatpilot.wp_total_num;
-    auto_navigation.in_wp_guide_no = gcs2ap_all_udp.wp_guide_no;
-    auto_navigation.in_work_mode = gcs2ap_all_udp.workmode;
-    auto_navigation.in_auto_work_mode = gcs2ap_all_udp.auto_work_mode;
-    auto_navigation.in_CTE_p = (float)gcs2ap_all_udp.cte_p * 0.1;
-    auto_navigation.in_CTE_i = (float)gcs2ap_all_udp.cte_i * 0.01;
-    auto_navigation.in_CTE_d = (float)gcs2ap_all_udp.cte_d * 0.1;
+    auto_navigation.in_arrive_radius = (unsigned int)gcs2ap_all_udp.arrive_radius * 10; // gcs2ap_all中的5其实表示的是50米，要扩大10倍
+    auto_navigation.in_total_wp_num  = global_bool_boatpilot.wp_total_num;
+    auto_navigation.in_wp_guide_no   = gcs2ap_all_udp.wp_guide_no;
+    auto_navigation.in_workmode      = gcs2ap_all_udp.workmode;
+    auto_navigation.in_auto_workmode = gcs2ap_all_udp.auto_workmode;
+    auto_navigation.in_CTE_p         = (float)gcs2ap_all_udp.cte_p * 0.1;
+    auto_navigation.in_CTE_i         = (float)gcs2ap_all_udp.cte_i * 0.01;
+    auto_navigation.in_CTE_d         = (float)gcs2ap_all_udp.cte_d * 0.1;
 
 	return 0;
 }
@@ -91,8 +91,8 @@ static int get_navigation_output(struct T_NAVIGATION *ptr_auto_navigation,\
 	ptr_auto_navigation->wp_guide_no = ptr_auto_navigation->in_wp_guide_no;
 
 	//控制模式，因为不同的控制模式需要不同的制导方式，path following 和 guide模式是不一样的
-	ptr_auto_navigation->work_mode = ptr_auto_navigation->in_work_mode;
-	ptr_auto_navigation->auto_work_mode = ptr_auto_navigation->in_auto_work_mode;
+	ptr_auto_navigation->work_mode = ptr_auto_navigation->in_workmode;
+	ptr_auto_navigation->auto_work_mode = ptr_auto_navigation->in_auto_workmode;
 
 	ptr_auto_navigation->CTE_p = ptr_auto_navigation->in_CTE_p;
 	ptr_auto_navigation->CTE_i = ptr_auto_navigation->in_CTE_i;
@@ -243,29 +243,26 @@ static unsigned int get_next_wp_num(struct WAY_POINT *ptr_wp_data,\
 
 	struct T_LOCATION last_target;
 	struct T_LOCATION specific_location;
-	struct T_LOCATION *specific_loc=NULL;
+	struct T_LOCATION *specific_loc = NULL;
 
 	specific_loc = &specific_location;
 
-	if(current_target_wp_cnt>=1)
+	if(current_target_wp_cnt >= 1)
 	{
-		last_target.lng=((float)ptr_wp_data[current_target_wp_cnt-1].lng)*GPS_LOCATION_SCALE;
-		last_target.lat=((float)ptr_wp_data[current_target_wp_cnt-1].lat)*GPS_LOCATION_SCALE;
+		last_target.lng = ((float)ptr_wp_data[current_target_wp_cnt-1].lng)*GPS_LOCATION_SCALE;
+		last_target.lat =((float)ptr_wp_data[current_target_wp_cnt-1].lat)*GPS_LOCATION_SCALE;
 	}
 	else
 	{
-		last_target.lng=((float)ptr_wp_data[total_wp_num-1].lng)*GPS_LOCATION_SCALE;
-		last_target.lat=((float)ptr_wp_data[total_wp_num-1].lat)*GPS_LOCATION_SCALE;
+		last_target.lng = ((float)ptr_wp_data[total_wp_num-1].lng)*GPS_LOCATION_SCALE;
+		last_target.lat = ((float)ptr_wp_data[total_wp_num-1].lat)*GPS_LOCATION_SCALE;
 	}
 
 	specific_loc->lng = ((float)ptr_wp_data[current_target_wp_cnt].lng)*GPS_LOCATION_SCALE;
 	specific_loc->lat = ((float)ptr_wp_data[current_target_wp_cnt].lat)*GPS_LOCATION_SCALE;
 
-	//DEBUG_PRINTF("current_loc->lng = %f,  specific_loc->lng = %f  \n",current_loc->lng,specific_loc->lng);
-	//DEBUG_PRINTF("current_loc->lat = %f,  specific_loc->lat = %f  \n",current_loc->lat,specific_loc->lat);
-
-	bool_arrive_point_radius = arrive_specific_location_radius(current_loc, specific_loc,arrive_radius);//这是利用  到达半径  判断
-	bool_arrive_point = arrive_specific_location_over_line_project_NED(&last_target,current_loc,specific_loc);//这是利用  过线  判断
+	bool_arrive_point_radius = arrive_specific_location_radius(current_loc, specific_loc, arrive_radius);//这是利用  到达半径  判断
+	bool_arrive_point        = arrive_specific_location_over_line_project_NED(&last_target, current_loc, specific_loc);//这是利用  过线  判断
 
 	/*
 	 * 或者到达指定航点的某个半径范围的圆圈内

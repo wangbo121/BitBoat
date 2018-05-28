@@ -76,6 +76,7 @@ void Boat::setup( void )
 
 
     II2C_init();
+    relay_switch_init();
 
     /*
      * 初始化自驾仪控制量输入以及参数的初始值，
@@ -83,22 +84,22 @@ void Boat::setup( void )
      * 尤其注意初始的方向舵和油门量值
      * 控制量的限幅参数
      */
-    gcs2ap_all_udp.rud_p=20;//rud_p单位是[0.1]所以一开始要赋值大一些
-	gcs2ap_all_udp.arrive_radius=10;//单位是[10米]，初始到达半径设置为100米
-	gcs2ap_all_udp.mmotor_off_pos=0;
-	gcs2ap_all_udp.mmotor_on_pos=255;
-	gcs2ap_all_udp.rudder_left_pos=0;
-	gcs2ap_all_udp.rudder_right_pos=255;
-	gcs2ap_all_udp.rudder_mid_pos=127;
-	gcs2ap_all_udp.rc_thruster=0;
-	gcs2ap_all_udp.rc_rudder=127;
-	gcs2ap_all_udp.cruise_throttle_percent=50;//初始巡航油门设置为百分之50
-	gcs2ap_all_udp.cte_max_degree=5;/*初始化偏航距的最大修正角度*/
-	gcs2ap_all_udp.throttle_change_time=5;/*油门改变10%所消耗的时间[秒]*/
-	gcs2ap_all_udp.navigation_mode=NAVIGATION_COURSE_ANGLE;
-	gcs2ap_all_udp.rudder_dead_zone_angle_degree=3;
-	gcs2ap_all_udp.diffspd_coef=100;
-	gcs2ap_all_udp.diffspd_lim=10;
+    gcs2ap_all_udp.rud_p                            =   20;//rud_p单位是[0.1]所以一开始要赋值大一些
+	gcs2ap_all_udp.arrive_radius                    =   10;//单位是[10米]，初始到达半径设置为100米
+	gcs2ap_all_udp.mmotor_off_pos                   =   0;
+	gcs2ap_all_udp.mmotor_on_pos                    =   255;
+	gcs2ap_all_udp.rudder_left_pos                  =   0;
+	gcs2ap_all_udp.rudder_right_pos                 =   255;
+	gcs2ap_all_udp.rudder_mid_pos                   =   127;
+	gcs2ap_all_udp.rc_thruster                      =   0;
+	gcs2ap_all_udp.rc_rudder                        =   127;
+	gcs2ap_all_udp.cruise_throttle_percent          =   50;//初始巡航油门设置为百分之50
+	gcs2ap_all_udp.cte_max_degree                   =   5;/*初始化偏航距的最大修正角度*/
+	gcs2ap_all_udp.throttle_change_time             =   5;/*油门改变10%所消耗的时间[秒]*/
+	gcs2ap_all_udp.navigation_mode                  =   NAVIGATION_COURSE_ANGLE;
+	gcs2ap_all_udp.rudder_dead_zone_angle_degree    =   3;
+	gcs2ap_all_udp.diffspd_coef                     =   100;
+	gcs2ap_all_udp.diffspd_lim                      =   10;
 
     /*
      * 下面是全局变量global_bool_boatpilot的初始化
@@ -106,8 +107,8 @@ void Boat::setup( void )
      * 而global_bool_boatpilot是驾驶仪内部需要的全局计算量
      * 一些标志量用global_bool_boatpilot中的bool表示
      */
-    global_bool_boatpilot.turn_mode=1;////转弯方式，0:方向舵，1:差速 2:方向舵和差速同时混合转弯
-    global_bool_boatpilot.save_boatpilot_log_req = TRUE;
+	global_bool_boatpilot.turn_mode                =    TURN_MODE_DIFFSPD;
+    global_bool_boatpilot.save_boatpilot_log_req   =    TRUE;
 
     /*
      * 设置PID控制器的参数 下面的这个pid_yaw还没有开始使用
@@ -126,13 +127,13 @@ void Boat::setup( void )
      * 有1个网卡是用来监听地面站向自驾仪发送数据的
      * 与此同时，发送也是通过这个网卡向地面站回传实时数据
      */
-    printf("Boat::setup    :    fd_socket_generic = %d \n",fd_socket_generic);
+    DEBUG_PRINTF("Boat::setup    :    fd_socket_generic = %d \n",fd_socket_generic);
     open_socket_udp_dev(&fd_socket_generic, "AP_LISTEN_UDP_IP", AP_LISTEN_UDP_PORT);
 
 #ifdef TEST
     unsigned int lng_start = 116.31574 * 1e5;
     unsigned int lat_start = 39.95635 * 1e5;
-    unsigned char wp_total_num_test =5;
+    unsigned char wp_total_num_test = 5;
     for(int i=0; i< wp_total_num_test; i++)
     {
         wp_data[i].no = i;
@@ -141,16 +142,12 @@ void Boat::setup( void )
         wp_data[i].alt = 12;
 
         wp_data[i].lng = lng_start + 3e3 * i;
-        //wp_data[i].lng = lng_start + 1e4 * i;
-        //wp_data[i].lat = lat_start + 1e5;
         wp_data[i].lat = lat_start;
 
-        printf("wp_data[%d].lng = %d \n",i,wp_data[i].lng);
-        printf("wp_data[%d].lat = %d \n",i,wp_data[i].lat);
+        DEBUG_PRINTF("wp_data[%d].lng = %d \n",i,wp_data[i].lng);
+        DEBUG_PRINTF("wp_data[%d].lat = %d \n",i,wp_data[i].lat);
     }
     global_bool_boatpilot.wp_total_num = wp_total_num_test;
-
-
 #endif
 
 
@@ -254,14 +251,52 @@ void Boat::update_GPS()
 	gps_data.velocity_east = (int)(all_external_device_input.v_east * 1e3);
 }
 
+void Boat::update_IMU()
+{
+
+
+
+}
+
 void Boat::update_mpu6050()
 {
 
 }
 
+void Boat::update_sim_water_craft()
+{
+
+    /*
+     * 下面是把驾驶仪计算得到的电机或者舵机的输出给到simulator模拟器中
+     */
+    servos_set_out[0] = (uint16_t)(ctrloutput.rudder_pwm);
+    servos_set_out[1] = (uint16_t)(ctrloutput.mmotor_onoff_pwm);
+
+    memcpy(input.servos,servos_set_out,sizeof(servos_set_out));
+    sim_water_craft.update(input);
+    sim_water_craft.fill_fdm(fdm);
+}
+
+void Boat::read_device_gps_JY901()
+{
+    read_gps_data_Y901();
+}
+
 void Boat::out_execute_ctrloutput()
 {
 	execute_ctrloutput(&ctrloutput);
+}
+
+void Boat::arm_motros_check()
+{
+
+
+
+}
+
+void Boat::motors_output()
+{
+    execute_ctrloutput(&ctrloutput);
 }
 
 void Boat::record_wp()
@@ -366,11 +401,22 @@ void Boat::loop_one_second()
     //DEBUG_PRINTF("global_bool_boatpilot.wp_next: %d\n",global_bool_boatpilot.wp_next);
     //DEBUG_PRINTF("global_bool_boatpilot.cnt_test : %d\n",global_bool_boatpilot.cnt_test );
 
-    DEBUG_PRINTF("gcs2ap_cmd_udp.func_info2    :    =%d \n", gcs2ap_cmd_udp.func_info2);
+    //DEBUG_PRINTF("gcs2ap_cmd_udp.func_info2    :    =%d \n", gcs2ap_cmd_udp.func_info2);
 
 
 }
 
+
+void Boat::relay_switch_init()
+{
+    unsigned char send;
+
+    send = 0xfa;
+    PFC8574_DO(PCF8574_DO1_ADDR, send);
+
+    send = 0x0f;
+    PFC8574_DO(PCF8574_DO2_ADDR, send);
+}
 
 void Boat::write_device_II2C()
 {

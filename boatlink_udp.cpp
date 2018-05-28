@@ -161,19 +161,12 @@ static int decode_gcs2ap_cmd_udp(struct GCS2AP_ALL_UDP *ptr_gcs2ap_all_udp, stru
 	switch(ptr_gcs2ap_all_udp->controller_type)
 	{
 	case CONTROLLER_TYPE_PID:
-		//ptr_gcs2ap_all_udp->ctrl_para_1;//throttle_p
-		//ptr_gcs2ap_all_udp->ctrl_para_2;//throttle_i
-		//ptr_gcs2ap_all_udp->ctrl_para_3;//throttle_d
 		ptr_gcs2ap_all_udp->rud_p= ptr_gcs2ap_all_udp->ctrl_para_4;
 		ptr_gcs2ap_all_udp->rud_i= ptr_gcs2ap_all_udp->ctrl_para_5;
 		ptr_gcs2ap_all_udp->rud_d= ptr_gcs2ap_all_udp->ctrl_para_6;
 		ptr_gcs2ap_all_udp->cte_p= ptr_gcs2ap_all_udp->ctrl_para_7;
 		ptr_gcs2ap_all_udp->cte_i= ptr_gcs2ap_all_udp->ctrl_para_8;
 		ptr_gcs2ap_all_udp->cte_d= ptr_gcs2ap_all_udp->ctrl_para_9;
-		//ptr_gcs2ap_all_udp->ctrl_para_10;//yaw_rate_p
-		//ptr_gcs2ap_all_udp->ctrl_para_11;//yaw_rate_i
-		//ptr_gcs2ap_all_udp->ctrl_para_12;//yaw_rate_d
-
 		break;
 	case CONTROLLER_TYPE_ADRC:
 		break;
@@ -191,7 +184,7 @@ static int decode_gcs2ap_cmd_udp(struct GCS2AP_ALL_UDP *ptr_gcs2ap_all_udp, stru
 		break;
 	case SAIL_MODE_1:
 		ptr_gcs2ap_all_udp->workmode = AUTO_MODE;
-		ptr_gcs2ap_all_udp->auto_work_mode = AUTO_MISSION_MODE;
+		ptr_gcs2ap_all_udp->auto_workmode = AUTO_MISSION_MODE;
 		break;
 	case SAIL_MODE_2:
 		ptr_gcs2ap_all_udp->workmode = STOP_MODE;
@@ -201,11 +194,11 @@ static int decode_gcs2ap_cmd_udp(struct GCS2AP_ALL_UDP *ptr_gcs2ap_all_udp, stru
 		break;
 	case SAIL_MODE_4:
 		ptr_gcs2ap_all_udp->workmode = AUTO_MODE;
-		ptr_gcs2ap_all_udp->auto_work_mode = AUTO_GUIDE_MODE;
+		ptr_gcs2ap_all_udp->auto_workmode = AUTO_GUIDE_MODE;
 		break;
 	case SAIL_MODE_5:
 		ptr_gcs2ap_all_udp->workmode = AUTO_MODE;
-		ptr_gcs2ap_all_udp->auto_work_mode = AUTO_LOITER_MODE;
+		ptr_gcs2ap_all_udp->auto_workmode = AUTO_LOITER_MODE;
 		break;
 	default:
 		ptr_gcs2ap_all_udp->workmode = RC_MODE;

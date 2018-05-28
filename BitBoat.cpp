@@ -11,7 +11,7 @@
  * 仿真测试使用
  */
 //Watercraft sim_water_craft("32.68436,117.05525,10,0","+");//+型机架，起始高度为10，yaw是0
-Watercraft sim_water_craft("39.95635,116.31574,10,0","+");//+型机架，起始高度为10，yaw是0
+//Watercraft sim_water_craft("39.95635,116.31574,10,0","+");//+型机架，起始高度为10，yaw是0
 
 /*
  * 这是任务调度表，除了fast_loop中的任务，其他任务都在这里执行
@@ -35,39 +35,38 @@ Watercraft sim_water_craft("39.95635,116.31574,10,0","+");//+型机架，起始�
 
 const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 {
-		// 自驾仪虚拟地获取传感器数据，从all_external_device_input 虚拟获取
-      { SCHED_TASK(update_GPS),                                                  10,     100 },
-     // { SCHED_TASK(update_mpu6050),                                                  10,     100 },
+    //真正读取传感器函数
+    //{ SCHED_TASK(read_device_gps_JY901),                                                  10,     3000 },
 
-      //自驾仪虚拟地输出数据，把控制量啥的输出到all_external_device_output
-
-      //真正读取传感器函数
-    //  { SCHED_TASK(read_device_gps),                                                  10,     3000 },
-
-      //真正设置外部设备函数，比如设置继电器让方向舵切换左右转
+    //真正写入外部设备的函数，比如设置继电器让方向舵切换左右转
     //  { SCHED_TASK(set_device_rc_out),                                                    100,     100 },
-      { SCHED_TASK(write_device_II2C),                                                    1,    1000 },
+    //{ SCHED_TASK(write_device_II2C),                                                    1,    1000 },
+    { SCHED_TASK(motors_output),                                                    1,    1000 },
 
-      { SCHED_TASK(get_gcs_udp),                                                    10,    1000 },
-//      { SCHED_TASK(send_ap2gcs_cmd_boatlink),                          1,    1000 },
-//      { SCHED_TASK(send_ap2gcs_wp_boatlink),                            1,    1000 },
-//      { SCHED_TASK(send_ap2gcs_realtime_data_boatlink),    100,    1000 },
-      { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),    1,    1000 },
+    // 自驾仪虚拟地获取传感器数据，从all_external_device_input虚拟获取
+    { SCHED_TASK(update_GPS),                                                  10,     100 },
+    { SCHED_TASK(update_IMU),                                                  10,     100 },
 
-//      { SCHED_TASK(record_log),                                                   100,    1100 },
-//      { SCHED_TASK(record_wp),                                                   100,    1100 },
-//      { SCHED_TASK(record_config),                                                   100,    1100 },
+    //自驾仪虚拟地输出数据，把控制量啥的输出到all_external_device_output
+    //{ SCHED_TASK(update_external_device),                                                  10,     100 },
 
-      { SCHED_TASK(get_timedata_now),                                     1,     1000 },
-      { SCHED_TASK(loop_one_second),                                      1,    10000 },
-     // { SCHED_TASK(end_of_task),                                          1000,    100 }
+    { SCHED_TASK(get_gcs_udp),                                                    10,    1000 },
+    { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),    1,    1000 },
+
+    { SCHED_TASK(get_timedata_now),                                     1,     1000 },
+    { SCHED_TASK(loop_one_second),                                      1,    10000 },
+
+    //      { SCHED_TASK(record_log),                                                   100,    1100 },
+    //      { SCHED_TASK(record_wp),                                                   100,    1100 },
+    //      { SCHED_TASK(record_config),                                                   100,    1100 },
+
+    { SCHED_TASK(end_of_task),                                          1000,    100 }
 };
 
 #define MAINTASK_TICK_TIME_MS 10//这个设置为10ms，对应每个循环100hz
-int seconds=0;
-int micro_seconds=MAINTASK_TICK_TIME_MS*(1e3);/*每个tick对应的微秒数*/
+int seconds = 0;
+int micro_seconds = MAINTASK_TICK_TIME_MS * (1e3);/*每个tick对应的微秒数*/
 struct timeval maintask_tick;
-static unsigned int navigation_loop_cnt;
 int main(int argc,char * const argv[])
 {
     DEBUG_PRINTF("Welcome to BitPilot \n");
@@ -78,8 +77,6 @@ int main(int argc,char * const argv[])
 
     //初始化步骤，初始化一些设备或者参数等
     boat.setup();
-
-
 
     while (1)
     {
@@ -99,7 +96,7 @@ void Boat::loop( void )
 
     loop_fast();//在无人机中是姿态控制内环，在无人船中是制导控制环
 
-    //  告诉调度器scheduler一个tick已经过去了，目前1个tick指的是10毫秒
+    // 告诉调度器scheduler一个tick已经过去了，目前1个tick指的是10毫秒
     scheduler.tick();
 
     /*
@@ -110,13 +107,14 @@ void Boat::loop( void )
      */
     uint32_t loop_us = micro_seconds;
     uint32_t time_available = loop_us - ( (uint32_t)gettimeofday_us() - timer );
-    //printf("time_available = %d \n",time_available);
 
     scheduler.run(time_available > loop_us ? 0u : time_available);
 }
 
 void Boat::loop_fast()
 {
+    fastloop_cnt ++;
+
     /*
      * 如果全部传感器都是硬件在环的，那么这里就不需要这个update_all_external_device_input
      * 如果传感器都硬件在环，那么就在数据有更新的时候，把数据填在这个结构中
@@ -136,18 +134,11 @@ void Boat::loop_fast()
     gcs2ap_all_udp.arrive_radius = 50;
     gcs2ap_all_udp.cruise_throttle_percent = 100;
     gcs2ap_all_udp.workmode = AUTO_MODE;
-    gcs2ap_all_udp.auto_work_mode = AUTO_MISSION_MODE;
-
-
+    gcs2ap_all_udp.auto_workmode = AUTO_MISSION_MODE;
 #endif
 
-
-
-    navigation_loop_cnt ++;
-
     /*2. navigation*/
-    //navigation_loop();
-    if( ! (navigation_loop_cnt % 100) )
+    if( ! (fastloop_cnt % 100) )
     {
         navigation_loop();
     }
@@ -158,17 +149,24 @@ void Boat::loop_fast()
     global_bool_boatpilot.command_course_degree = (short)(auto_navigation.out_command_course_degree * 100);
     global_bool_boatpilot.wp_next = auto_navigation.out_current_target_wp_cnt;
 
-
     /*3 control*/
     control_loop();
+
+    arm_motros_check();
+    //motors_output();
 
     /*
      * 下面是把驾驶仪计算得到的电机或者舵机的输出给到simulator模拟器中
      */
-    servos_set_out[0] = (uint16_t)(ctrloutput.rudder_pwm);
-    servos_set_out[1] = (uint16_t)(ctrloutput.mmotor_onoff_pwm);
-
-    memcpy(input.servos,servos_set_out,sizeof(servos_set_out));
-    sim_water_craft.update(input);
-    sim_water_craft.fill_fdm(fdm);
+    update_sim_water_craft();
 }
+
+
+
+
+
+
+
+
+
+

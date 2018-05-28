@@ -17,11 +17,11 @@ struct T_NAVIGATION
 	 * in表示需要从外部传输进navigation这个循环的参数，
 	 * 主要是从地面站发送过来的一些参数
 	 */
-	unsigned int in_arrive_radius;
+	unsigned int in_arrive_radius; // [m] 单位是米
 	unsigned char in_total_wp_num;
 	unsigned char in_wp_guide_no;//引导模式时，指定的航点编号
-	unsigned char in_work_mode;//工作模式
-	unsigned char in_auto_work_mode;
+	unsigned char in_workmode;//工作模式
+	unsigned char in_auto_workmode;
 	float in_CTE_p;
 	float in_CTE_i;
 	float in_CTE_d;
