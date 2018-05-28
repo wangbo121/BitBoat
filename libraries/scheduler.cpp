@@ -20,6 +20,7 @@ void BIT_Scheduler::init(const BIT_Scheduler::Task *tasks, uint8_t num_tasks)
     _last_run = new uint16_t[_num_tasks];
     memset(_last_run, 0, sizeof(_last_run[0]) * _num_tasks);
     _tick_counter = 0;
+    _loop_rate_hz = 100; // 100hz 主循环是10ms 一次
 }
 
 // 经过了一个tick
@@ -39,7 +40,13 @@ void BIT_Scheduler::run(uint16_t time_available)
     for (uint8_t i=0; i<_num_tasks; i++)
     {
         uint16_t dt = _tick_counter - _last_run[i];
-        memcpy(&interval_ticks,&_tasks[i].interval_ticks,sizeof(uint16_t));
+
+        //memcpy(&interval_ticks,&_tasks[i].interval_ticks,sizeof(uint16_t));
+        uint16_t interval_ticks = _loop_rate_hz / _tasks[i].rate_hz;
+        if(interval_ticks < 1)
+        {
+            interval_ticks = 1;
+        }
 
         if (dt >= interval_ticks)
         {

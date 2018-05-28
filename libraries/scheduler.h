@@ -25,7 +25,8 @@ public:
     struct Task
     {
         task_fn_t function;
-        uint16_t interval_ticks;// 需要经过interval_ticks个周期，才能执行该任务
+        //uint16_t interval_ticks;// 需要经过interval_ticks个周期，才能执行该任务
+        uint16_t rate_hz;
         uint16_t max_time_micros;
     };
 
@@ -65,6 +66,8 @@ private:
 
     // the time in microseconds when the task started
     uint32_t _task_time_started;
+
+    uint32_t _loop_rate_hz;
 };
 
 #endif /* LIBRARIES_SCHEDULER_H_ */
