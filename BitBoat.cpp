@@ -8,59 +8,45 @@
 #include "Boat.h"
 
 /*
- * 仿真测试使用
- */
-//Watercraft sim_water_craft("32.68436,117.05525,10,0","+");//+型机架，起始高度为10，yaw是0
-//Watercraft sim_water_craft("39.95635,116.31574,10,0","+");//+型机架，起始高度为10，yaw是0
-
-/*
  * 这是任务调度表，除了fast_loop中的任务，其他任务都在这里执行
- * 中间的数字是执行频率，也就是经过多少个tick执行一次这个任务(目前我写的是10ms一个tick)
+ * 中间的数字是执行频率，最慢1hz，最快100hz
  * 最右边的数字是最大允许的时间，单位是微妙
-  scheduler table - all regular tasks apart from the fast_loop()
-  should be listed here, along with how often they should be called
-  (in 10ms units) and the maximum time they are expected to take (in
-  microseconds)
-  1 = 100hz
-  2 = 50hz
-  4 = 25hz
-  10 = 10hz
-  100 = 1hz
-  每个函数的执行时间必须小于最大允许的时间，单位是微秒，否则就会出现Scheduler overrun task
-  因此需要特别注意串口读取 udp读取等阻塞式的读取方式，阻塞等待的时间需要小于这个任务调度允许的最大时间
-  gps_Y901我给的最大允许是3000微秒，而gps_Y901是在10hz循环中的，因此该10hz循环中最多能有3个gps_Y901这种
-  读取函数，否则就会把10ms全部占用了
+ * 每个函数的执行时间必须小于最大允许的时间
+ * 每个任务都需要测试一下实际需要多长时间，如果大于每个tick所允许的剩余时间，就会出现Scheduler overrun task
+ * 因此需要特别注意串口读取 udp读取等阻塞式的读取方式，阻塞等待的时间需要小于这个任务调度允许的最大时间
+ * gps_Y901我给的最大允许是3000微秒，而gps_Y901是在10hz循环中的，因此该10hz循环中最多能有3个gps_Y901这种
+ * 读取函数，否则就会把10ms全部占用了
  */
 #define SCHED_TASK(func) (void (*)())&Boat::func
 
 const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 {
     //真正读取传感器函数
-    //{ SCHED_TASK(read_device_gps_JY901),                                                  10,     3000 },
+    { SCHED_TASK(read_device_gps_JY901),                                       10,     3000 },
+    { SCHED_TASK(read_device_mpu6050),                                         10,     3000 },
 
     //真正写入外部设备的函数，比如设置继电器让方向舵切换左右转
-    //  { SCHED_TASK(set_device_rc_out),                                                    100,     100 },
-    //{ SCHED_TASK(write_device_II2C),                                                    1,    1000 },
-    { SCHED_TASK(motors_output),                                                    1,    1000 },
+    //{ SCHED_TASK(write_device_II2C),                                          1,     1000 },
+    { SCHED_TASK(write_device_motors_output),                                   1,     1000 },
 
     // 自驾仪虚拟地获取传感器数据，从all_external_device_input虚拟获取
-    { SCHED_TASK(update_GPS),                                                  10,     100 },
-    { SCHED_TASK(update_IMU),                                                  10,     100 },
+    { SCHED_TASK(update_GPS),                                                  10,      100 },
+    { SCHED_TASK(update_IMU),                                                  10,      100 },
 
     //自驾仪虚拟地输出数据，把控制量啥的输出到all_external_device_output
-    //{ SCHED_TASK(update_external_device),                                                  10,     100 },
+    //{ SCHED_TASK(update_external_device),                                    10,      100 },
 
-    { SCHED_TASK(get_gcs_udp),                                                    10,    1000 },
-    { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),    1,    1000 },
+    { SCHED_TASK(get_gcs_udp),                                                 10,     9000 },
+    { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),                    1,     1000 },
 
-    { SCHED_TASK(get_timedata_now),                                     1,     1000 },
-    { SCHED_TASK(loop_one_second),                                      1,    10000 },
+    { SCHED_TASK(get_timedata_now),                                             1,     1000 },
+    { SCHED_TASK(loop_one_second),                                              1,    10000 },
 
-    //      { SCHED_TASK(record_log),                                                   100,    1100 },
-    //      { SCHED_TASK(record_wp),                                                   100,    1100 },
-    //      { SCHED_TASK(record_config),                                                   100,    1100 },
+    { SCHED_TASK(record_log),                                                   1,    10000 },
+    { SCHED_TASK(record_wp),                                                    1,    10000 },
+    { SCHED_TASK(record_config),                                                1,    10000 },
 
-    { SCHED_TASK(end_of_task),                                          1000,    100 }
+    { SCHED_TASK(end_of_task),                                                  1,    10 }
 };
 
 #define MAINTASK_TICK_TIME_MS 10//这个设置为10ms，对应每个循环100hz

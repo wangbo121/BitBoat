@@ -31,10 +31,6 @@ struct SQ       stcQ;
 /*extern variable*/
 nmea_msg_Y901 gps_data_Y901;
 
-/*static variable*/
-static nmea_msg_Y901 gpsx_Y901;
-
-
 static struct T_UART_DEVICE uart_device_gps_Y901;
 
 int gps_uart_init_Y901()
@@ -67,7 +63,6 @@ int decode_data_gps_Y901(unsigned char *buf, int len)
 {
     static unsigned char _buffer[GPS_Y901_BUF_SIZE];
 
-    static unsigned char _pack_recv_len[4] = {0};
     static int _pack_recv_real_len = 8;//表示收到的包中的数据包应该收到的除了帧头和校验的长度，Y901是8位
     static unsigned char _pack_recv_buf[GPS_Y901_BUF_SIZE];
     static int _pack_buf_len = 0;
@@ -78,14 +73,13 @@ int decode_data_gps_Y901(unsigned char *buf, int len)
     unsigned char c;
 
     int i=0;
-    static int i_len=0;
     static unsigned char checksum = 0;
 
     memcpy(_buffer, buf, len);
 
     _length=len;
 
-    for (i = 0; i<_length; i++)
+    for (i = 0; i < _length; i++)
     {
         c = _buffer[i];
         switch (gps_Y901_recv_state)
@@ -211,15 +205,9 @@ int read_gps_data_Y901()
 
     if( recv_buf_real_len > 0)
     {
-        printf("read_gps_data_Y901    :    receive %d bytes\n",recv_buf_real_len);
-//        for(int i=0;i<recv_buf_real_len;i++)
-//        {
-//            printf("%2x  ",recv_buf[i]);
-//        }
-//        printf("\n");
+        //DEBUG_PRINTF("read_gps_data_Y901    :    receive %d bytes\n",recv_buf_real_len);
         decode_data_gps_Y901((unsigned char*)recv_buf, recv_buf_real_len);
     }
-
 
     return 0;
 }

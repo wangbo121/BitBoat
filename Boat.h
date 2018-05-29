@@ -38,7 +38,7 @@
 #include "boatlink_udp.h"
 #include "gps.h"
 #include "gps_Y901.h"
-
+#include "servo.h"
 #include "udp.h"
 
 #include "II2C.h"
@@ -85,7 +85,7 @@ private:
     uint32_t    fastloop_cnt;
 
 private:
-    void get_timedata_now();//获取当前的时间，包含年月日时分秒的
+    static void get_timedata_now();//获取当前的时间，包含年月日时分秒的
 
     void loop_fast();
     static void loop_one_second();
@@ -102,38 +102,48 @@ private:
      */
     static void update_GPS();//
     static void update_IMU();
-    void update_mpu6050();// 从all_external_device_input 获取 acc/gyo/姿态
+    static void update_mpu6050();// 从all_external_device_input 获取 acc/gyo/姿态
 
     //  //自驾仪虚拟地输出数据，把控制量啥的输出到all_external_device_output
     void out_execute_ctrloutput();
 
     void arm_motros_check();
-    void motors_output();
+    static void write_device_motors_output();
+
+    void write_device_motors_on();
+
+    void write_device_motors_off();
+
+    void disarm_motors();
 
     void relay_switch_init();
 
 
-    void record_config();//记录配置文件
-    void record_wp();//记录航点文件
-    void record_log();//记录日志
+    static void record_config();//记录配置文件
+    static void record_wp();//记录航点文件
+    static void record_log();//记录日志
 
     /*
      * 读取和设置外围设备函数
      * 这些是真正的读取硬件设备的函数
      */
     void read_device_gps();
-    void read_device_mpu6050();
+    static void read_device_mpu6050();
     void set_device_rc_out();//这给用来设置舵机和电机所使用的pwm波，频率是50hz
     void set_device_gpio();//设置gpio
     void set_device_analog();//设置模拟量
     void set_device_relays();//设置继电器开关量
 
 
-    void static read_device_gps_JY901();
+    static void read_device_gps_JY901();
 
-    void write_device_II2C();
+    static void write_device_II2C();
 
     void update_sim_water_craft();
+
+    void start_central_control_computer();
+
+    void write_motors_device_init();
 
 
 public:

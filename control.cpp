@@ -23,21 +23,6 @@
 #include "Boat.h"
 #include "boatlink_udp.h"
 
-#ifndef M_PI
-#define M_PI       3.14159265358979323846
-#endif
-//
-//#define TURN_MODE_DIFFSPD 1
-//#define TURN_MODE_RUDDER  2
-
-
-#define OFF_LMT 1000.0
-#define ON_LMT 2000.0
-#define LEFT_LMT 1000.0
-#define RIGHT_LMT 2000.0
-#define BWD_LMT 1000.0
-#define FWD_LMT 2000.0
-
 struct CTRL_PARA ctrlpara;
 struct CTRL_INPUT ctrlinput;
 struct CTRL_OUTPUT ctrloutput;
@@ -69,8 +54,6 @@ int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput)
 	ptr_ctrloutput->mmotor_onoff_pwm = constrain_pwm(ptr_ctrloutput->mmotor_onoff_pwm, 1000.0, 2000.0);
 	ptr_ctrloutput->rudder_pwm = constrain_pwm(ptr_ctrloutput->rudder_pwm, 1000.0, 2000.0);
 
-	DEBUG_PRINTF("wwwww  ptr_ctrloutput->rudder_pwm = %f \n",ptr_ctrloutput->rudder_pwm);
-
 	unsigned char turn_mode = global_bool_boatpilot.turn_mode;
     float rudder2motor=0.0;
     int delta_rudder=0;
@@ -82,7 +65,6 @@ int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput)
          */
         motor_left_pwm_out  = ptr_ctrloutput->mmotor_onoff_pwm;
         motor_right_pwm_out = ptr_ctrloutput->mmotor_onoff_pwm;
-
 
         rudder2motor = ptr_ctrloutput->rudder_pwm-1500;
         DEBUG_PRINTF("ptr_ctrloutput->rudder_pwm = %f \n",ptr_ctrloutput->rudder_pwm);
@@ -112,7 +94,6 @@ int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput)
         set_throttle_left_right(motor_left_pwm_out, motor_right_pwm_out, DEFAULT_DEVICE_NUM);
 	    break;
 	case TURN_MODE_RUDDER:
-	    set_rudder(ptr_ctrloutput->rudder_pwm, DEFAULT_RUDDER_NUM);
 	    break;
 	default:
 	    break;
@@ -122,9 +103,9 @@ int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput)
 }
 
 /*
- * Function:       get_ctrlpara
- * Description:  从地面站获取控制参数，所有的参数均为unsigned char型，使用时需要进行类型转换
- *
+ * Function:     get_ctrlpara
+ * Description:  get parameters from ground control station
+ *               all parameters are unsigned char type
  */
 static int get_ctrlpara()
 {
@@ -159,7 +140,7 @@ static int get_ctrlpara()
 
 /*
  * Function:       get_ctrlinput
- * Description:  把从地面站传输过来的手控方向舵和油门量（unsigned char数值）转换为标准的1000-2000（浮点数值）
+ * Description:    把从地面站传输过来的手控方向舵和油门量（unsigned char数值）转换为标准的1000-2000（浮点数值）
  *                        获取目标航向和当前航迹的方向（gps的航向）
  */
 static int get_ctrlinput()
@@ -193,8 +174,7 @@ static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput,struct CTRL_INPUT *
     {
     case STOP_MODE:
         //推进器停止，方向舵停止
-        set_left_motor_off();
-        set_right_motor_off();
+        set_motor_off();
         ptr_ctrloutput->mmotor_onoff_pwm =1000;
         ptr_ctrloutput->rudder_pwm =1500;
         break;
@@ -213,8 +193,8 @@ static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput,struct CTRL_INPUT *
         pid.i = ctrlpara.rudder_i;
         pid.d = ctrlpara.rudder_d;
 		ptr_ctrloutput->rudder_pwm = cal_rudder_control(ptr_ctrlinput->command_course_angle_radian,\
-																									ptr_ctrlinput->gps_course_angle_radian,\
-																									pid);
+                                                        ptr_ctrlinput->gps_course_angle_radian,\
+                                                        pid);
 
         /*
          * 2. 计算油门量输出
@@ -250,12 +230,9 @@ static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput,struct CTRL_INPUT *
         ptr_ctrloutput->rudder_pwm = 2000.0;
     }
 
-    /*
-     * 限制输出幅度，进行保护,按道理说这里应该是可以设置的，不能简单的设置为宏定义
-     */
-    ptr_ctrloutput->mmotor_onoff_pwm = constrain_pwm(ptr_ctrloutput->mmotor_onoff_pwm, 1000.0, 2000.0);
-    ptr_ctrloutput->rudder_pwm = constrain_pwm(ptr_ctrloutput->rudder_pwm, 1000.0, 2000.0);
-    ptr_ctrloutput->mmotor_fwdbwd_pwm = constrain_pwm(ptr_ctrloutput->mmotor_fwdbwd_pwm, 1000.0, 2000.0);
+    ptr_ctrloutput->mmotor_onoff_pwm    = constrain_pwm(ptr_ctrloutput->mmotor_onoff_pwm,  1000.0, 2000.0);
+    ptr_ctrloutput->rudder_pwm          = constrain_pwm(ptr_ctrloutput->rudder_pwm,        1000.0, 2000.0);
+    ptr_ctrloutput->mmotor_fwdbwd_pwm   = constrain_pwm(ptr_ctrloutput->mmotor_fwdbwd_pwm, 1000.0, 2000.0);
 
     return 0;
 }

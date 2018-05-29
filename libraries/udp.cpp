@@ -186,7 +186,7 @@ int send_socket_udp_data(int fd_socket, unsigned char *buf, unsigned int len, ch
 //数据包中len是用len_byte_num个字节表示的，本协议用unsigned short表示的，是2个字节
 #define LEN_BYTE_NUM 2
 //命令包长度 实时数据包长度
-#define GCS2AP_CMD_REAL 76
+#define GCS2AP_CMD_REAL_PACK_LEN 76
 
 #define UDP_RECV_HEAD1           0
 #define UDP_RECV_HEAD2           1
@@ -261,53 +261,38 @@ int decode_udp_data(char *buf, int len)
 			_pack_buf_len = 4;//0xaa 0x55 len_low len_high 共4个字节
 			break;
 		case UDP_RECV_DATA:
-
-		    _pack_recv_buf[_pack_buf_len++] = c;
-            data_type = _pack_recv_buf[4];
-            //printf("UDP_RECV_DATA: = %d \n", data_type);
-
-			_pack_recv_buf[0] = 0xaa;
-			_pack_recv_buf[1] = 0x55;
-			_pack_recv_buf[2] = _pack_recv_len[0];
-			_pack_recv_buf[3] = _pack_recv_len[1];
-			//_pack_buf_len++;
-			checksum += c;
+		    _pack_recv_buf[_pack_buf_len++]    = c;
+            data_type                          = _pack_recv_buf[4];
+			_pack_recv_buf[0]                  = 0xaa;
+			_pack_recv_buf[1]                  = 0x55;
+			_pack_recv_buf[2]                  = _pack_recv_len[0];
+			_pack_recv_buf[3]                  = _pack_recv_len[1];
+			checksum                          += c;
 			if (_pack_buf_len >= _pack_recv_real_len)
 			{
-				if(_pack_recv_real_len == GCS2AP_CMD_REAL )
+				if(_pack_recv_real_len == GCS2AP_CMD_REAL_PACK_LEN )
 				{
 					//收到的是命令包
 					udp_recv_state = UDP_RECV_CHECKSUM;
 				}
 				else if( (data_type == COMMAND_GCS2AP_WP_UDP) )
-				//else if( _pack_recv_real_len >= 12 )
 				{
 					//收到的是航点包
-				    printf("收到航点包\n");
+				    DEBUG_PRINTF("收到航点包\n");
 					udp_recv_state = UDP_RECV_WP;
-
 
 					global_bool_boatpilot.bool_get_gcs2ap_waypoint = TRUE;
                     memcpy(wp_data, &_pack_recv_buf[12], _pack_recv_real_len - 12);
                     int wp_num;
                     wp_num = (_pack_recv_real_len - 12)/sizeof(WAY_POINT);
-                    printf("decode_udp_data    :    wp_num = %ld \n",wp_num);
+                    DEBUG_PRINTF("decode_udp_data    :    receive %d waypoint \n", wp_num);
                     global_bool_boatpilot.wp_total_num = wp_num;
 
-                    for(int wp_i = 0; wp_i < 3 ; wp_i++)
-                    {
-                        printf("wp_data(%d).lat = %d, wp_data(%d).lng = %d \n", wp_i, wp_data[wp_i].lat, wp_i, wp_data[wp_i].lng);
-
-                    }
-
                     udp_recv_state = UDP_RECV_HEAD1;
-
-
 				}
 			}
 			break;
 		case UDP_RECV_CHECKSUM:
-
 			unsigned int checksum_low;
 			unsigned int checksum_high;
 			unsigned int checksum_temp;//暂时默认校验和发过来的先是低字节
@@ -337,25 +322,6 @@ int decode_udp_data(char *buf, int len)
             udp_recv_state = UDP_RECV_HEAD1;
 #endif
 			break;
-		case UDP_RECV_WP:
-			/*
-			 * 收到了航点数据，准备解析航点数据
-			 */
-
-            global_bool_boatpilot.bool_get_gcs2ap_waypoint = TRUE;
-            memcpy(wp_data, &_pack_recv_buf[12], _pack_recv_real_len - 12);
-            int wp_num;
-            wp_num = (_pack_recv_real_len - 12)/sizeof(WAY_POINT);
-            printf("decode_udp_data    :    wp_num = %ld \n",wp_num);
-            global_bool_boatpilot.wp_total_num = wp_num;
-
-            for(int wp_i = 0; wp_i<3 ; wp_i++)
-            {
-                printf("wp_data[i].lat = %d, wp_data[i].lng = %d \n", wp_data[i].lat, wp_data[i].lng);
-
-            }
-            udp_recv_state = UDP_RECV_HEAD1;
-			break;
 		}
 	}
 
@@ -372,22 +338,18 @@ int read_socket_udp_data(int fd_socket)
 
 	struct timeval timeout;
 	timeout.tv_sec = 0;//秒
-	timeout.tv_usec = UDP_RECVFROM_BLOCK_TIME;//微秒
+	timeout.tv_usec = UDP_RECVFROM_BLOCK_TIME; // 微秒
 	if (setsockopt(fd_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1)
 	{
 		printf("read_socket_udp_data    :    setsockopt failed \n");
 	}
 
 	char recv_buf[256];
-	int recv_len;
+	int  recv_len;
 
 	struct sockaddr_in addr;
-	unsigned int addr_len = sizeof(struct sockaddr_in);
+	unsigned int       addr_len = sizeof(struct sockaddr_in);
 
-	/*
-	 * 参数len为可接收数据的最大长度
-	 */
-	//printf("read_socket_udp_data    :    ready to receive \n");
 	recv_len = recvfrom(fd_socket, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr, &addr_len);
 
 	if( recv_len > 0)

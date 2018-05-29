@@ -107,24 +107,23 @@
 #define SENSRO_CHECK_BARO     3
 #define SENSRO_CHECK_RESET     4
 
-//#define AP_LISTEN_UDP_IP           "127.0.0.1"   //自驾仪监听地面站发送来的数据时用的网卡ip地址
-#define AP_LISTEN_UDP_IP           "192.168.0.15"   //自驾仪监听地面站发送来的数据时用的网卡ip地址
-//#define AP_LISTEN_UDP_PORT     49000           //自驾仪监听地面站发送来的数据时用的端口号
-#define AP_LISTEN_UDP_PORT     1100           //自驾仪监听地面站发送来的数据时用的端口号
+//本机测试时使用"127.0.0.1"
+//#define AP_LISTEN_UDP_IP           "127.0.0.1"           //自驾仪监听地面站发送来的数据时用的网卡ip地址
+//#define AP_LISTEN_UDP_PORT               49000           //自驾仪监听地面站发送来的数据时用的端口号
+//#define AP_SENDTO_UDP_IP           "127.0.0.1"           //自驾仪向对方发送数据时，对方的socket或者网卡对应的ip地址
+//#define AP_SENDTO_UDP_PORT               49000           //自驾仪向对方发送数据时，对方的socket或者网卡对应的端口号
 
-//#define AP_SENDTO_UDP_IP         "127.0.0.1" //自驾仪向对方发送数据时，对方的socket或者网卡对应的ip地址
-//#define AP_SENDTO_UDP_PORT   49000   //自驾仪向对方发送数据时，对方的socket或者网卡对应的端口号
-#define AP_SENDTO_UDP_IP         "192.168.0.10" //自驾仪向对方发送数据时，对方的socket或者网卡对应的ip地址
-//#define AP_SENDTO_UDP_IP         "192.168.14.172"
-//#define AP_SENDTO_UDP_PORT   1000   //自驾仪向对方发送数据时，对方的socket或者网卡对应的端口号
-#define AP_SENDTO_UDP_PORT   1000   //自驾仪向对方发送数据时，对方的socket或者网卡对应的端口号
+#define AP_LISTEN_UDP_IP          "192.168.0.15"           //自驾仪监听地面站发送来的数据时用的网卡ip地址
+#define AP_LISTEN_UDP_PORT                  1100           //自驾仪监听地面站发送来的数据时用的端口号
+#define AP_SENDTO_UDP_IP          "192.168.0.10"           //自驾仪向对方发送数据时，对方的socket或者网卡对应的ip地址
+#define AP_SENDTO_UDP_PORT                  1000           //自驾仪向对方发送数据时，对方的socket或者网卡对应的端口号
 
 #define CONTROLLER_TYPE_PID      0
 #define CONTROLLER_TYPE_ADRC  1
 #define CONTROLLER_TYPE_SMC    2
 
-#define UDP_RECVFROM_BLOCK_TIME 1000 //udp监听数据最大阻塞时间 1ms
-//#define UDP_RECVFROM_BLOCK_TIME 200 //udp监听数据最大阻塞时间 200us
+#define UDP_RECVFROM_BLOCK_TIME 200 //udp监听数据最大阻塞时间 200us
+//#define UDP_RECVFROM_BLOCK_TIME 900
 
 #define TURN_MODE_DIFFSPD 0
 #define TURN_MODE_RUDDER  1

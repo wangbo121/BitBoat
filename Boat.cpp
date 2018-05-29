@@ -76,7 +76,8 @@ void Boat::setup( void )
 
 
     II2C_init();
-    relay_switch_init();
+    write_motors_device_init(); // motor的通信用iic
+
 
     /*
      * 初始化自驾仪控制量输入以及参数的初始值，
@@ -272,7 +273,7 @@ void Boat::update_sim_water_craft()
     servos_set_out[0] = (uint16_t)(ctrloutput.rudder_pwm);
     servos_set_out[1] = (uint16_t)(ctrloutput.mmotor_onoff_pwm);
 
-    memcpy(input.servos,servos_set_out,sizeof(servos_set_out));
+    memcpy(input.servos, servos_set_out, sizeof(servos_set_out));
     sim_water_craft.update(input);
     sim_water_craft.fill_fdm(fdm);
 }
@@ -294,10 +295,21 @@ void Boat::arm_motros_check()
 
 }
 
-void Boat::motors_output()
+void Boat::write_device_motors_output()
 {
     execute_ctrloutput(&ctrloutput);
 }
+
+void Boat::write_device_motors_on()
+{
+    set_motor_on();
+}
+
+void Boat::write_device_motors_off()
+{
+    set_motor_on();
+}
+
 
 void Boat::record_wp()
 {
@@ -334,8 +346,6 @@ void Boat::record_log()
 
         memcpy(&boatpilot_log.global_bool_boatpilot, &global_bool_boatpilot, sizeof(global_bool_boatpilot));
 
-        //printf("sizeof(boatpilot_log)=%d,sizeof(boatpilot_log.global)=%d\n",sizeof(boatpilot_log),sizeof(boatpilot_log.global));
-        //printf("fd_boatpilot_log = %d\n",fd_boatpilot_log);
         save_data_to_binary_log(fd_boatpilot_log, &boatpilot_log, sizeof(boatpilot_log));
 
         global_bool_boatpilot.save_boatpilot_log_req=FALSE;
@@ -349,7 +359,6 @@ void Boat::record_config()
 
 void Boat::read_device_gps()
 {
-    //read_gps_data_Y901();
 
 }
 
@@ -390,23 +399,15 @@ void Boat::set_device_gpio()
 void Boat::loop_one_second()
 {
     //DEBUG_PRINTF("Hello loop_slow\n");
-    //printf("gcs2ap_all_udp.workmode    :    %d \n", gcs2ap_all_udp.workmode);
 
-    //print_data_gps_Y901();
-    //DEBUG_PRINTF("GPS_DATA: \n");
-    //DEBUG_PRINTF("gps_data.gps_data.longitude: %d\n",gps_data.longitude);
-    //DEBUG_PRINTF("gps_data.gps_data.latitude: %d\n",gps_data.latitude);
-
-
-    //DEBUG_PRINTF("global_bool_boatpilot.wp_next: %d\n",global_bool_boatpilot.wp_next);
-    //DEBUG_PRINTF("global_bool_boatpilot.cnt_test : %d\n",global_bool_boatpilot.cnt_test );
-
-    //DEBUG_PRINTF("gcs2ap_cmd_udp.func_info2    :    =%d \n", gcs2ap_cmd_udp.func_info2);
-
-
+    DEBUG_PRINTF("GPS_DATA: \n"); // do not delete, test for GPS_JY901
+    DEBUG_PRINTF("gps_data.gps_data.longitude   :    =%d, gps_data.gps_data.latitude    :    %d \n",gps_data.longitude, gps_data.latitude);
 }
 
-
+void Boat::write_motors_device_init()
+{
+    set_motors_init();
+}
 void Boat::relay_switch_init()
 {
     unsigned char send;
@@ -418,12 +419,18 @@ void Boat::relay_switch_init()
     PFC8574_DO(PCF8574_DO2_ADDR, send);
 }
 
+
+void Boat::disarm_motors()
+{
+    set_motor_off();
+}
+
 void Boat::write_device_II2C()
 {
     unsigned char send_buf[256];
     float voltage;
 
-    send_buf[0] = 0xfa;
+    send_buf[0] = 0x0a;
     PFC8574_DO(PCF8574_DO1_ADDR, send_buf[0]);
 
     send_buf[0] = 0x0f;
@@ -457,6 +464,11 @@ void Boat::write_device_II2C()
 
 }
 
+void Boat::start_central_control_computer()
+{
+
+
+}
 
 void Boat::end_of_task()
 {

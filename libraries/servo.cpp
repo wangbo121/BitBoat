@@ -17,106 +17,44 @@
 /*目前油门最大电压为5伏特*/
 #define MAX_THROTTLE 5
 
-int set_rudder(float pwm, int rudder_num)
+/*
+ * 目前继电器就用到了第一个芯片，每一个芯片是8路继电器
+ * 第1个继电器控制使用芯片1的DA1 和 DA2 输出 还是用第2个芯片的DA1 和 DA2  初始状态：常闭-使用的芯片1的  所以开机不需要动作 置0
+ * 第2个继电器控制使用DA1 和 DA2 输出的通断                            初始状态：常开的-不输出电压   所以开机需要动作一下继电器 置1
+ * 第3个继电器控制使用芯片1的DA3 和 DA4 输出 还是用第2个芯片的DA3 和 DA4  初始状态：常闭 默认使用的芯片1的
+ * 第4个继电器控制使用DA3 和 DA4 输出的通断                            初始状态：常开的-不输出电压    所以开机需要动作一下继电器 置1
+ * 第5个继电器控制 左 电机的正反装                                    初始状态：常闭的-是反转     所以开机需要动作一下继电器 置1
+ * 第6个继电器控制 右 电机的正反装                                    初始状态：常闭的-是反转     所以开机需要动作一下继电器 置1
+ * 所以模式初始状态是0x3a--0011 1010表示 电机都是正转 芯片1的 DA1 2 3 4都可以输出电压
+ */
+int set_motors_init()
 {
-#if 0
-    float pwm_normalize=0.0;
-    float dead_zone=0.0;
+    unsigned char send;
 
-    dead_zone=0.022*gcs2ap_radio_all.rudder_dead_zone_angle_degree;
+    send = 0x3a; // 整转 输出电压
+    //send = 0x30; // 整转 不输出电压
+    PFC8574_DO(PCF8574_DO1_ADDR, send);
 
-    //printf("set servor pwm:%f\n",pwm);
-    if(pwm<1000.0)
-    {
-        pwm=1000.0;
-    }
-    else if(pwm>2000.0)
-    {
-        pwm=2000.0;
-    }
-
-    /*pwm within 1000-2000 to -1.0--+1.0*/
-    pwm_normalize=((float)pwm-1500)/500;/*-1.0--+1.0*/
-
-    /*默认的方向舵通道数*/
-    switch(rudder_num)
-    {
-    case DEFAULT_RUDDER_NUM:
-        /*0xff00 继电器闭合状态 0x0000继电器断开状态*/
-
-        set_switch.switch4_state=0x0000;
-
-        /*如果读取的码盘的刻度大于计算输出的方向舵，那么就往左打舵
-         * 如果读取的小于计算的值，则右舵
-         * pwm值范围改为-1--+1,pwm其实对应的是期望的输出舵角
-         * 码盘的值范围也改为-1--+1
-         * */
-        if(read_encoder.position_normalize > pwm_normalize + dead_zone)
-        {
-            //当前的舵面角度大于了期望的pwm舵面角度，所以要打左舵
-            /*switch2_state左舵闭合*/
-            set_switch.switch2_state=0xff00;
-            /*switch3_state右舵断开*/
-            set_switch.switch3_state=0x0000;
-        }
-        else if(read_encoder.position_normalize < pwm_normalize - dead_zone)
-        {
-            //当前的舵面角度小于了期望的pwm舵面角度，所以要打右舵
-            set_switch.switch2_state=0x0000;
-            set_switch.switch3_state=0xff00;
-        }
-        else
-        {
-            //停止 stop rudder
-            set_switch.switch2_state=0x0000;
-            set_switch.switch3_state=0x0000;
-        }
-
-        break;
-    case SPARE_RUDDER_NUM:
-        /*0xff00 继电器闭合状态 0x0000继电器断开状态*/
-
-        set_switch.switch4_state=0xff00;
-
-        if(read_encoder.position_normalize > pwm_normalize + dead_zone)
-        {
-            /*switch0_state左舵闭合*/
-            set_switch.switch0_state=0xff00;
-            /*switch3_state右舵断开*/
-            set_switch.switch1_state=0x0000;
-
-        }
-        else if(read_encoder.position_normalize < pwm_normalize - dead_zone)
-        {
-            set_switch.switch0_state=0x0000;
-            set_switch.switch1_state=0xff00;
-
-        }
-        else
-        {
-            set_switch.switch0_state=0x0000;
-            set_switch.switch1_state=0x0000;
-        }
-
-        break;
-    default:
-
-        break;
-    }
-    global_bool_modbus.send_request_switch_cnt++;//请求发送继电器指令
-#endif
     return 0;
 }
 
-int set_rudder_off()
+int set_motor_on()
 {
-#if 0
-    //停止 stop rudder
-    set_switch.switch2_state=0x0000;
-    set_switch.switch3_state=0x0000;
+    unsigned char send;
 
-    global_bool_modbus.send_request_switch_cnt++;//请求发送继电器指令
-#endif
+    send = 0x3a; // 整转 输出电压
+    PFC8574_DO(PCF8574_DO1_ADDR, send);
+
+    return 0;
+}
+
+int set_motor_off()
+{
+    unsigned char send;
+
+    send = 0x30; // 整转 不输出电压
+    PFC8574_DO(PCF8574_DO1_ADDR, send);
+
     return 0;
 }
 
@@ -168,141 +106,17 @@ int set_throttle_left_right(float pwm_left, float pwm_right, int device_num)
 
 int set_motor_forward()
 {
-#if 0
-    set_switch.switch9_state=0x0000;//前进
-    set_switch.switch13_state=0x0000;//前进
-    //write_set_all_switch(&set_switch);
-    global_bool_modbus.send_request_switch_cnt++;
-#endif
+
     return 0;
 }
 
 int set_motor_backward()
 {
-#if 0
-    set_switch.switch9_state=0xff00;//后退
-    set_switch.switch13_state=0xff00;//后退
-    //write_set_all_switch(&set_switch);
-    global_bool_modbus.send_request_switch_cnt++;
-#endif
+
     return 0;
 }
 
-int set_motor_on()
-{
-#if 0
-    set_switch.switch8_state=0xff00;
-    set_switch.switch12_state=0xff00;
-    //write_set_all_switch(&set_switch);
-    global_bool_modbus.send_request_switch_cnt++;
-#endif
-    return 0;
-}
 
-int set_motor_off()
-{
-#if 0
-    set_switch.switch8_state=0x0000;
-    set_switch.switch12_state=0x0000;
-    //write_set_all_switch(&set_switch);
-    global_bool_modbus.send_request_switch_cnt++;
-#endif
-    return 0;
-}
-
-int set_left_motor_forward()
-{
-#if 0
-    set_switch.switch9_state=0x0000;//前进
-    global_bool_modbus.send_request_switch_cnt++;
-#endif
-    return 0;
-}
-
-int set_left_motor_backward()
-{
-#if 0
-    set_switch.switch9_state=0xff00;//后退
-    global_bool_modbus.send_request_switch_cnt++;
-#endif
-    return 0;
-}
-
-int set_right_motor_forward()
-{
-#if 0
-    set_switch.switch13_state=0x0000;//前进
-    global_bool_modbus.send_request_switch_cnt++;
-#endif
-    return 0;
-}
-
-int set_right_motor_backward()
-{
-#if 0
-    set_switch.switch13_state=0xff00;//后退
-    global_bool_modbus.send_request_switch_cnt++;
-#endif
-    return 0;
-}
-
-int set_left_motor_on()
-{
-#if 0
-    set_switch.switch8_state=0xff00;
-    global_bool_modbus.send_request_switch_cnt++;
-#endif
-    return 0;
-}
-
-int set_left_motor_off()
-{
-#if 0
-    set_switch.switch8_state=0x0000;
-    global_bool_modbus.send_request_switch_cnt++;
-#endif
-    return 0;
-}
-
-int set_right_motor_on()
-{
-#if 0
-    set_switch.switch12_state=0xff00;
-    global_bool_modbus.send_request_switch_cnt++;
-#endif
-    return 0;
-}
-
-int set_right_motor_off()
-{
-#if 0
-    set_switch.switch12_state=0x0000;
-    global_bool_modbus.send_request_switch_cnt++;
-#endif
-    return 0;
-}
-
-int start_third_small_motor()
-{
-#if 0
-    //打开第三个小电机
-    //printf("打开第三个小电机\n");
-    set_switch.switch6_state=0xff00;
-    //write_set_all_switch(&set_switch);
-    global_bool_modbus.send_request_switch_cnt++;
-#endif
-    return 0;
-}
-int stop_third_small_motor()
-{
-#if 0
-    //printf("关闭第三个小电机\n");
-    set_switch.switch6_state=0x0000;
-    //write_set_all_switch(&set_switch);
-    global_bool_modbus.send_request_switch_cnt++;
-#endif
-    return 0;
-}
 
 
 
