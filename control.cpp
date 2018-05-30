@@ -133,7 +133,8 @@ static int get_ctrlpara()
     }
 
     ctrlpara.work_mode = gcs2ap_all_udp.workmode;
-    ctrlpara.throttle_change_time = gcs2ap_all_udp.throttle_change_time;
+    //ctrlpara.throttle_change_time = gcs2ap_all_udp.throttle_change_time;
+    ctrlpara.throttle_change_time = 5;
 
 	return 0;
 }
@@ -145,8 +146,8 @@ static int get_ctrlpara()
  */
 static int get_ctrlinput()
 {
-	ctrlinput.rudder_pwm = convert_to_pwm(ctrlpara.rudder_left_pos,ctrlpara.rudder_right_pos,gcs2ap_all_udp.rc_rudder);
-	ctrlinput.mmotor_onoff_pwm = convert_to_pwm(ctrlpara.mmotor_off_pos,ctrlpara.mmotor_on_pos,gcs2ap_all_udp.rc_thruster);
+	ctrlinput.rudder_pwm = convert_to_pwm(ctrlpara.rudder_left_pos,ctrlpara.rudder_right_pos,gcs2ap_all_udp.cmd.rudder);
+	ctrlinput.mmotor_onoff_pwm = convert_to_pwm(ctrlpara.mmotor_off_pos,ctrlpara.mmotor_on_pos,gcs2ap_all_udp.cmd.throttle);
 
     /*
      * 1. 获取期望航迹角course angle 或者 期望航向角heading angle

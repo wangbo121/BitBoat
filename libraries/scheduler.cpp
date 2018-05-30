@@ -41,7 +41,6 @@ void BIT_Scheduler::run(uint16_t time_available)
     {
         uint16_t dt = _tick_counter - _last_run[i];
 
-        //memcpy(&interval_ticks,&_tasks[i].interval_ticks,sizeof(uint16_t));
         uint16_t interval_ticks = _loop_rate_hz / _tasks[i].rate_hz;
         if(interval_ticks < 1)
         {
@@ -51,9 +50,9 @@ void BIT_Scheduler::run(uint16_t time_available)
         if (dt >= interval_ticks)
         {
         	// 拷贝该第i个任务允许执行的时间
-            memcpy(&_task_time_allowed,&_tasks[i].max_time_micros,sizeof(uint16_t));
+            memcpy(&_task_time_allowed, &_tasks[i].max_time_micros, sizeof(uint16_t));
 
-            if (dt >= interval_ticks*2)
+            if (dt >= interval_ticks * 2)
             {
                 printf("Scheduler slip task[%u] \n",(unsigned)i);// 说明应该执行该任务的但是错过了一次
             }
@@ -74,7 +73,7 @@ void BIT_Scheduler::run(uint16_t time_available)
 
                 if (time_taken > _task_time_allowed)
                 {
-                    printf("Scheduler overrun task[%u]\n",(unsigned)i);
+                    printf("Scheduler overrun task[%u], time_taken is:%d \n", (unsigned)i, time_taken);
                     return;
                 }
                 time_available -= time_taken;

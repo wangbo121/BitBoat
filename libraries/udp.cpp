@@ -273,6 +273,7 @@ int decode_udp_data(char *buf, int len)
 				if(_pack_recv_real_len == GCS2AP_CMD_REAL_PACK_LEN )
 				{
 					//收到的是命令包
+				    DEBUG_PRINTF("收到命令包\n");
 					udp_recv_state = UDP_RECV_CHECKSUM;
 				}
 				else if( (data_type == COMMAND_GCS2AP_WP_UDP) )
@@ -317,6 +318,7 @@ int decode_udp_data(char *buf, int len)
 #else
 			//因为地面站还没有加校验，所以先不管校验了
 			global_bool_boatpilot.bool_get_gcs2ap_cmd = TRUE;
+			 DEBUG_PRINTF("命令包正确\n");
             memcpy(&gcs2ap_cmd_udp, _pack_recv_buf, _pack_recv_real_len);
 
             udp_recv_state = UDP_RECV_HEAD1;
@@ -328,7 +330,7 @@ int decode_udp_data(char *buf, int len)
 	return 0;
 }
 
-int read_socket_udp_data(int fd_socket)
+int read_socket_udp_data_old(int fd_socket)
 {
 	if( fd_socket < 0)
 	{
@@ -345,11 +347,12 @@ int read_socket_udp_data(int fd_socket)
 	}
 
 	char recv_buf[256];
-	int  recv_len;
+	int  recv_len = 0; // 20180530发现 这个必须置0 否则recv_len是个未知的长度导致decode_udp_data解析时间过长
 
 	struct sockaddr_in addr;
 	unsigned int       addr_len = sizeof(struct sockaddr_in);
 
+	printf("fd_socket    :    %d \n", fd_socket);
 	recv_len = recvfrom(fd_socket, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr, &addr_len);
 
 	if( recv_len > 0)
@@ -360,3 +363,50 @@ int read_socket_udp_data(int fd_socket)
 
 	return 0;
 }
+
+int read_socket_udp_data(int fd_socket)
+{
+    if( fd_socket < 0)
+    {
+        printf("read_socket_udp_data    :    fd_socket is invalid!!!\n");
+        return 0;
+    }
+
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    FD_SET(fd_socket, &read_fds);
+
+    struct timeval timeout;
+    timeout.tv_sec = 0;//秒
+    timeout.tv_usec = UDP_RECVFROM_BLOCK_TIME; // 微秒
+    select(fd_socket+1, &read_fds, NULL, NULL, &timeout); // select系统检测从0到fd_socket+1的所有文件描述符，如果fd_socket有事件发生，就把read_fds置1
+
+    char recv_buf[256];
+    int  recv_len = 0; // 20180530发现 这个必须置0 否则recv_len是个未知的长度导致decode_udp_data解析时间过长
+
+    struct sockaddr_in addr;
+    unsigned int       addr_len = sizeof(struct sockaddr_in);
+
+    if(FD_ISSET(fd_socket, &read_fds))
+    {
+        // FD_ISSET判断selsect函数是否把read_fds中的fd_socket置1了，如果置1了，那就是有事件发生，对于udp来说就是有数据传送过来了
+        // 因为地面站发送的频率是1hz发送一次命令，而我检测的频率是10hz，因此在地面站发送数据的间隙，read_socket_udp_data就执行了10次，
+        // 而其中9次没有数据传来时，select函数都会把read_fds中的fd_socket位置清零，这样也就不会进入if(FD_ISSET(fd_socket, &read_fds))了，进入else中
+        // 出发我把检测udp的频率跟地面站的频率设置为一致，都是1hz，那么每次都会进入这个if判断中
+        recv_len = recvfrom(fd_socket, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr, &addr_len);
+
+        if( recv_len > 0)
+        {
+            DEBUG_PRINTF("time is enough, left time %ld s, %ld usec \n", timeout.tv_sec, timeout.tv_usec);
+            DEBUG_PRINTF("read_socket_udp_data    :    recv_len = %d \n",recv_len);
+            decode_udp_data(recv_buf, recv_len);
+        }
+    }
+
+    return 0;
+}
+
+
+
+
+

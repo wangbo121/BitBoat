@@ -107,7 +107,7 @@ private:
     //  //自驾仪虚拟地输出数据，把控制量啥的输出到all_external_device_output
     void out_execute_ctrloutput();
 
-    void arm_motros_check();
+    void motros_arm_check();
     static void write_device_motors_output();
 
     void write_device_motors_on();
@@ -147,6 +147,8 @@ private:
 
 
 public:
+    void loop_fast_simulate();
+
     /*
      * 航行器的物理数学模型
      */

@@ -8,18 +8,8 @@
 #ifndef HEADERS_CONTROL_H_
 #define HEADERS_CONTROL_H_
 
-
-//#define TURN_MODE_DIFFSPD 0
-//#define TURN_MODE_RUDDER  1
-
-
-
 struct CTRL_PARA
 {
-//	unsigned char rudder_p;
-//	unsigned char rudder_i;
-//	unsigned char rudder_d;
-
 	float rudder_p;
 	float rudder_i;
 	float rudder_d;

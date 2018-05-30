@@ -239,8 +239,8 @@ float get_cross_track_error_NED(struct T_LOCATION *previous_target_loc,struct T_
  * 20180207这个函数经过测试，应该没有问题
  */
 float get_cross_track_error_correct_radian_NED_PID(struct T_LOCATION *last_target_loc,
-		                                                                                                struct T_LOCATION *current_loc, struct T_LOCATION *target_loc,
-		                                                                                                 void *pid_class_ptr)
+                                                   struct T_LOCATION *current_loc, struct T_LOCATION *target_loc,
+                                                   void   *pid_class_ptr)
 {
 	BIT_PID *pid;
 	pid = (BIT_PID *)pid_class_ptr;
@@ -257,17 +257,14 @@ float get_cross_track_error_correct_radian_NED_PID(struct T_LOCATION *last_targe
 	float distance=0.0;
 
 	CTE_m=get_cross_track_error_NED(last_target_loc, current_loc, target_loc);
-	//printf("偏航距离是 NED=%f[m]\n",CTE_m);//20170508已测试
-	//global_bool_boatpilot.cte_distance_error=(short)fabs(CTE_m)*100;//这个是为了距离扩大100倍发送到地面站
 
 	float atan_cte=0.0;
 	atan_cte = 0.5 * atan(CTE_m);// 2/pi*arctan(CTE_m) 限制幅度是pi/4
-	//printf("atan_cte = %f \n",atan_cte);
 	gamma_CTE = pid->get_pid(atan_cte, 20, 1);
-	//printf("gamma_CTE=%f\n",gamma_CTE);//20170508已测试
 
-	gamma_CTE_max_radian=convert_degree_to_radian((float)gcs2ap_all_udp.cte_max_degree);
-	if(gamma_CTE_max_radian>=MAX_CTE_CORRECT_RADIAN)
+	//gamma_CTE_max_radian=convert_degree_to_radian((float)gcs2ap_all_udp.cte_max_degree); // 勿删除 后期这个值要能修改
+	gamma_CTE_max_radian = convert_degree_to_radian(30.0f); // 暂时定为最大CTE矫正量是30度
+	if(gamma_CTE_max_radian >= MAX_CTE_CORRECT_RADIAN)
 	{
 		gamma_CTE_max_radian=MAX_CTE_CORRECT_RADIAN;
 	}
@@ -284,19 +281,18 @@ float get_cross_track_error_correct_radian_NED_PID(struct T_LOCATION *last_targe
 	{
 		gamma_CTE = -gamma_CTE_max_radian;
 	}
-	global_bool_boatpilot.cte_error_check_radian=(short)gamma_CTE*1000;// 把数据放大1000倍，成为整型，然后通过实时数据发送给地面站
 
 	if(CTE_m >= 0)
 	{
-		//printf("在航线的左侧了，打右舵gamma_CTE=%f\n",convert_radian_to_degree(gamma_CTE));//20170508已测试
+		//DEBUG_PRINTF("在航线的左侧了，打右舵gamma_CTE=%f\n",convert_radian_to_degree(gamma_CTE));//20170508已测试
 	}
 	else
 	{
-		//printf("在航线的右侧了，打左舵gamma_CTE=%f\n",convert_radian_to_degree(gamma_CTE));//20170508已测试
+		//DEBUG_PRINTF("在航线的右侧了，打左舵gamma_CTE=%f\n",convert_radian_to_degree(gamma_CTE));//20170508已测试
 	}
 
 	//获取前一航点到当前航点距离
-	distance=get_distance_loc_to_loc(last_target_loc, target_loc);
+	distance = get_distance_loc_to_loc(last_target_loc, target_loc);
 	//只有距离大于30米时，才进行偏航距的补偿
 	if(distance > 30.0)
 	{
@@ -308,97 +304,7 @@ float get_cross_track_error_correct_radian_NED_PID(struct T_LOCATION *last_targe
 	}
 
 	return 0;
-
 }
 
-#if 0
-float get_cross_track_error_correct_radian_NED(struct T_LOCATION *last_target_loc,struct T_LOCATION *current_loc, struct T_LOCATION *target_loc)
-{
-    float CTE_m=0.0;/*计算得到的偏航的距离，单位：米[m]*/
-
-    /*
-     * 乘以偏航距离 比例系数后的数值，偏航距比例系数0--100/10.00
-     * 这个其实由偏航距离计算得到的补偿的目标期望航向角
-     * 这个单位是[弧度]
-     */
-    float gamma_CTE = 0.0;
-    float gamma_CTE_max_radian=0.0;//最大偏航距补偿角度[弧度]
-
-    float CTE_p=0.0;
-    float CTE_i=0.0;
-    float CTE_d=0.0;
-
-    float distance=0.0;
-
-    CTE_m=get_cross_track_error_NED(last_target_loc, current_loc, target_loc);
-    //printf("偏航距离是 NED=%f[m]\n",CTE_m);//20170508已测试
-    global_bool_boatpilot.cte_distance_error=(short)fabs(CTE_m)*100;//这个是为了距离扩大100倍发送到地面站
-
-#if 0
-	CTE_p=(float)gcs2ap_radio_all.cte_p * 0.1;
-	CTE_i=(float)gcs2ap_radio_all.cte_i *   0.01;
-	CTE_d=(float)gcs2ap_radio_all.cte_d * 0.1;
-    gamma_CTE = boat.pid_CTE.get_pid(CTE_m, 20, 1);//最终由偏航距计算的修正的补偿方向舵角
-#else
-    // 可以选择用反正切的
-    CTE_p=(float)gcs2ap_radio_all.cte_p * 0.1;
-    CTE_i=(float)gcs2ap_radio_all.cte_i *   0.01;
-    CTE_d=(float)gcs2ap_radio_all.cte_d * 0.1;
-
-	boat.pid_CTE.set_kP(CTE_p);
-	boat.pid_CTE.set_kI(CTE_i);
-	boat.pid_CTE.set_kD(CTE_d);
-
-    float atan_cte=0.0;
-    atan_cte = 0.5 * atan(CTE_m);// 2/pi*arctan(CTE_m) 限制幅度是pi/4
-    //printf("atan_cte = %f \n",atan_cte);
-    gamma_CTE = boat.pid_CTE.get_pid(atan_cte, 20, 1);
-#endif
-    //printf("gamma_CTE=%f\n",gamma_CTE);//20170508已测试
-
-    gamma_CTE_max_radian=convert_degree_to_radian((float)gcs2ap_radio_all.cte_max_degree);
-    if(gamma_CTE_max_radian>=MAX_CTE_CORRECT_RADIAN)
-    {
-        gamma_CTE_max_radian=MAX_CTE_CORRECT_RADIAN;
-    }
-    else if(gamma_CTE_max_radian<=0)
-    {
-        gamma_CTE_max_radian=0;
-    }
-
-    if (gamma_CTE>gamma_CTE_max_radian)
-    {
-        gamma_CTE = gamma_CTE_max_radian;
-    }
-    else if (gamma_CTE<-gamma_CTE_max_radian)
-    {
-        gamma_CTE = -gamma_CTE_max_radian;
-    }
-    global_bool_boatpilot.cte_error_check_radian=(short)gamma_CTE*1000;// 把数据放大1000倍，成为整型，然后通过实时数据发送给地面站
-
-    if(CTE_m >= 0)
-    {
-        //printf("在航线的左侧了，打右舵gamma_CTE=%f\n",convert_radian_to_degree(gamma_CTE));//20170508已测试
-    }
-    else
-    {
-        //printf("在航线的右侧了，打左舵gamma_CTE=%f\n",convert_radian_to_degree(gamma_CTE));//20170508已测试
-    }
-
-    //获取前一航点到当前航点距离
-    distance=get_distance_loc_to_loc(last_target_loc, target_loc);
-    //只有距离大于30米时，才进行偏航距的补偿
-    if(distance > 30.0)
-    {
-        return gamma_CTE;
-    }
-    else
-    {
-        return 0;
-    }
-
-    return 0;
-}
-#endif
 
 

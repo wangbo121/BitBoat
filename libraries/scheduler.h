@@ -25,9 +25,8 @@ public:
     struct Task
     {
         task_fn_t function;
-        //uint16_t interval_ticks;// 需要经过interval_ticks个周期，才能执行该任务
-        uint16_t rate_hz;
-        uint16_t max_time_micros;
+        uint16_t  rate_hz;
+        uint16_t  max_time_micros;
     };
 
     //调度初始化，指定任务表的地址，明确有多少个任务

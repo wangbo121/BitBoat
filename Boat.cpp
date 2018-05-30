@@ -42,7 +42,6 @@ void Boat::setup( void )
     {
         printf("可以读取配置或者创建配置文件 fd = %d\n",fd_config);
 
-        gcs2ap_all_udp.workmode=boatpilot_config_udp.work_mode;
         gcs2ap_all_udp.rud_p=boatpilot_config_udp.rud_p;
         gcs2ap_all_udp.rud_i=boatpilot_config_udp.rud_i;
         gcs2ap_all_udp.rud_d=boatpilot_config_udp.rud_d;
@@ -50,12 +49,7 @@ void Boat::setup( void )
         gcs2ap_all_udp.cte_i=boatpilot_config_udp.cte_i;
         gcs2ap_all_udp.cte_d=boatpilot_config_udp.cte_d;
         gcs2ap_all_udp.cruise_throttle_percent=boatpilot_config_udp.cruise_throttle_percent;
-        gcs2ap_all_udp.throttle_change_time=boatpilot_config_udp.throttle_change_time;
         gcs2ap_all_udp.arrive_radius=boatpilot_config_udp.arrive_radius;
-        gcs2ap_all_udp.cte_max_degree=boatpilot_config_udp.cte_max_degree;
-        gcs2ap_all_udp.rudder_left_pos=boatpilot_config_udp.rudder_left_pos;
-        gcs2ap_all_udp.rudder_right_pos=boatpilot_config_udp.rudder_right_pos;
-        gcs2ap_all_udp.rudder_mid_pos=boatpilot_config_udp.rudder_mid_pos;
         global_bool_boatpilot.wp_next=boatpilot_config_udp.current_target_wp_num;
         global_bool_boatpilot.wp_total_num=boatpilot_config_udp.total_wp_num;
     }
@@ -85,22 +79,27 @@ void Boat::setup( void )
      * 尤其注意初始的方向舵和油门量值
      * 控制量的限幅参数
      */
+    gcs2ap_all_udp.cmd.pilot_manual                     =   1; // 默认通过驾驶仪
+    gcs2ap_all_udp.cmd.throttle                     =   0;
+    gcs2ap_all_udp.cmd.rudder                       =   127;
+
     gcs2ap_all_udp.rud_p                            =   20;//rud_p单位是[0.1]所以一开始要赋值大一些
+    gcs2ap_all_udp.rud_i                            =   0;
+    gcs2ap_all_udp.rud_d                            =   0;
+    gcs2ap_all_udp.cte_p                            =   20;
+    gcs2ap_all_udp.cte_i                            =   0;
+    gcs2ap_all_udp.cte_d                            =   0;
+
 	gcs2ap_all_udp.arrive_radius                    =   10;//单位是[10米]，初始到达半径设置为100米
+    gcs2ap_all_udp.cruise_throttle_percent          =   50;//初始巡航油门设置为百分之50
+
+
 	gcs2ap_all_udp.mmotor_off_pos                   =   0;
 	gcs2ap_all_udp.mmotor_on_pos                    =   255;
 	gcs2ap_all_udp.rudder_left_pos                  =   0;
 	gcs2ap_all_udp.rudder_right_pos                 =   255;
 	gcs2ap_all_udp.rudder_mid_pos                   =   127;
-	gcs2ap_all_udp.rc_thruster                      =   0;
-	gcs2ap_all_udp.rc_rudder                        =   127;
-	gcs2ap_all_udp.cruise_throttle_percent          =   50;//初始巡航油门设置为百分之50
-	gcs2ap_all_udp.cte_max_degree                   =   5;/*初始化偏航距的最大修正角度*/
-	gcs2ap_all_udp.throttle_change_time             =   5;/*油门改变10%所消耗的时间[秒]*/
-	gcs2ap_all_udp.navigation_mode                  =   NAVIGATION_COURSE_ANGLE;
-	gcs2ap_all_udp.rudder_dead_zone_angle_degree    =   3;
-	gcs2ap_all_udp.diffspd_coef                     =   100;
-	gcs2ap_all_udp.diffspd_lim                      =   10;
+
 
     /*
      * 下面是全局变量global_bool_boatpilot的初始化
@@ -288,7 +287,7 @@ void Boat::out_execute_ctrloutput()
 	execute_ctrloutput(&ctrloutput);
 }
 
-void Boat::arm_motros_check()
+void Boat::motros_arm_check()
 {
 
 
@@ -400,8 +399,7 @@ void Boat::loop_one_second()
 {
     //DEBUG_PRINTF("Hello loop_slow\n");
 
-    DEBUG_PRINTF("GPS_DATA: \n"); // do not delete, test for GPS_JY901
-    DEBUG_PRINTF("gps_data.gps_data.longitude   :    =%d, gps_data.gps_data.latitude    :    %d \n",gps_data.longitude, gps_data.latitude);
+    DEBUG_PRINTF("GPS_DATA: longitude:=%d, latitude:%d \n", gps_data.longitude, gps_data.latitude); // do not delete, test for GPS_JY901
 }
 
 void Boat::write_motors_device_init()

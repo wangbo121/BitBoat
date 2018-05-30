@@ -22,16 +22,16 @@
 const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 {
     //真正读取传感器函数
-    { SCHED_TASK(read_device_gps_JY901),                                       10,     3000 },
-    { SCHED_TASK(read_device_mpu6050),                                         10,     3000 },
+    //{ SCHED_TASK(read_device_gps_JY901),                                       10,     3000 },
+    //{ SCHED_TASK(read_device_mpu6050),                                         10,     3000 },
 
     //真正写入外部设备的函数，比如设置继电器让方向舵切换左右转
     //{ SCHED_TASK(write_device_II2C),                                          1,     1000 },
-    { SCHED_TASK(write_device_motors_output),                                   1,     1000 },
+    //{ SCHED_TASK(write_device_motors_output),                                   1,     1000 },
 
     // 自驾仪虚拟地获取传感器数据，从all_external_device_input虚拟获取
-    { SCHED_TASK(update_GPS),                                                  10,      100 },
-    { SCHED_TASK(update_IMU),                                                  10,      100 },
+    { SCHED_TASK(update_GPS),                                                  1,      100 },
+    { SCHED_TASK(update_IMU),                                                  1,      20 },
 
     //自驾仪虚拟地输出数据，把控制量啥的输出到all_external_device_output
     //{ SCHED_TASK(update_external_device),                                    10,      100 },
@@ -40,35 +40,33 @@ const BIT_Scheduler::Task Boat::scheduler_tasks[] =
     { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),                    1,     1000 },
 
     { SCHED_TASK(get_timedata_now),                                             1,     1000 },
-    { SCHED_TASK(loop_one_second),                                              1,    10000 },
+    { SCHED_TASK(loop_one_second),                                              1,     1000 },
 
-    { SCHED_TASK(record_log),                                                   1,    10000 },
-    { SCHED_TASK(record_wp),                                                    1,    10000 },
-    { SCHED_TASK(record_config),                                                1,    10000 },
+    //{ SCHED_TASK(record_log),                                                   1,    10000 },
+    //{ SCHED_TASK(record_wp),                                                    1,    10000 },
+    //{ SCHED_TASK(record_config),                                                1,    10000 },
 
-    { SCHED_TASK(end_of_task),                                                  1,    10 }
+    { SCHED_TASK(end_of_task),                                                  1,       10 }
 };
 
-#define MAINTASK_TICK_TIME_MS 10//这个设置为10ms，对应每个循环100hz
+#define MAINTASK_TICK_TIME_MS 10 // 这个设置为10ms，对应每个循环100hz
 int seconds = 0;
-int micro_seconds = MAINTASK_TICK_TIME_MS * (1e3);/*每个tick对应的微秒数*/
+int micro_seconds = MAINTASK_TICK_TIME_MS * (1e3); /*每个tick对应的微秒数*/
 struct timeval maintask_tick;
 int main(int argc,char * const argv[])
 {
     DEBUG_PRINTF("Welcome to BitPilot \n");
 
-    // 初始化任务调度表
-    boat.scheduler.init(&boat.scheduler_tasks[0], sizeof(boat.scheduler_tasks)/sizeof(boat.scheduler_tasks[0]));
-    DEBUG_PRINTF(" sizeof(scheduler_tasks)/sizeof(scheduler_tasks[0]) = %d\n",sizeof(boat.scheduler_tasks)/sizeof(boat.scheduler_tasks[0]));
+    boat.scheduler.init(&boat.scheduler_tasks[0], sizeof(boat.scheduler_tasks)/sizeof(boat.scheduler_tasks[0])); // 初始化任务调度表
+    DEBUG_PRINTF(" There are %d tasks to run !!! \n",sizeof(boat.scheduler_tasks) / sizeof(boat.scheduler_tasks[0]));
 
-    //初始化步骤，初始化一些设备或者参数等
-    boat.setup();
+    boat.setup(); // 初始化步骤，初始化一些设备或者参数等
 
     while (1)
     {
         maintask_tick.tv_sec = seconds;
         maintask_tick.tv_usec = micro_seconds;
-        select(0, NULL, NULL, NULL, &maintask_tick);
+        select(0, NULL, NULL, NULL, &maintask_tick); // 这里的select定时器堵塞是为了保证每10ms一个周期
 
         boat.loop();
     }
@@ -76,20 +74,25 @@ int main(int argc,char * const argv[])
     return 0;
 }
 
+#define SIMULATE_BOAT 1
 void Boat::loop( void )
 {
-    uint32_t timer = (uint32_t)gettimeofday_us();//当前系统运行时间精确到微秒
+    uint32_t timer = (uint32_t)gettimeofday_us(); //当前系统运行时间精确到微秒
 
-    loop_fast();//在无人机中是姿态控制内环，在无人船中是制导控制环
+#ifdef SIMULATE_BOAT
+    loop_fast_simulate(); //在无人机中是姿态控制内环，在无人船中是制导控制环
+#else
+    loop_fast(); //在无人机中是姿态控制内环，在无人船中是制导控制环
+#endif
 
-    // 告诉调度器scheduler一个tick已经过去了，目前1个tick指的是10毫秒
-    scheduler.tick();
+    scheduler.tick(); // 告诉调度器scheduler一个tick已经过去了，目前1个tick指的是10毫秒
 
     /*
      * loop_us这个应该是一个tick循环所指定的时间，比如我这里目前定义的是10ms，
      * 但是如果所有任务的执行时间的总和还是小于10ms呢，如果没有select这个定时器，就会一直循环
      * 这样就会导致scheduler_tasks数组中指定的频率失去原本的意义，所以必须有select定时器或者
-     * 如果在单片机中，则使用某一个定时器来触发这个loop这个函数
+     * 如果在单片机中，则使用某一个定时器来触发这个loop这个函数，或者利用gettimeofday_ms函数把最小时间差缩短为1ms，那么每次tick至少就是1ms
+     * gettimeofday_us() - timer 表示从loop开始到scheduler.run之前瞬间已经使用的时间
      */
     uint32_t loop_us = micro_seconds;
     uint32_t time_available = loop_us - ( (uint32_t)gettimeofday_us() - timer );
@@ -97,7 +100,9 @@ void Boat::loop( void )
     scheduler.run(time_available > loop_us ? 0u : time_available);
 }
 
-void Boat::loop_fast()
+
+
+void Boat::loop_fast_simulate()
 {
     fastloop_cnt ++;
 
@@ -119,7 +124,7 @@ void Boat::loop_fast()
     gcs2ap_all_udp.cte_d = 0.0;
     gcs2ap_all_udp.arrive_radius = 50;
     gcs2ap_all_udp.cruise_throttle_percent = 100;
-    gcs2ap_all_udp.workmode = AUTO_MODE;
+    gcs2ap_all_udp.cmd.pilot_manual = AUTO_MODE;
     gcs2ap_all_udp.auto_workmode = AUTO_MISSION_MODE;
 #endif
 
@@ -138,7 +143,9 @@ void Boat::loop_fast()
     /*3 control*/
     control_loop();
 
-    arm_motros_check();
+
+    /*4 motors output*/
+    motros_arm_check();
     //motors_output();
 
     /*
@@ -150,6 +157,35 @@ void Boat::loop_fast()
 
 
 
+void Boat::loop_fast()
+{
+    fastloop_cnt ++;
+
+    /*1. decode_gcs2ap_radio*/
+    decode_gcs2ap_udp();
+
+    /*2. navigation*/
+    if( !(fastloop_cnt % 100) )
+    {
+        navigation_loop();
+    }
+
+    global_bool_boatpilot.current_to_target_radian = (short)(auto_navigation.out_current_to_target_radian * 100.0);
+    global_bool_boatpilot.current_to_target_degree = (short)(auto_navigation.out_current_to_target_degree * 100);
+    global_bool_boatpilot.command_course_radian = (short)(auto_navigation.out_command_course_radian);
+    global_bool_boatpilot.command_course_degree = (short)(auto_navigation.out_command_course_degree * 100);
+    global_bool_boatpilot.wp_next = auto_navigation.out_current_target_wp_cnt;
+
+    /*3 control*/
+    control_loop();
+
+    /*4 motors output*/
+    motros_arm_check();
+    //motors_output();
+
+    /*5 update sensors*/
+    //update_sensors;
+}
 
 
 
