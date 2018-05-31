@@ -222,7 +222,7 @@ int read_gps_data_Y901()
 
 int gps_uart_close_Y901()
 {
-    uart_device_gps_Y901.uart_name=UART_GPS_Y901;
+    uart_device_gps_Y901.uart_name = (char *)UART_GPS_Y901;
     close_uart_dev(uart_device_gps_Y901.uart_name);
 
     return 0;

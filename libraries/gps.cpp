@@ -15,38 +15,42 @@
 
 #include "gps.h"
 
+#define GPS_DATA_NMEA_LEN 1024
+//#define GPS_DATA_NMEA_LEN 256
+
 /*extern variable*/
 nmea_msg gps_data;
+
+nmea_msg gps_data_nmea;
 
 /*static variable*/
 static nmea_msg gpsx;
 
 static void gps_analysis(nmea_msg *gpsx, unsigned char *buf);
 
+static int convert_to_require(int x,int float_num,int require_num);
+
 static struct T_UART_DEVICE uart_device_gps;
 
 int gps_uart_init()
 {
-    uart_device_gps.uart_name=UART_GPS;
+    uart_device_gps.uart_name = (char *)UART_GPS;
 
     uart_device_gps.baudrate=UART_GPS_BAUD;
     uart_device_gps.databits=UART_GPS_DATABITS;
     uart_device_gps.parity=UART_GPS_PARITY;
     uart_device_gps.stopbits=UART_GPS_STOPBITS;
 
-    /*
-     * 20180205因为我的电脑就1个串口还得用，所以暂时把这个打开串口和创建串口线程注释掉了
-     */
-//    uart_device_gps.uart_num=open_uart_dev(uart_device_gps.uart_name);
-//
-//    uart_device_gps.ptr_fun=read_gps_data;
-//
-//    set_uart_opt( uart_device_gps.uart_name, \
-//                  uart_device_gps.baudrate,\
-//                  uart_device_gps.databits,\
-//                  uart_device_gps.parity,\
-//                  uart_device_gps.stopbits);
-//
+    uart_device_gps.uart_num=open_uart_dev(uart_device_gps.uart_name);
+
+    //uart_device_gps.ptr_fun=read_gps_data;
+
+    set_uart_opt( uart_device_gps.uart_name, \
+                  uart_device_gps.baudrate,\
+                  uart_device_gps.databits,\
+                  uart_device_gps.parity,\
+                  uart_device_gps.stopbits);
+//    之前串口接收都是创建线程接收的，后来改了，但是其实用线程接收很好，只是我还没弄明白怎么设置线程优先级
 //    create_uart_pthread(&uart_device_gps);
 
     return 0;
@@ -55,24 +59,19 @@ int gps_uart_init()
 int read_gps_data(unsigned char *buf, unsigned int len)
 {
 
-#if 0
-	char buf_temp[200];
+#if 1
+	char buf_temp[GPS_DATA_NMEA_LEN + 1];
 	memcpy(buf_temp, buf, len);
 	buf_temp[len+1]='\0';
-	printf("GPS收到的数据：%s\n",buf_temp);
+	printf("GPS收到的数据：%s\n", buf_temp);
 #endif
 
-    static unsigned char valid_len=5;
-
-    /*
-     * 判断是否持续在接收
-     */
-    if(len > valid_len)
-    {
-        //global_bool_boatpilot.gps_wait_time=0;
-    }
 
 	gps_analysis(&gpsx, (unsigned char*)buf);
+
+	memcpy(&gps_data_nmea, &gpsx, sizeof(gpsx));
+
+
 	/*
 	 * 这里加个判断，如果速度太大，就认为是坏点，不赋值给gps_data
 	 * 如果经纬度小于50度，也不赋值
@@ -82,7 +81,8 @@ int read_gps_data(unsigned char *buf, unsigned int len)
 	    /*
 	     * 只有速度在小于100米每秒的情况下才赋值，声速是340米每秒
 	     */
-	    memcpy(&gps_data, &gpsx, sizeof(gpsx));
+	    //memcpy(&gps_data, &gpsx, sizeof(gpsx));
+	    //memcpy(&gps_data_nmea, &gpsx, sizeof(gpsx));
 	}
 
 #ifdef NMEA_GPS
@@ -90,7 +90,6 @@ int read_gps_data(unsigned char *buf, unsigned int len)
 	 * 这里是因为nmea的经纬度是度分秒的格式，所以需要转换为单位是[度]的格式
 	 */
 	int tmp_d,tmp_m;
-	char convert_to_string[200];
 
 	tmp_d = ((int)(gps_data.latitude * 0.000001)) * 1000000;
 	tmp_m = gps_data.latitude - tmp_d;
@@ -103,10 +102,40 @@ int read_gps_data(unsigned char *buf, unsigned int len)
 	return 0;
 }
 
+int send_gps_data_NMEA()
+{
+    char send_buf[7]="wangbo";
+    send_uart_data(uart_device_gps.uart_name, send_buf, sizeof(send_buf));
+
+
+
+}
+
+
+int read_gps_data_NMEA()
+{
+    static char recv_buf[GPS_DATA_NMEA_LEN];
+    static int recv_buf_require_len = GPS_DATA_NMEA_LEN;// 请求接收的字节数目
+    static int recv_buf_real_len = 0; //实际接收的字节数目
+    static int max_wait_ms = 1000;//最大等待时间ms
+
+    recv_buf_real_len = read_uart_data(uart_device_gps.uart_name, recv_buf, max_wait_ms, recv_buf_require_len);
+    DEBUG_PRINTF("read_gps_data_NMEA    :    recv_buf_real_len = %d \n", recv_buf_real_len);
+
+    if( recv_buf_real_len > 0)
+    {
+        DEBUG_PRINTF("read_gps_data_NMEA    :    receive %d bytes\n",recv_buf_real_len);
+        read_gps_data((unsigned char*)recv_buf, recv_buf_real_len);
+    }
+
+    return 0;
+}
+
+
 int gps_uart_close()
 {
-    uart_device_gps.uart_name=UART_GPS;
-//    close_uart_dev(uart_device_gps.uart_name);
+    uart_device_gps.uart_name = (char *)UART_GPS;
+    close_uart_dev(uart_device_gps.uart_name);
 
 	return 0;
 }
@@ -322,19 +351,7 @@ static void XW5651_GPFPD_analysis(nmea_msg *gpsx, unsigned char *buf)
 	}
 }
 
-static void gps_analysis(nmea_msg *gpsx, unsigned char *buf)
-{
-#ifdef NMEA_GPS
-	nmea_GPGSV_analysis(gpsx, buf);
-	nmea_GPGGA_analysis(gpsx, buf);
-	nmea_GPRMC_analysis(gpsx, buf);
-	nmea_GPVTG_analysis(gpsx, buf);
-#endif
 
-#ifdef XW_GPFPD_GPS
-	XW5651_GPFPD_analysis(gpsx, buf);
-#endif
-}
 
 #ifdef NMEA_GPS
 static void nmea_GPGSV_analysis(nmea_msg *gpsx, unsigned char *buf);
@@ -371,8 +388,8 @@ static void nmea_GPRMC_analysis(nmea_msg *gpsx, unsigned char *buf)
     unsigned char *p, dx;
     unsigned char posx;
     unsigned int temp;
-    //float rs;
-    if ((p = (unsigned char*)strstr((const char *)buf, "GPRMC")) != NULL)
+    //if ((p = (unsigned char*)strstr((const char *)buf, "GPRMC")) != NULL)
+    if ((p = (unsigned char*)strstr((const char *)buf, "GNRMC")) != NULL)
     {
         posx = nmea_comma_pos(p, 1);
         if (posx != 0xff)
@@ -388,7 +405,8 @@ static void nmea_GPRMC_analysis(nmea_msg *gpsx, unsigned char *buf)
         {
             temp = nmea_str2num(p + posx, &dx);
             gpsx->latitude = (int)((float)temp * 0.1+0.5);
-            //gpsx->latitude = (int)temp;
+            gpsx->latitude = (int)temp;
+            gpsx->latitude = (int)3912345;
         }
         posx = nmea_comma_pos(p, 4);
         if (posx != 0xff)gpsx->nshemi = *(p + posx);
@@ -398,7 +416,7 @@ static void nmea_GPRMC_analysis(nmea_msg *gpsx, unsigned char *buf)
         {
             temp = nmea_str2num(p + posx, &dx);
             gpsx->longitude = (int)((float)temp * 0.1+0.5);
-            //gpsx->longitude = (int)temp;
+            gpsx->longitude = (int)temp;
         }
         posx = nmea_comma_pos(p, 6);
         if (posx != 0xff)gpsx->ewhemi = *(p + posx);
@@ -414,7 +432,7 @@ static void nmea_GPRMC_analysis(nmea_msg *gpsx, unsigned char *buf)
         if (posx != 0xff)
         {
             temp = nmea_str2num(p + posx, &dx);
-            gpsx->direction = (int)((float)temp * 0.1 + 0.5);
+            //gpsx->direction = (int)((float)temp * 0.1 + 0.5);
         }
 
         posx = nmea_comma_pos(p, 9);
@@ -443,3 +461,18 @@ static void nmea_GPVTG_analysis(nmea_msg *gpsx, unsigned char *buf)
     }
 }
 #endif
+
+
+static void gps_analysis(nmea_msg *gpsx, unsigned char *buf)
+{
+#ifdef NMEA_GPS
+    nmea_GPGSV_analysis(gpsx, buf);
+    nmea_GPGGA_analysis(gpsx, buf);
+    nmea_GPRMC_analysis(gpsx, buf);
+    nmea_GPVTG_analysis(gpsx, buf);
+#endif
+
+#ifdef XW_GPFPD_GPS
+    XW5651_GPFPD_analysis(gpsx, buf);
+#endif
+}

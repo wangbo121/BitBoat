@@ -136,6 +136,7 @@ private:
 
 
     static void read_device_gps_JY901();
+    static void read_device_gps_NMEA();
 
     static void write_device_II2C();
     static void write_device_II2C_test();

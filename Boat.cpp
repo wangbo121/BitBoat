@@ -59,7 +59,7 @@ void Boat::setup( void )
 #endif
 
 #ifdef __GPS_
-    //gps_uart_init(); // 以后要把gps作为某一个抽象类来处理，否则每换衣个gps都需要重新写
+    gps_uart_init(); // 以后要把gps作为某一个抽象类来处理，否则每换衣个gps都需要重新写
     gps_uart_init_Y901();
 #endif
 
@@ -289,6 +289,12 @@ void Boat::read_device_gps_JY901()
     read_gps_data_Y901();
 }
 
+void Boat::read_device_gps_NMEA()
+{
+    read_gps_data_NMEA();
+
+}
+
 void Boat::out_execute_ctrloutput()
 {
 	execute_ctrloutput(&ctrloutput);
@@ -404,14 +410,16 @@ void Boat::set_device_gpio()
 
 void Boat::loop_one_second()
 {
-    DEBUG_PRINTF("Hello loop_slow\n");
+    //DEBUG_PRINTF("Hello loop_slow\n");
 
-    print_data_gps_Y901(); // do not delete, test for GPS_JY901
+    //print_data_gps_Y901(); // do not delete, test for GPS_JY901
 
-    DEBUG_PRINTF("GPS_DATA: longitude:=%d, latitude:%d \n", gps_data.longitude, gps_data.latitude); // do not delete, test for GPS signal
+    //DEBUG_PRINTF("GPS_DATA: longitude:=%d, latitude:%d \n", gps_data.longitude, gps_data.latitude); // do not delete, test for GPS signal
 
 
-    DEBUG_PRINTF("rudder    := %d, throttle    := %d \n", gcs2ap_all_udp.cmd.rudder, gcs2ap_all_udp.cmd.throttle);
+    //DEBUG_PRINTF("rudder    := %d, throttle    := %d \n", gcs2ap_all_udp.cmd.rudder, gcs2ap_all_udp.cmd.throttle);
+
+    DEBUG_PRINTF("GPS_NMEA: longitude:=%d, latitude:%d \n", gps_data_nmea.longitude, gps_data_nmea.latitude); // do not delete, test for GPS signal
 }
 
 void Boat::write_motors_device_init()

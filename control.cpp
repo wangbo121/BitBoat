@@ -67,7 +67,7 @@ int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput)
         motor_right_pwm_out = ptr_ctrloutput->mmotor_onoff_pwm;
 
         rudder2motor = ptr_ctrloutput->rudder_pwm-1500;
-        DEBUG_PRINTF("ptr_ctrloutput->rudder_pwm = %f \n",ptr_ctrloutput->rudder_pwm);
+        //DEBUG_PRINTF("ptr_ctrloutput->rudder_pwm = %f \n",ptr_ctrloutput->rudder_pwm);
         if(rudder2motor > 50)
         {
             //右舵
@@ -90,7 +90,7 @@ int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput)
         /*
          * 最终输出左右推进器
          */
-        DEBUG_PRINTF("motor_left_pwm_out = %f, motor_right_pwm_out = %f \n", motor_left_pwm_out, motor_right_pwm_out);
+        //DEBUG_PRINTF("motor_left_pwm_out = %f, motor_right_pwm_out = %f \n", motor_left_pwm_out, motor_right_pwm_out);
         set_throttle_left_right(motor_left_pwm_out, motor_right_pwm_out, DEFAULT_DEVICE_NUM);
 	    break;
 	case TURN_MODE_RUDDER:

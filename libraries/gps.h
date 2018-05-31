@@ -8,7 +8,8 @@
 #ifndef HEADERS_GPS_H_
 #define HEADERS_GPS_H_
 
-#define UART_GPS_BAUD 115200
+//#define UART_GPS_BAUD 115200
+#define UART_GPS_BAUD 9600
 #define UART_GPS_DATABITS 8 //8 data bit
 #define UART_GPS_STOPBITS 1 //1 stop bit
 #define UART_GPS_PARITY 0 //no parity
@@ -61,6 +62,7 @@ typedef struct
  * gps能够确定的物理量比如经度纬度速度等都从这里获取
  */
 extern nmea_msg gps_data;
+extern nmea_msg gps_data_nmea;
 
 /*
  * Function:       read_gps_data
@@ -69,15 +71,18 @@ extern nmea_msg gps_data;
  */
 int gps_uart_init();
 
+int send_gps_data_NMEA();
+
 /*
  * Function:       read_gps_data
  * Description:  通过nmea的gps或者导航模块读取gps数据，经过解析，存储到gps_data这个全局变量中
  */
 int read_gps_data(unsigned char *buf, unsigned int len);
+int read_gps_data_NMEA();
 
 /*
  * Function:       gps_uart_close
- * Description:  关闭串口
+ * Description:     关闭串口
  */
 int gps_uart_close();
 
