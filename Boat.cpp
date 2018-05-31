@@ -15,12 +15,12 @@ void Boat::setup( void )
     /*
      * 创建要保存的二进制日志文件boatpilot_log
      */
-    fd_boatpilot_log=create_log_file(BOATPILOT_LOG_FILE);
+    fd_boatpilot_log = create_log_file( (char *)BOATPILOT_LOG_FILE );
 
     /*
      * 载入航点文件waypoint
      */
-    fd_waypoint=load_data_struct_from_binary(WAY_POINT_FILE,&wp_data,sizeof(wp_data));
+    fd_waypoint     = load_data_struct_from_binary( (char *)WAY_POINT_FILE, &wp_data, sizeof(wp_data));
     if(fd_waypoint==-1)
     {
         printf("无法创建航点文件\n");
@@ -33,7 +33,7 @@ void Boat::setup( void )
     /*
      * 载入配置文件config
      */
-    fd_config=load_data_struct_from_binary(CONFIG_FILE,&boatpilot_config_udp,sizeof(boatpilot_config_udp));
+    fd_config      = load_data_struct_from_binary( (char *)CONFIG_FILE, &boatpilot_config_udp, sizeof(boatpilot_config_udp) );
     if(fd_config==-1)
     {
         printf("无法创建配置文件\n");
@@ -42,16 +42,16 @@ void Boat::setup( void )
     {
         printf("可以读取配置或者创建配置文件 fd = %d\n",fd_config);
 
-        gcs2ap_all_udp.rud_p=boatpilot_config_udp.rud_p;
-        gcs2ap_all_udp.rud_i=boatpilot_config_udp.rud_i;
-        gcs2ap_all_udp.rud_d=boatpilot_config_udp.rud_d;
-        gcs2ap_all_udp.cte_p=boatpilot_config_udp.cte_p;
-        gcs2ap_all_udp.cte_i=boatpilot_config_udp.cte_i;
-        gcs2ap_all_udp.cte_d=boatpilot_config_udp.cte_d;
-        gcs2ap_all_udp.cruise_throttle_percent=boatpilot_config_udp.cruise_throttle_percent;
-        gcs2ap_all_udp.arrive_radius=boatpilot_config_udp.arrive_radius;
-        global_bool_boatpilot.wp_next=boatpilot_config_udp.current_target_wp_num;
-        global_bool_boatpilot.wp_total_num=boatpilot_config_udp.total_wp_num;
+        gcs2ap_all_udp.rud_p                          = boatpilot_config_udp.rud_p;
+        gcs2ap_all_udp.rud_i                          = boatpilot_config_udp.rud_i;
+        gcs2ap_all_udp.rud_d                          = boatpilot_config_udp.rud_d;
+        gcs2ap_all_udp.cte_p                          = boatpilot_config_udp.cte_p;
+        gcs2ap_all_udp.cte_i                          = boatpilot_config_udp.cte_i;
+        gcs2ap_all_udp.cte_d                          = boatpilot_config_udp.cte_d;
+        gcs2ap_all_udp.cruise_throttle_percent        = boatpilot_config_udp.cruise_throttle_percent;
+        gcs2ap_all_udp.arrive_radius                  = boatpilot_config_udp.arrive_radius;
+        global_bool_boatpilot.wp_next                 = boatpilot_config_udp.current_target_wp_num;
+        global_bool_boatpilot.wp_total_num            = boatpilot_config_udp.total_wp_num;
     }
 
 #ifdef __RADIO_
@@ -59,18 +59,19 @@ void Boat::setup( void )
 #endif
 
 #ifdef __GPS_
-    //gps_uart_init();
+    //gps_uart_init(); // 以后要把gps作为某一个抽象类来处理，否则每换衣个gps都需要重新写
     gps_uart_init_Y901();
 #endif
-
-    /*
-     * 初始化导航环节
-     */
-    navigation_init();
 
 
     II2C_init();
     write_motors_device_init(); // motor的通信用iic
+
+    /*
+     * 作为分界线
+     * 以上都是硬件初始化
+     * 下面的是驾驶仪内部软件初始化
+     */
 
 
     /*
@@ -93,6 +94,7 @@ void Boat::setup( void )
 	gcs2ap_all_udp.arrive_radius                    =   10;//单位是[10米]，初始到达半径设置为100米
     gcs2ap_all_udp.cruise_throttle_percent          =   50;//初始巡航油门设置为百分之50
 
+    gcs2ap_all_udp.workmode = RC_MODE;
 
 	gcs2ap_all_udp.mmotor_off_pos                   =   0;
 	gcs2ap_all_udp.mmotor_on_pos                    =   255;
@@ -105,7 +107,7 @@ void Boat::setup( void )
      * 下面是全局变量global_bool_boatpilot的初始化
      * global_bool_boatpilot和gcs2ap_all_udp的区别在于后者是从地面站发送过来的参数，
      * 而global_bool_boatpilot是驾驶仪内部需要的全局计算量
-     * 一些标志量用global_bool_boatpilot中的bool表示
+     * 同时，一些标志量也用global_bool_boatpilot中的bool表示
      */
 	global_bool_boatpilot.turn_mode                =    TURN_MODE_DIFFSPD;
     global_bool_boatpilot.save_boatpilot_log_req   =    TRUE;
@@ -128,7 +130,7 @@ void Boat::setup( void )
      * 与此同时，发送也是通过这个网卡向地面站回传实时数据
      */
     DEBUG_PRINTF("Boat::setup    :    fd_socket_generic = %d \n",fd_socket_generic);
-    open_socket_udp_dev(&fd_socket_generic, "AP_LISTEN_UDP_IP", AP_LISTEN_UDP_PORT);
+    open_socket_udp_dev(&fd_socket_generic, (char *)"AP_LISTEN_UDP_IP", AP_LISTEN_UDP_PORT);
 
 #ifdef TEST
     unsigned int lng_start = 116.31574 * 1e5;
@@ -152,6 +154,11 @@ void Boat::setup( void )
 
 
 
+
+    /*
+     * 初始化导航环节
+     */
+    navigation_init();
 
 
 
@@ -397,9 +404,14 @@ void Boat::set_device_gpio()
 
 void Boat::loop_one_second()
 {
-    //DEBUG_PRINTF("Hello loop_slow\n");
+    DEBUG_PRINTF("Hello loop_slow\n");
 
-    DEBUG_PRINTF("GPS_DATA: longitude:=%d, latitude:%d \n", gps_data.longitude, gps_data.latitude); // do not delete, test for GPS_JY901
+    print_data_gps_Y901(); // do not delete, test for GPS_JY901
+
+    DEBUG_PRINTF("GPS_DATA: longitude:=%d, latitude:%d \n", gps_data.longitude, gps_data.latitude); // do not delete, test for GPS signal
+
+
+    DEBUG_PRINTF("rudder    := %d, throttle    := %d \n", gcs2ap_all_udp.cmd.rudder, gcs2ap_all_udp.cmd.throttle);
 }
 
 void Boat::write_motors_device_init()
@@ -424,6 +436,15 @@ void Boat::disarm_motors()
 }
 
 void Boat::write_device_II2C()
+{
+    unsigned char send_buf[256];
+    float voltage;
+
+    //send_buf[0] = 0x0a;
+    //PFC8574_DO(PCF8574_DO1_ADDR, send_buf[0]);
+}
+
+void Boat::write_device_II2C_test()
 {
     unsigned char send_buf[256];
     float voltage;

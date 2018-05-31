@@ -35,7 +35,7 @@ static struct T_UART_DEVICE uart_device_gps_Y901;
 
 int gps_uart_init_Y901()
 {
-    uart_device_gps_Y901.uart_name=UART_GPS_Y901;
+    uart_device_gps_Y901.uart_name = (char *)UART_GPS_Y901;
 
     uart_device_gps_Y901.baudrate=UART_GPS_BAUD_Y901;
     uart_device_gps_Y901.databits=UART_GPS_DATABITS_Y901;
@@ -157,16 +157,29 @@ void print_data_gps_Y901()
     sprintf(str,"Time:20%d-%d-%d %d:%d:%.3f\r\n",stcTime.ucYear,stcTime.ucMonth,stcTime.ucDay,stcTime.ucHour,stcTime.ucMinute,(float)stcTime.ucSecond+(float)stcTime.usMiliSecond/1000);
     printf("%s",str);
     delay_ms(10);
+
+    //输出经纬度
+    sprintf(str,"Longitude:%ldDeg%.5fm Lattitude:%ldDeg%.5fm\r\n",stcLonLat.lLon/10000000,(double)(stcLonLat.lLon % 10000000)/1e5,stcLonLat.lLat/10000000,(double)(stcLonLat.lLat % 10000000)/1e5);
+    printf("%s",str);
+    delay_ms(10);
+
+    //输出角度
+    sprintf(str,"Angle:%.3f %.3f %.3f\r\n",(float)stcAngle.Angle[0]/32768*180,(float)stcAngle.Angle[1]/32768*180,(float)stcAngle.Angle[2]/32768*180);
+    printf("%s",str);
+    delay_ms(10);
+
+    //输出地速
+    sprintf(str,"GPSHeight:%.1fm GPSYaw:%.1fDeg GPSV:%.3fkm/h\r\n",(float)stcGPSV.sGPSHeight/10,(float)stcGPSV.sGPSYaw/10,(float)stcGPSV.lGPSVelocity/1000);
+    printf("%s",str);
+
+
+#if 0
     //输出加速度
     sprintf(str,"Acc:%.3f %.3f %.3f\r\n",(float)stcAcc.a[0]/32768*16,(float)stcAcc.a[1]/32768*16,(float)stcAcc.a[2]/32768*16);
     printf("%s",str);
     delay_ms(10);
     //输出角速度
     sprintf(str,"Gyro:%.3f %.3f %.3f\r\n",(float)stcGyro.w[0]/32768*2000,(float)stcGyro.w[1]/32768*2000,(float)stcGyro.w[2]/32768*2000);
-    printf("%s",str);
-    delay_ms(10);
-    //输出角度
-    sprintf(str,"Angle:%.3f %.3f %.3f\r\n",(float)stcAngle.Angle[0]/32768*180,(float)stcAngle.Angle[1]/32768*180,(float)stcAngle.Angle[2]/32768*180);
     printf("%s",str);
     delay_ms(10);
     //输出磁场
@@ -181,17 +194,12 @@ void print_data_gps_Y901()
     sprintf(str,"DStatus:%d %d %d %d\r\n",stcDStatus.sDStatus[0],stcDStatus.sDStatus[1],stcDStatus.sDStatus[2],stcDStatus.sDStatus[3]);
     printf("%s",str);
     delay_ms(10);
-    //输出经纬度
-    sprintf(str,"Longitude:%ldDeg%.5fm Lattitude:%ldDeg%.5fm\r\n",stcLonLat.lLon/10000000,(double)(stcLonLat.lLon % 10000000)/1e5,stcLonLat.lLat/10000000,(double)(stcLonLat.lLat % 10000000)/1e5);
-    printf("%s",str);
-    delay_ms(10);
-    //输出地速
-    sprintf(str,"GPSHeight:%.1fm GPSYaw:%.1fDeg GPSV:%.3fkm/h\r\n",(float)stcGPSV.sGPSHeight/10,(float)stcGPSV.sGPSYaw/10,(float)stcGPSV.lGPSVelocity/1000);
-    printf("%s",str);
+
     delay_ms(10);
     //输出四元素
     sprintf(str,"Four elements:%.5f %.5f %.5f %.5f\r\n\r\n",(float)stcQ.q[0]/32768,(float)stcQ.q[1]/32768,(float)stcQ.q[2]/32768,(float)stcQ.q[3]/32768);
     printf("%s",str);
+#endif
 }
 
 int read_gps_data_Y901()

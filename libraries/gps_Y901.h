@@ -8,7 +8,7 @@
 #ifndef LIBRARIES_GPS_Y901_H_
 #define LIBRARIES_GPS_Y901_H_
 
-#define UART_GPS_BAUD_Y901 115200
+#define UART_GPS_BAUD_Y901 9600
 #define UART_GPS_DATABITS_Y901 8 //8 data bit
 #define UART_GPS_STOPBITS_Y901 1 //1 stop bit
 #define UART_GPS_PARITY_Y901 0 //no parity

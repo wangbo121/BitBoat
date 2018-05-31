@@ -137,7 +137,7 @@ struct GCS2AP_ALL_UDP
     unsigned char link_ID;//链路编号 (0:局域网;1:北斗;2:串口数传电台)
 
     /*
-     * 对controller_type字节的解释
+     * 对controller_type字节的解释 可以是PID控制器，也可以是ADRC自抗扰控制器 也可以是SMC滑模控制器
      */
     unsigned char rud_p;//[0.1],转弯参数P  //8字节
     unsigned char rud_i;//[0.01],转弯参数I

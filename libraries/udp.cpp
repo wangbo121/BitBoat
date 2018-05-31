@@ -249,8 +249,8 @@ int decode_udp_data(char *buf, int len)
 			checksum += c;
 			if ( i_len >= LEN_BYTE_NUM)
 			{
-				_pack_recv_real_len = _pack_recv_len[1]*pow(2,4)+_pack_recv_len[0];
-				printf("udp收到的有效数据长度为=%d\n",_pack_recv_real_len);
+				_pack_recv_real_len = _pack_recv_len[1] * pow(2,4) + _pack_recv_len[0];
+				printf("udp收到的有效数据长度为=%d\n", _pack_recv_real_len);
 				udp_recv_state = UDP_RECV_DATA;
 				i_len=0;
 			}
@@ -285,7 +285,7 @@ int decode_udp_data(char *buf, int len)
 					global_bool_boatpilot.bool_get_gcs2ap_waypoint = TRUE;
                     memcpy(wp_data, &_pack_recv_buf[12], _pack_recv_real_len - 12);
                     int wp_num;
-                    wp_num = (_pack_recv_real_len - 12)/sizeof(WAY_POINT);
+                    wp_num = (_pack_recv_real_len - 12) / sizeof(WAY_POINT);
                     DEBUG_PRINTF("decode_udp_data    :    receive %d waypoint \n", wp_num);
                     global_bool_boatpilot.wp_total_num = wp_num;
 
@@ -391,14 +391,14 @@ int read_socket_udp_data(int fd_socket)
     {
         // FD_ISSET判断selsect函数是否把read_fds中的fd_socket置1了，如果置1了，那就是有事件发生，对于udp来说就是有数据传送过来了
         // 因为地面站发送的频率是1hz发送一次命令，而我检测的频率是10hz，因此在地面站发送数据的间隙，read_socket_udp_data就执行了10次，
-        // 而其中9次没有数据传来时，select函数都会把read_fds中的fd_socket位置清零，这样也就不会进入if(FD_ISSET(fd_socket, &read_fds))了，进入else中
-        // 出发我把检测udp的频率跟地面站的频率设置为一致，都是1hz，那么每次都会进入这个if判断中
+        // 而其中9次没有数据传来时，select函数都会把read_fds中的fd_socket位置清零，这样也就不会进入if(FD_ISSET(fd_socket, &read_fds))了，进入else中去了
+        // 我把检测udp的频率跟地面站的频率设置为一致，都是1hz，那么每次都会进入这个if判断中
         recv_len = recvfrom(fd_socket, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr, &addr_len);
 
         if( recv_len > 0)
         {
-            DEBUG_PRINTF("time is enough, left time %ld s, %ld usec \n", timeout.tv_sec, timeout.tv_usec);
-            DEBUG_PRINTF("read_socket_udp_data    :    recv_len = %d \n",recv_len);
+            //DEBUG_PRINTF("time is enough, left time %ld s, %ld usec \n", timeout.tv_sec, timeout.tv_usec);
+            //DEBUG_PRINTF("read_socket_udp_data    :    recv_len = %d \n",recv_len);
             decode_udp_data(recv_buf, recv_len);
         }
     }

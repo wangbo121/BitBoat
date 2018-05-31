@@ -53,8 +53,9 @@
 
 //#define UART_RADIO          "/dev/ttyUSB0"
 #define UART_RADIO          "/dev/ttyO3"
-#define UART_GPS               "/dev/ttyO1"
-#define UART_GPS_Y901               "/dev/ttyO2"
+//#define UART_GPS               "/dev/ttyO1"
+#define UART_GPS               "/dev/ttyO2"
+#define UART_GPS_Y901               "/dev/ttyO1"
 
 /*
  * 因为从导航姿态模块读回来的gps数据和航向数据都是经过 扩大倍数 转为int整型的，

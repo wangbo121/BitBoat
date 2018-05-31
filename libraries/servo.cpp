@@ -90,10 +90,10 @@ int set_throttle_left_right(float pwm_left, float pwm_right, int device_num)
     {
     case DEFAULT_DEVICE_NUM:
         voltage = pwm_left_normalize * MAX_THROTTLE;
-        DAC7574_DA(DAC7574_DA1_ADDR, DA_CHANNEL_0, voltage); // left motor
+        DAC7574_DA(DAC7574_DA1_ADDR, DA_CHANNEL_1, voltage); // left motor
 
         voltage = pwm_right_normalize * MAX_THROTTLE;
-        DAC7574_DA(DAC7574_DA1_ADDR, DA_CHANNEL_1, voltage); // right motor
+        DAC7574_DA(DAC7574_DA1_ADDR, DA_CHANNEL_0, voltage); // right motor
         break;
     case SPARE_DEVICE_NUM:
         break;

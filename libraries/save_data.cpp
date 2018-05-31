@@ -28,7 +28,7 @@ int create_log_file(char *log_name)
 	time_of_file=localtime(&ptrtime);
 
 	sprintf(convert_to_string,"%d-%d-%d-%d-%d-%d",time_of_file->tm_year+1900,time_of_file->tm_mon+1,time_of_file->tm_mday,\
-			                                                                                 time_of_file->tm_hour,time_of_file->tm_min,time_of_file->tm_sec);
+                                                  time_of_file->tm_hour,time_of_file->tm_min,time_of_file->tm_sec);
 	strcat(convert_to_string,log_name);
 
 	if(-1==(fd=open(convert_to_string,O_RDWR |O_CREAT |O_APPEND)))
@@ -37,7 +37,7 @@ int create_log_file(char *log_name)
 		exit(1);
 	}
 
-	chmod(convert_to_string,0666);//改变文件权限为 任何人都可以修改
+	chmod(convert_to_string, 0666);//改变文件权限为 任何人都可以修改
 
 	return fd;
 }
@@ -98,36 +98,34 @@ int load_data_struct_from_binary(char* file_name,void* data_struct,int data_stru
 
             return -1;
         }
-        else if(f_stat.st_size>=data_struct_size)
+        else if(f_stat.st_size >= data_struct_size)
         {
-            printf("f_stat.st_size=%u\n",f_stat.st_size);
+            printf("f_stat.st_size = %ld \n", f_stat.st_size);
             //载入文件的最后一个数据结构
             lseek(fd,f_stat.st_size-data_struct_size,SEEK_SET);
             read_len = read(fd, data_struct, data_struct_size);
-            printf("文件存在，载入文件%s,载入字节数=%d\n",file_name,read_len);
+            printf("文件存在，载入文件%s,载入字节数 = %d \n", file_name,read_len);
 
             return fd;
         }
         else
         {
-            printf("文件存在，但是 %s 文件没有数据，载入数据失败\n",file_name);
+            printf("文件存在，但是 %s 文件没有数据，载入数据失败. \n",file_name);
 
-            //return -1;//没有数据，就不载入了
             return fd;
         }
     }
     else
     {
         printf("文件不存在，正在创建文件 %s \n",file_name);
-        if(-1==(fd=open(file_name,O_RDWR |O_CREAT)))
+        if(-1 == (fd=open(file_name,O_RDWR |O_CREAT)))
         {
-            printf("文件不存在，并且创建文件 %s 失败！",file_name);
+            printf("文件不存在，并且创建文件 %s 失败. \n",file_name);
             exit(1);
         }
         else
         {
-            printf("文件不存在，并且创建文件 %s 成功！",file_name);
-            //chmod(file_name,0777);//改变文件权限为 任何人都可以修改
+            printf("文件不存在，并且创建文件 %s 成功. \n",file_name);
             chmod(file_name,0666);//改变文件权限为 任何人都可以修改
         }
 
