@@ -92,6 +92,10 @@ int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput)
          */
         //DEBUG_PRINTF("motor_left_pwm_out = %f, motor_right_pwm_out = %f \n", motor_left_pwm_out, motor_right_pwm_out);
         set_throttle_left_right(motor_left_pwm_out, motor_right_pwm_out, DEFAULT_DEVICE_NUM);
+
+
+        global_bool_boatpilot.motor_left  = motor_left_pwm_out;
+        global_bool_boatpilot.motor_right = motor_right_pwm_out;
 	    break;
 	case TURN_MODE_RUDDER:
 	    break;

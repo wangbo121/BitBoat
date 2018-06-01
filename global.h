@@ -41,7 +41,7 @@
 /*
  * 下面是与控制相关的
  */
-#define TEST 1
+#define TEST 0
 
 
 
@@ -181,6 +181,10 @@ struct T_GLOBAL_BOOL_BOATPILOT
 	int cte_distance_error; // [0.01米]
 
 	unsigned int cnt_test;
+
+
+	 float motor_left ;
+	       float motor_right;
 };
 
 /*

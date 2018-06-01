@@ -70,12 +70,13 @@ int read_gps_data(unsigned char *buf, unsigned int len)
 
 
 	gps_analysis(&gpsx, (unsigned char*)buf);
+	//memcpy(&gps_data_NMEA, &gpsx, sizeof(gpsx));
 
 	/*
 	 * 这里加个判断，如果速度太大，就认为是坏点，不赋值给gps_data
 	 * 如果经纬度小于50度，也不赋值
 	 */
-	if(gpsx.velocity<10000 && gpsx.longitude>5000000)
+	if((gpsx.latitude > 3100000) && (gpsx.longitude > 10100000) )
 	{
 	    /*
 	     * 只有速度在小于100米每秒的情况下才赋值，声速是340米每秒
@@ -83,20 +84,25 @@ int read_gps_data(unsigned char *buf, unsigned int len)
 	    //memcpy(&gps_data, &gpsx, sizeof(gpsx));
 	    memcpy(&gps_data_NMEA, &gpsx, sizeof(gpsx));
 	}
+	else
+	{
+	    gpsx.latitude  = 0;
+	    gpsx.longitude = 0;
+	}
 
-#ifdef NMEA_GPS
-	/*
-	 * 这里是因为nmea的经纬度是度分秒的格式，所以需要转换为单位是[度]的格式
-	 */
-	int tmp_d,tmp_m;
-
-	tmp_d = ((int)(gps_data.latitude * 0.000001)) * 1000000;
-	tmp_m = gps_data.latitude - tmp_d;
-	gps_data.latitude = (int)(tmp_d + tmp_m*1.66666667);
-	tmp_d = ((int)(gps_data.longitude * 0.000001)) * 1000000;
-	tmp_m = gps_data.longitude - tmp_d;
-	gps_data.longitude = (int)(tmp_d + tmp_m*1.66666667);
-#endif
+//#ifdef NMEA_GPS
+//	/*
+//	 * 这里是因为nmea的经纬度是度分秒的格式，所以需要转换为单位是[度]的格式
+//	 */
+//	int tmp_d,tmp_m;
+//
+//	tmp_d = ((int)(gps_data.latitude * 0.000001)) * 1000000;
+//	tmp_m = gps_data.latitude - tmp_d;
+//	gps_data.latitude = (int)(tmp_d + tmp_m*1.66666667);
+//	tmp_d = ((int)(gps_data.longitude * 0.000001)) * 1000000;
+//	tmp_m = gps_data.longitude - tmp_d;
+//	gps_data.longitude = (int)(tmp_d + tmp_m*1.66666667);
+//#endif
 
 	return 0;
 }
@@ -115,7 +121,7 @@ int read_gps_data_NMEA()
     static char recv_buf[GPS_DATA_NMEA_LEN];
     static int recv_buf_require_len = GPS_DATA_NMEA_LEN;// 请求接收的字节数目
     static int recv_buf_real_len = 0; //实际接收的字节数目
-    static int max_wait_ms = 1000;//最大等待时间ms
+    static int max_wait_ms = 3;//最大等待时间ms
 
     recv_buf_real_len = read_uart_data(uart_device_gps.uart_name, recv_buf, max_wait_ms, recv_buf_require_len);
     //DEBUG_PRINTF("read_gps_data_NMEA    :    recv_buf_real_len = %d \n", recv_buf_real_len);

@@ -132,7 +132,7 @@ void Boat::setup( void )
     DEBUG_PRINTF("Boat::setup    :    fd_socket_generic = %d \n",fd_socket_generic);
     open_socket_udp_dev(&fd_socket_generic, (char *)"AP_LISTEN_UDP_IP", AP_LISTEN_UDP_PORT);
 
-#ifdef TEST
+#if TEST
     unsigned int lng_start = 116.31574 * 1e5;
     unsigned int lat_start = 39.95635 * 1e5;
     unsigned char wp_total_num_test = 5;
@@ -222,13 +222,13 @@ void Boat::update_all_external_device_input( void )
 	 * 这里使用仿真sim_water_craft的数据
 	 * 如果有相应的硬件传感器则，应该是真实的传感器反馈数据
 	 */
-	all_external_device_input.latitude = fdm.latitude;
-	all_external_device_input.longitude = fdm.longitude;
-	all_external_device_input.altitude = 10 ;
-	all_external_device_input.v_north = fdm.speedN;
-	all_external_device_input.v_east = fdm.speedE;
-	all_external_device_input.v_down = fdm.speedD;
-	all_external_device_input.heading = fdm.heading;
+//	all_external_device_input.latitude = fdm.latitude;
+//	all_external_device_input.longitude = fdm.longitude;
+//	all_external_device_input.altitude = 10 ;
+//	all_external_device_input.v_north = fdm.speedN;
+//	all_external_device_input.v_east = fdm.speedE;
+//	all_external_device_input.v_down = fdm.speedD;
+//	all_external_device_input.heading = fdm.heading;
 
 
 
@@ -249,6 +249,10 @@ void Boat::update_all_external_device_input( void )
     all_external_device_input.course                = gps_data_NMEA.course_radian;
     all_external_device_input.speed                 = gps_data_NMEA.velocity;
 
+
+    all_external_device_input.phi = (float)stcAngle.Angle[1]/32768*180;
+    all_external_device_input.theta = (float)stcAngle.Angle[0]/32768*180;
+    all_external_device_input.psi = (float)stcAngle.Angle[2]/32768*180;
 
 
 }
@@ -273,8 +277,18 @@ void Boat::update_GPS()
 	gps_data.latitude =(int)( all_external_device_input.latitude * 1e5);
 	gps_data.longitude = (int)(all_external_device_input.longitude * 1e5);
 
-	gps_data.course_radian = all_external_device_input.heading * DEG_TO_RAD;
-	gps_data.yaw = (int)(all_external_device_input.heading * 1e2);
+	//gps_data.course_radian = all_external_device_input.heading * DEG_TO_RAD;
+	gps_data.course_radian = all_external_device_input.course;
+
+
+
+	// JY901
+	gps_data.roll = (int)(all_external_device_input.phi * 1e2);
+	gps_data.pitch = (int)(all_external_device_input.theta * 1e2);
+	gps_data.yaw = (int)(all_external_device_input.psi * 1e2);
+
+
+
 
 	gps_data.velocity_north = (int)(all_external_device_input.v_north *1e3);
 	gps_data.velocity_east = (int)(all_external_device_input.v_east * 1e3);
@@ -442,6 +456,8 @@ void Boat::loop_one_second()
     //DEBUG_PRINTF("rudder    := %d, throttle    := %d \n", gcs2ap_all_udp.cmd.rudder, gcs2ap_all_udp.cmd.throttle);
 
     DEBUG_PRINTF("GPS_NMEA: longitude:=%d, latitude:%d \n", gps_data_NMEA.longitude, gps_data_NMEA.latitude); // do not delete, test for GPS signal
+
+    DEBUG_PRINTF("left motor = %f, right motor = %f \n", global_bool_boatpilot.motor_left, global_bool_boatpilot.motor_right);
 }
 
 void Boat::write_motors_device_init()

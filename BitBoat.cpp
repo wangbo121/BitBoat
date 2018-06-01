@@ -22,22 +22,22 @@
 const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 {
     //真正读取传感器函数
-    //{ SCHED_TASK(read_device_gps_JY901),                                       10,     3000 },
-    { SCHED_TASK(read_device_gps_NMEA),                                        1,     3000 },
+    { SCHED_TASK(read_device_gps_JY901),                                         11,     6000 },
+    { SCHED_TASK(read_device_gps_NMEA),                                          10,     4000 },
     //{ SCHED_TASK(read_device_mpu6050),                                         10,     3000 },
 
     //真正写入外部设备的函数，比如设置继电器让方向舵切换左右转
     //{ SCHED_TASK(write_device_II2C),                                          1,     1000 },
-    { SCHED_TASK(write_device_motors_output),                                   10,     1000 },
+    { SCHED_TASK(write_device_motors_output),                                    20,     3000 },
 
     // 自驾仪虚拟地获取传感器数据，从all_external_device_input虚拟获取
-    { SCHED_TASK(update_GPS),                                                  1,      100 },
+    { SCHED_TASK(update_GPS),                                                    10,      100 },
     //{ SCHED_TASK(update_IMU),                                                  1,      20 },
 
     //自驾仪虚拟地输出数据，把控制量啥的输出到all_external_device_output
     //{ SCHED_TASK(update_external_device),                                    10,      100 },
 
-    { SCHED_TASK(get_gcs_udp),                                                 10,      1000 },
+    { SCHED_TASK(get_gcs_udp),                                                  10,      1000 },
     { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),                    1,     1000 },
 
     { SCHED_TASK(get_timedata_now),                                             1,     1000 },
@@ -147,7 +147,7 @@ void Boat::loop_fast_simulate()
 
 
     /*4 motors output*/
-    motros_arm_check();
+    //motros_arm_check();
     //motors_output();
 
     /*
