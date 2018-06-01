@@ -229,6 +229,28 @@ void Boat::update_all_external_device_input( void )
 	all_external_device_input.v_east = fdm.speedE;
 	all_external_device_input.v_down = fdm.speedD;
 	all_external_device_input.heading = fdm.heading;
+
+
+
+
+
+
+
+
+	/*
+	 * 20180601 下面是更新使用真实的外部设备
+	 */
+	all_external_device_input.latitude              = ((float)gps_data_NMEA.latitude)  * 1e-5;
+    all_external_device_input.longitude             = ((float)gps_data_NMEA.longitude) * 1e-5;
+    all_external_device_input.altitude              = gps_data_NMEA.altitude ;
+//    all_external_device_input.v_north               = gps_data_NMEA.speedN;
+//    all_external_device_input.v_east                = gps_data_NMEA.speedE;
+//    all_external_device_input.v_down                = gps_data_NMEA.speedD;
+    all_external_device_input.course                = gps_data_NMEA.course_radian;
+    all_external_device_input.speed                 = gps_data_NMEA.velocity;
+
+
+
 }
 
 void Boat::get_gcs_udp()
@@ -251,7 +273,7 @@ void Boat::update_GPS()
 	gps_data.latitude =(int)( all_external_device_input.latitude * 1e5);
 	gps_data.longitude = (int)(all_external_device_input.longitude * 1e5);
 
-	gps_data.course = all_external_device_input.heading * DEG_TO_RAD;
+	gps_data.course_radian = all_external_device_input.heading * DEG_TO_RAD;
 	gps_data.yaw = (int)(all_external_device_input.heading * 1e2);
 
 	gps_data.velocity_north = (int)(all_external_device_input.v_north *1e3);
@@ -419,7 +441,7 @@ void Boat::loop_one_second()
 
     //DEBUG_PRINTF("rudder    := %d, throttle    := %d \n", gcs2ap_all_udp.cmd.rudder, gcs2ap_all_udp.cmd.throttle);
 
-    DEBUG_PRINTF("GPS_NMEA: longitude:=%d, latitude:%d \n", gps_data_nmea.longitude, gps_data_nmea.latitude); // do not delete, test for GPS signal
+    DEBUG_PRINTF("GPS_NMEA: longitude:=%d, latitude:%d \n", gps_data_NMEA.longitude, gps_data_NMEA.latitude); // do not delete, test for GPS signal
 }
 
 void Boat::write_motors_device_init()

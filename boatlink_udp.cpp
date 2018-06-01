@@ -60,8 +60,8 @@ int send_ap2gcs_real_udp()
     ap2gcs_real_udp.pack_func_info2 = 0;
     ap2gcs_real_udp.lng = gps_data.longitude;
     ap2gcs_real_udp.lat = gps_data.latitude;
-    ap2gcs_real_udp.spd = gps_data.speed;
-    ap2gcs_real_udp.dir_gps=(short)(convert_radian_to_degree(gps_data.course))*100;
+    ap2gcs_real_udp.spd = gps_data.velocity;
+    ap2gcs_real_udp.dir_gps=(short)(convert_radian_to_degree(gps_data.course_radian))*100;
     ap2gcs_real_udp.dir_heading=(short)gps_data.yaw;
     ap2gcs_real_udp.dir_target=global_bool_boatpilot.current_to_target_degree;
     ap2gcs_real_udp.dir_nav=global_bool_boatpilot.command_course_degree;
@@ -140,7 +140,11 @@ static int decode_gcs2ap_cmd_udp(struct GCS2AP_ALL_UDP *ptr_gcs2ap_all_udp, stru
         break;
     }
 
+
+
     temp = ptr_gcs2ap_all_udp->cmd.sail_mode & 0x0f;
+
+    printf("cmd.sail_mode = %d \n", temp = ptr_gcs2ap_all_udp->cmd.sail_mode);
     switch(temp)
     {
     case SAIL_MODE_0:

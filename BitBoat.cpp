@@ -28,16 +28,16 @@ const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 
     //真正写入外部设备的函数，比如设置继电器让方向舵切换左右转
     //{ SCHED_TASK(write_device_II2C),                                          1,     1000 },
-    //{ SCHED_TASK(write_device_motors_output),                                   1,     1000 },
+    { SCHED_TASK(write_device_motors_output),                                   10,     1000 },
 
     // 自驾仪虚拟地获取传感器数据，从all_external_device_input虚拟获取
-    //{ SCHED_TASK(update_GPS),                                                  1,      100 },
+    { SCHED_TASK(update_GPS),                                                  1,      100 },
     //{ SCHED_TASK(update_IMU),                                                  1,      20 },
 
     //自驾仪虚拟地输出数据，把控制量啥的输出到all_external_device_output
     //{ SCHED_TASK(update_external_device),                                    10,      100 },
 
-    //{ SCHED_TASK(get_gcs_udp),                                                 10,      1000 },
+    { SCHED_TASK(get_gcs_udp),                                                 10,      1000 },
     { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),                    1,     1000 },
 
     { SCHED_TASK(get_timedata_now),                                             1,     1000 },
@@ -130,11 +130,11 @@ void Boat::loop_fast_simulate()
 //#endif
 
     /*2. navigation*/
-//    if( ! (fastloop_cnt % 100) )
-//    {
-//        navigation_loop();
-//    }
-    navigation_loop();
+    if( ! (fastloop_cnt % 100) )
+    {
+        navigation_loop();
+    }
+//    navigation_loop();
 
     global_bool_boatpilot.current_to_target_radian    = (short)(auto_navigation.out_current_to_target_radian * 100.0);
     global_bool_boatpilot.current_to_target_degree    = (short)(auto_navigation.out_current_to_target_degree * 100);
@@ -153,7 +153,7 @@ void Boat::loop_fast_simulate()
     /*
      * 下面是把驾驶仪计算得到的电机或者舵机的输出给到simulator模拟器中
      */
-    update_sim_water_craft();
+    //update_sim_water_craft();
 }
 
 

@@ -167,7 +167,7 @@ static int get_navigation_output(struct T_NAVIGATION *ptr_auto_navigation,\
 																					  ptr_auto_navigation->current_loc,\
 																					  ptr_auto_navigation->current_target_loc,\
 																					  &guidance_ctrl);
-		   ptr_auto_navigation->gps_course_angle_radian=ptr_gps_data->course;
+		   ptr_auto_navigation->gps_course_angle_radian=ptr_gps_data->course_radian;
 		}
 		ptr_auto_navigation->out_current_target_wp_cnt = ptr_auto_navigation->current_target_wp_cnt;
 		ptr_auto_navigation->out_current_to_target_radian = guidance_ctrl.out_current_to_target_radian;
@@ -217,7 +217,7 @@ static int get_navigation_output(struct T_NAVIGATION *ptr_auto_navigation,\
 																					   ptr_auto_navigation->current_loc,\
 																					   ptr_auto_navigation->current_target_loc,\
 																					   &guidance_ctrl);
-			ptr_auto_navigation->gps_course_angle_radian=ptr_gps_data->course;
+			ptr_auto_navigation->gps_course_angle_radian=ptr_gps_data->course_radian;
 		}
 		ptr_auto_navigation->out_current_target_wp_cnt = ptr_auto_navigation->current_target_wp_cnt;
 		ptr_auto_navigation->out_current_to_target_radian = guidance_ctrl.out_current_to_target_radian;

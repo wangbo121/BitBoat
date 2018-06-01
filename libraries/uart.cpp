@@ -330,7 +330,6 @@ int read_uart_data(char *uart_name, char *rcv_buf, int time_out_ms, int buf_len)
     struct stat temp_stat;
 
     fd=get_uart_fd(uart_name);
-    printf("gps     : fd = %d \n", fd);
     pos = 0;
 
     while (1)

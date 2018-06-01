@@ -30,20 +30,15 @@ typedef struct
     int latitude;//单位[0.00001度]，扩大了100000倍，范围是[-180-+180度]
 	int altitude;//单位[米]，扩大了100倍
 
-	int roll;//单位[0.01度]，扩大了100倍，范围是[-180-+180度]
-	int pitch;//单位[0.01度]，扩大了100倍，范围是[-90-+90度]
-	/*
-	 * 一定要分清楚yaw=heading 与 course angle不同，course angle指的是前进的速度方向与正北的夹角，也就是航迹与正北的夹角
-	 * 20170410修改 单位[0.01度]，扩大了100倍，范围是[-180-+180度]船尾与船头的连线跟正北的夹角 对应GPFPD包中的heading
-	 */
-	int yaw;
+
 
 	int velocity_north;//单位[0.001米/秒]，扩大了1000倍
     int velocity_east;//单位[0.001米/秒]，扩大了1000倍
     int velocity_u;//单位[0.001米/秒]，扩大了1000倍
-    unsigned int speed;//单位[0.01米/秒]，扩大了100倍
+    unsigned int velocity;//单位[0.001米/秒]，扩大了1000倍
 
-    float course;/*单位[弧度]，没有放大，范围是[-pi-+pi]，course angle值得是前进方向也就是航迹与正北的夹角*/
+    //int course_radian; // 单位[0.01弧度]，范围是[-pi ~ +pi]，course angle值得是前进方向也就是航迹与正北的夹角*/
+    float course_radian;/*单位[弧度]，没有放大，范围是[-pi-+pi]，course angle值得是前进方向也就是航迹与正北的夹角*/
 
 	unsigned char posslnum1;
 	unsigned char posslnum2;
@@ -55,6 +50,15 @@ typedef struct
 	unsigned char svnum;
     unsigned char posslnum;
     unsigned char gpssta;
+
+    /*
+     * 按道理gps模块是不能输出姿态角的，但是有些模块把gps和姿态集成了，所以我们的gps结构就把姿态包括了进来
+     * 以备将来融合使用
+     * 一定要分清楚yaw = heading 与 course angle不同，course angle指的是前进的速度方向与正北的夹角，也就是航迹与正北的夹角
+     */
+    int roll;//单位[0.01度]，扩大了100倍，范围是[-180 ~ +180度]
+    int pitch;//单位[0.01度]，扩大了100倍，范围是[-90 ~ +90度]
+    int yaw; // 单位[0.01度]，扩大了100倍，范围是[-180 ~ +180]
 }nmea_msg;
 
 /*
@@ -62,7 +66,7 @@ typedef struct
  * gps能够确定的物理量比如经度纬度速度等都从这里获取
  */
 extern nmea_msg gps_data;
-extern nmea_msg gps_data_nmea;
+extern nmea_msg gps_data_NMEA; // 20180601 这个用的是和芯星通的 UM220-3 gps和北斗 混合定位
 
 /*
  * Function:       read_gps_data
