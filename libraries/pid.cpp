@@ -79,9 +79,9 @@ float BIT_PID::get_pid(float error, float dt, float scaler)
 void
 BIT_PID::reset_I()
 {
-	_integrator = 0;
-	_last_error = 0;
-	_last_derivative = 0;
+	_integrator         = 0;
+	_last_error         = 0;
+	_last_derivative    = 0;
 }
 
 float BIT_PID::get_p(float error)

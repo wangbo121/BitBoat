@@ -42,6 +42,7 @@
  * 下面是与控制相关的
  */
 #define TEST 0
+#define SIMULATE_BOAT 1
 
 
 
@@ -60,6 +61,7 @@
 
 //test
 #define UART_GPS               "/dev/ttyO2"
+#define UART_GPS_UM220               "/dev/ttyO2"
 #define UART_GPS_Y901               "/dev/ttyO1"
 
 
@@ -71,6 +73,11 @@
  * 建议写成1e-5这种形式
  */
 #define GPS_LOCATION_SCALE 1e-5 //gps中经纬度因为是放大了10^5的，所以需要缩小
+
+#define GPS_SCALE 1e-7 // gps的经度已经是[1e-7度]
+#define WP_SCALE  1e-5 // wp航点的经度目前是[1e-5度]
+
+#define GPS_SCALE_LARGE 1e7
 
 #define DEG_TO_RAD (M_PI / 180.0f)
 #define RAD_TO_DEG (180.0f / M_PI)
@@ -144,8 +151,13 @@ struct WAY_POINT
     unsigned char spd;
     unsigned char alt;
 
-    unsigned int lng;
-    unsigned int lat;
+    /*
+     * 航点的经纬度的单位其实我想把经度放在厘米，也就是缩小1e-7倍，
+     * 但是目前地面站的是1e-5倍，后面要改地面站的
+     * 进一步也要修改GPS_LOCATION_SCALE
+     */
+    unsigned int lng; // 航点包里面的经度 单位根据地面站传过来的航点数据包而定 目前地面站传过来的经度单位是[1e-5度]
+    unsigned int lat; // 航点包里面的经度 单位根据地面站传过来的航点数据包而定 目前地面站传过来的经度单位是[1e-5度]
 };
 
 struct T_GLOBAL_BOOL_BOATPILOT

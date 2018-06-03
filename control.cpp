@@ -29,9 +29,9 @@ struct CTRL_OUTPUT ctrloutput;
 
 static int get_ctrlpara();
 static int get_ctrlinput();
-static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput,struct CTRL_INPUT *ptr_ctrlinput,struct CTRL_PARA *ptr_ctrlpara);
+static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput, struct CTRL_INPUT *ptr_ctrlinput, struct CTRL_PARA *ptr_ctrlpara);
 
-static float cal_throttle_control(float command_throttle,float current_throttle, float change_time);
+static float cal_throttle_control(float command_throttle,float current_throttle, unsigned char change_time);
 static float cal_rudder_control(float command_heading,float current_track_heading,struct T_PID pid);
 
 static float convert_to_pwm(unsigned char min,unsigned char max,unsigned char input );
@@ -67,7 +67,7 @@ int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput)
         motor_right_pwm_out = ptr_ctrloutput->mmotor_onoff_pwm;
 
         rudder2motor = ptr_ctrloutput->rudder_pwm-1500;
-        //DEBUG_PRINTF("ptr_ctrloutput->rudder_pwm = %f \n",ptr_ctrloutput->rudder_pwm);
+        DEBUG_PRINTF("ptr_ctrloutput->rudder_pwm = %f \n",ptr_ctrloutput->rudder_pwm);
         if(rudder2motor > 50)
         {
             //右舵
@@ -113,17 +113,17 @@ int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput)
  */
 static int get_ctrlpara()
 {
-	ctrlpara.rudder_p = (float)gcs2ap_all_udp.rud_p * 0.1;
-	ctrlpara.rudder_i = (float)gcs2ap_all_udp.rud_i * 0.01;
-	ctrlpara.rudder_d = (float)gcs2ap_all_udp.rud_d * 0.1;
+	ctrlpara.rudder_p               = (float)gcs2ap_all_udp.rud_p * 0.1;
+	ctrlpara.rudder_i               = (float)gcs2ap_all_udp.rud_i * 0.01;
+	ctrlpara.rudder_d               = (float)gcs2ap_all_udp.rud_d * 0.1;
 
-	ctrlpara.cruise_throttle=gcs2ap_all_udp.cruise_throttle_percent;
+	ctrlpara.cruise_throttle        = gcs2ap_all_udp.cruise_throttle_percent;
 
-	ctrlpara.mmotor_on_pos=gcs2ap_all_udp.mmotor_on_pos;
-	ctrlpara.mmotor_off_pos=gcs2ap_all_udp.mmotor_off_pos;
-	ctrlpara.rudder_left_pos=gcs2ap_all_udp.rudder_left_pos;
-	ctrlpara.rudder_right_pos=gcs2ap_all_udp.rudder_right_pos;
-	ctrlpara.rudder_mid_pos=gcs2ap_all_udp.rudder_mid_pos;
+	ctrlpara.mmotor_on_pos          = gcs2ap_all_udp.mmotor_on_pos;
+	ctrlpara.mmotor_off_pos         = gcs2ap_all_udp.mmotor_off_pos;
+	ctrlpara.rudder_left_pos        = gcs2ap_all_udp.rudder_left_pos;
+	ctrlpara.rudder_right_pos       = gcs2ap_all_udp.rudder_right_pos;
+	ctrlpara.rudder_mid_pos         = gcs2ap_all_udp.rudder_mid_pos;
 
 	/*
 	 * 如果油门通道的上限值比下限值大了 就颠倒过来
@@ -131,14 +131,14 @@ static int get_ctrlpara()
 	int temp;
     if(ctrlpara.mmotor_off_pos>ctrlpara.mmotor_on_pos)
     {
-        temp=ctrlpara.mmotor_on_pos;
-        ctrlpara.mmotor_on_pos=ctrlpara.mmotor_off_pos;
-        ctrlpara.mmotor_off_pos=temp;
+        temp                        = ctrlpara.mmotor_on_pos;
+        ctrlpara.mmotor_on_pos      = ctrlpara.mmotor_off_pos;
+        ctrlpara.mmotor_off_pos     = temp;
     }
 
     ctrlpara.work_mode = gcs2ap_all_udp.workmode;
     //ctrlpara.throttle_change_time = gcs2ap_all_udp.throttle_change_time;
-    ctrlpara.throttle_change_time = 5;
+    ctrlpara.throttle_change_time_s = 5; //
 
 	return 0;
 }
@@ -157,13 +157,13 @@ static int get_ctrlinput()
      * 1. 获取期望航迹角course angle 或者 期望航向角heading angle
      */
     //ctrlinput.command_course_angle_radian = auto_navigation.command_course_angle_radian;
-	ctrlinput.command_course_angle_radian = auto_navigation.out_command_course_radian;
+	ctrlinput.command_course_angle_radian = navi_output.command_course_angle_radian;
     //ctrlinput.command_heading_angle_radian = auto_navigation.command_heading_angle_radian;
 
     /*
      * 2. 获取当前实际的航迹角course angle 或者 当前实际的航向角heading
      */
-    ctrlinput.gps_course_angle_radian = auto_navigation.gps_course_angle_radian;//单位弧度
+    ctrlinput.gps_course_angle_radian = navi_output.gps_course_angle_radian;//单位弧度
 
     return 0;
 }
@@ -197,6 +197,9 @@ static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput,struct CTRL_INPUT *
         pid.p = ctrlpara.rudder_p;
         pid.i = ctrlpara.rudder_i;
         pid.d = ctrlpara.rudder_d;
+
+        //DEBUG_PRINTF("pid.p = %f \n", pid.p);
+        //DEBUG_PRINTF("command_course_angle_radian = %f, gps_course_angle_radian = %f \n", ptr_ctrlinput->command_course_angle_radian, ptr_ctrlinput->gps_course_angle_radian);
 		ptr_ctrloutput->rudder_pwm = cal_rudder_control(ptr_ctrlinput->command_course_angle_radian,\
                                                         ptr_ctrlinput->gps_course_angle_radian,\
                                                         pid);
@@ -209,10 +212,9 @@ static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput,struct CTRL_INPUT *
         if (ptr_ctrlpara->cruise_throttle!=0)
         {
             /*cruise_throttle是百分比*/
-            command_throttle=1000.0+1000*(float)(ptr_ctrlpara->cruise_throttle)*0.01;
+            command_throttle                 = 1000.0 + 1000 * (float)(ptr_ctrlpara->cruise_throttle) * 0.01;
             /*控制油门的改变速率*/
-            //ptr_ctrloutput->mmotor_onoff_pwm = cal_throttle_control(command_throttle,ptr_ctrloutput->mmotor_onoff_pwm);
-            ptr_ctrloutput->mmotor_onoff_pwm = cal_throttle_control(command_throttle, ptr_ctrloutput->mmotor_onoff_pwm, ptr_ctrlpara->throttle_change_time);
+            ptr_ctrloutput->mmotor_onoff_pwm = cal_throttle_control(command_throttle, ptr_ctrloutput->mmotor_onoff_pwm, ptr_ctrlpara->throttle_change_time_s);
         }
         else
         {
@@ -299,42 +301,38 @@ static float cal_rudder_control(float command_heading,float current_track_headin
 	return rudder_ctrl;
 }
 
-static float cal_throttle_control(float command_throttle,float current_throttle, float change_time)
+static float cal_throttle_control(float command_throttle,float current_throttle, unsigned char change_time)
 {
-	static float current_time=0.0;
-	static float last_time=0.0;
+	static float current_time    = 0.0;
+	static float last_time       = 0.0;
 
-	current_time=clock_gettime_s();
+	current_time = clock_gettime_s();
 
 	/*
-	 * 1秒钟油门变化百分之1
-	 * 这个10秒还是1秒还挺重要的，因为貌似这个模拟量板子反应速度不够呀
-	 * 如果是1秒钟改变百分之1，发现485总线总是接收超时，强制发送，也就是
-	 * 模拟量板子在电压发生变化时，485传输数据会收到电平的影响，所以必须等待
-	 * 模拟量输出电压稳定后才能再次更改需要发送的电压，至少2秒，我这里暂时用10秒钟，其实也够
-	 * 而这个如果485设备出现强制发送就会干扰切换器和充电机，这说明充电机和切换器的健壮性还是不够，仍需要更改
+	 * 改变百分之10油门量所需要的时间，单位是秒
+	 * 这个改变油门所需时间，是考虑到模拟量或者电机变化速度太快导致电机损耗过大
 	 */
-	if( (current_time-last_time) > change_time )
+	if( (current_time - last_time) > (float)change_time )
 	{
-		if(current_throttle<(command_throttle-50))
+		if(current_throttle < (command_throttle - 50))
 		{
-			current_throttle+=100;
-			last_time=current_time;
+			current_throttle    += 100;
+			last_time            = current_time;
 		}
-		else if(current_throttle>(command_throttle+50))
+		else if(current_throttle > (command_throttle + 50))
 		{
-			current_throttle-=100;
-			last_time=current_time;
+			current_throttle    -= 100;
+			last_time            = current_time;
 		}
 		else
 		{
-			current_throttle+=0;
-			last_time=current_time;
+			current_throttle    += 0;
+			last_time            = current_time;
 		}
 	}
 	else
 	{
-		current_throttle+=0;
+		current_throttle        +=0;
 	}
 
 	return current_throttle;

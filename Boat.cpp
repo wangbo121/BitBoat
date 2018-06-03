@@ -21,7 +21,7 @@ void Boat::setup( void )
      * 载入航点文件waypoint
      */
     fd_waypoint     = load_data_struct_from_binary( (char *)WAY_POINT_FILE, &wp_data, sizeof(wp_data));
-    if(fd_waypoint==-1)
+    if(fd_waypoint  == -1)
     {
         printf("无法创建航点文件\n");
     }
@@ -34,7 +34,7 @@ void Boat::setup( void )
      * 载入配置文件config
      */
     fd_config      = load_data_struct_from_binary( (char *)CONFIG_FILE, &boatpilot_config_udp, sizeof(boatpilot_config_udp) );
-    if(fd_config==-1)
+    if(fd_config   == -1)
     {
         printf("无法创建配置文件\n");
     }
@@ -59,15 +59,23 @@ void Boat::setup( void )
 #endif
 
 #ifdef __GPS_
-    gps_uart_init(); // 以后要把gps作为某一个抽象类来处理，否则每换衣个gps都需要重新写
+    gps_uart_init(); // 以后要把gps作为某一个抽象类来处理，否则每换1个gps都需要重新写
+    gps_uart_init_UM220();
     gps_uart_init_Y901();
 #endif
 
+    /*
+     * 有1个网卡是用来监听地面站向自驾仪发送数据的
+     * 与此同时，发送也是通过这个网卡向地面站回传实时数据
+     * 现在这个udp通信代替电台通信 ，作为地面站和自驾仪的通信连接媒介
+     */
+    DEBUG_PRINTF("Boat::setup    :    fd_socket_generic = %d \n",fd_socket_generic);
+    open_socket_udp_dev(&fd_socket_generic, (char *)"AP_LISTEN_UDP_IP", AP_LISTEN_UDP_PORT);
 
     II2C_init();
     write_motors_device_init(); // motor的通信用iic
 
-    /*
+    /* **********************************************************************************************************
      * 作为分界线
      * 以上都是硬件初始化
      * 下面的是驾驶仪内部软件初始化
@@ -80,7 +88,7 @@ void Boat::setup( void )
      * 尤其注意初始的方向舵和油门量值
      * 控制量的限幅参数
      */
-    gcs2ap_all_udp.cmd.pilot_manual                     =   1; // 默认通过驾驶仪
+    gcs2ap_all_udp.cmd.pilot_manual                 =   1; // 默认通过驾驶仪
     gcs2ap_all_udp.cmd.throttle                     =   0;
     gcs2ap_all_udp.cmd.rudder                       =   127;
 
@@ -94,7 +102,7 @@ void Boat::setup( void )
 	gcs2ap_all_udp.arrive_radius                    =   10;//单位是[10米]，初始到达半径设置为100米
     gcs2ap_all_udp.cruise_throttle_percent          =   50;//初始巡航油门设置为百分之50
 
-    gcs2ap_all_udp.workmode = RC_MODE;
+    gcs2ap_all_udp.workmode                         = RC_MODE;
 
 	gcs2ap_all_udp.mmotor_off_pos                   =   0;
 	gcs2ap_all_udp.mmotor_on_pos                    =   255;
@@ -126,13 +134,22 @@ void Boat::setup( void )
     pid_CTE.set_imax( 0.174 * 3 );//30度
 
     /*
-     * 有1个网卡是用来监听地面站向自驾仪发送数据的
-     * 与此同时，发送也是通过这个网卡向地面站回传实时数据
+     * 初始化导航环节
      */
-    DEBUG_PRINTF("Boat::setup    :    fd_socket_generic = %d \n",fd_socket_generic);
-    open_socket_udp_dev(&fd_socket_generic, (char *)"AP_LISTEN_UDP_IP", AP_LISTEN_UDP_PORT);
+    navigation_init();
 
-#if TEST
+
+    /* **************************************************************************************
+     * 仿真时使用
+     */
+#if SIMULATE_BOAT
+    //simulate_init();
+#endif
+}
+
+void Boat::simulate_init()
+{
+#if 1
     unsigned int lng_start = 116.31574 * 1e5;
     unsigned int lat_start = 39.95635 * 1e5;
     unsigned char wp_total_num_test = 5;
@@ -151,23 +168,6 @@ void Boat::setup( void )
     }
     global_bool_boatpilot.wp_total_num = wp_total_num_test;
 #endif
-
-
-
-
-    /*
-     * 初始化导航环节
-     */
-    navigation_init();
-
-
-
-
-
-
-
-
-
 }
 
 T_DATETIME datetime_now;//当前的日期和时间，精确到秒。在主线程中每秒更新一次，其它程序直接使用即可。
@@ -186,7 +186,7 @@ void Boat::get_timedata_now()
     datetime_now.minute = (unsigned char)gbl_time_val->tm_min;
     datetime_now.second = (unsigned char)gbl_time_val->tm_sec;
 
-    DEBUG_PRINTF("当前系统时间是:%d年%d月%d日%d时%d分%d秒\n",datetime_now.year,datetime_now.month,datetime_now.day,datetime_now.hour,datetime_now.minute,datetime_now.second);
+    DEBUG_PRINTF("当前系统时间是:%d年%d月%d日%d时%d分%d秒\n", datetime_now.year, datetime_now.month, datetime_now.day, datetime_now.hour, datetime_now.minute, datetime_now.second);
 }
 
 void Boat::update_all_external_device_input( void )
@@ -205,6 +205,7 @@ void Boat::update_all_external_device_input( void )
 	* 但是这种方式有可能出现这边在写内存，而另一边在读内存，这个概率有多大又会造成什么影响呢
 	*/
 
+#if SIMULATE_BOAT
 	/*
 	 * 获取遥控器的信号
 	 */
@@ -222,39 +223,31 @@ void Boat::update_all_external_device_input( void )
 	 * 这里使用仿真sim_water_craft的数据
 	 * 如果有相应的硬件传感器则，应该是真实的传感器反馈数据
 	 */
-//	all_external_device_input.latitude = fdm.latitude;
-//	all_external_device_input.longitude = fdm.longitude;
-//	all_external_device_input.altitude = 10 ;
-//	all_external_device_input.v_north = fdm.speedN;
-//	all_external_device_input.v_east = fdm.speedE;
-//	all_external_device_input.v_down = fdm.speedD;
-//	all_external_device_input.heading = fdm.heading;
+	all_external_device_input.latitude    = fdm.latitude;
+	all_external_device_input.longitude   = fdm.longitude;
+	all_external_device_input.altitude    = 10 ;
+	all_external_device_input.v_north     = fdm.speedN;
+	all_external_device_input.v_east      = fdm.speedE;
+	all_external_device_input.v_down      = fdm.speedD;
+	all_external_device_input.heading     = fdm.heading;
+    all_external_device_input.course      = fdm.heading * 3.14f / 180.0f;
 
 
 
-
-
-
-
-
+#else
 	/*
 	 * 20180601 下面是更新使用真实的外部设备
 	 */
-	all_external_device_input.latitude              = ((float)gps_data_NMEA.latitude)  * 1e-5;
-    all_external_device_input.longitude             = ((float)gps_data_NMEA.longitude) * 1e-5;
-    all_external_device_input.altitude              = gps_data_NMEA.altitude ;
-//    all_external_device_input.v_north               = gps_data_NMEA.speedN;
-//    all_external_device_input.v_east                = gps_data_NMEA.speedE;
-//    all_external_device_input.v_down                = gps_data_NMEA.speedD;
-    all_external_device_input.course                = gps_data_NMEA.course_radian;
-    all_external_device_input.speed                 = gps_data_NMEA.velocity;
-
+	all_external_device_input.latitude              = ((float)gps_data_UM220.latitude)  * 1e-5;
+    all_external_device_input.longitude             = ((float)gps_data_UM220.longitude) * 1e-5;
+    all_external_device_input.altitude              = gps_data_UM220.altitude;
+    all_external_device_input.speed                 = gps_data_UM220.velocity;
+    all_external_device_input.course                = gps_data_UM220.course_radian;
 
     all_external_device_input.phi = (float)stcAngle.Angle[1]/32768*180;
     all_external_device_input.theta = (float)stcAngle.Angle[0]/32768*180;
     all_external_device_input.psi = (float)stcAngle.Angle[2]/32768*180;
-
-
+#endif
 }
 
 void Boat::get_gcs_udp()
@@ -274,24 +267,18 @@ void Boat::send_ap2gcs_realtime_data_boatlink_by_udp()
 
 void Boat::update_GPS()
 {
-	gps_data.latitude =(int)( all_external_device_input.latitude * 1e5);
-	gps_data.longitude = (int)(all_external_device_input.longitude * 1e5);
+	gps_data.latitude        = (int64_t)( all_external_device_input.latitude * GPS_SCALE_LARGE);
+	gps_data.longitude       = (int64_t)(all_external_device_input.longitude * GPS_SCALE_LARGE);
 
-	//gps_data.course_radian = all_external_device_input.heading * DEG_TO_RAD;
-	gps_data.course_radian = all_external_device_input.course;
-
-
+	gps_data.course_radian   = all_external_device_input.course;
 
 	// JY901
 	gps_data.roll = (int)(all_external_device_input.phi * 1e2);
 	gps_data.pitch = (int)(all_external_device_input.theta * 1e2);
 	gps_data.yaw = (int)(all_external_device_input.psi * 1e2);
 
-
-
-
-	gps_data.velocity_north = (int)(all_external_device_input.v_north *1e3);
-	gps_data.velocity_east = (int)(all_external_device_input.v_east * 1e3);
+	gps_data.velocity_north = (int)(all_external_device_input.v_north * 1e3);
+	gps_data.velocity_east  = (int)(all_external_device_input.v_east  * 1e3);
 }
 
 void Boat::update_IMU()
@@ -325,9 +312,13 @@ void Boat::read_device_gps_JY901()
     read_gps_data_Y901();
 }
 
+void Boat::read_device_gps_UM220()
+{
+    read_gps_data_UM220();
+}
+
 void Boat::read_device_gps_NMEA()
 {
-    read_gps_data_NMEA();
 
 }
 
@@ -410,6 +401,11 @@ void Boat::read_device_gps()
 
 }
 
+void Boat::read_device_IMU_mpu6050()
+{
+
+}
+
 void Boat::read_device_mpu6050()
 {
 
@@ -455,8 +451,6 @@ void Boat::loop_one_second()
 
     //DEBUG_PRINTF("rudder    := %d, throttle    := %d \n", gcs2ap_all_udp.cmd.rudder, gcs2ap_all_udp.cmd.throttle);
 
-    DEBUG_PRINTF("GPS_NMEA: longitude:=%d, latitude:%d \n", gps_data_NMEA.longitude, gps_data_NMEA.latitude); // do not delete, test for GPS signal
-
     DEBUG_PRINTF("left motor = %f, right motor = %f \n", global_bool_boatpilot.motor_left, global_bool_boatpilot.motor_right);
 }
 
@@ -481,14 +475,7 @@ void Boat::disarm_motors()
     set_motor_off();
 }
 
-void Boat::write_device_II2C()
-{
-    unsigned char send_buf[256];
-    float voltage;
 
-    //send_buf[0] = 0x0a;
-    //PFC8574_DO(PCF8574_DO1_ADDR, send_buf[0]);
-}
 
 void Boat::write_device_II2C_test()
 {

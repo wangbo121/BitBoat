@@ -36,12 +36,18 @@
 #include "control.h"
 #include "navigation.h"
 #include "boatlink_udp.h"
+
 #include "gps.h"
 #include "gps_Y901.h"
+#include "gps_UM220.h"
+#include "gps_XW5651.h"
+
 #include "servo.h"
 #include "udp.h"
 
 #include "II2C.h"
+
+#include "BIT_Math.h"
 
 /*
  * 控制模式的宏定义
@@ -128,6 +134,7 @@ private:
      * 这些是真正的读取硬件设备的函数
      */
     void read_device_gps();
+    static void read_device_IMU_mpu6050();
     static void read_device_mpu6050();
     void set_device_rc_out();//这给用来设置舵机和电机所使用的pwm波，频率是50hz
     void set_device_gpio();//设置gpio
@@ -137,11 +144,13 @@ private:
 
     static void read_device_gps_JY901();
     static void read_device_gps_NMEA();
+    static void read_device_gps_UM220();
 
-    static void write_device_II2C();
     static void write_device_II2C_test();
 
-    void update_sim_water_craft();
+
+
+
 
     void start_central_control_computer();
 
@@ -149,7 +158,12 @@ private:
 
 
 public:
+    /*
+     * 仿真测试时使用
+     */
     void loop_fast_simulate();
+    void update_sim_water_craft();
+    void simulate_init();
 
     /*
      * 航行器的物理数学模型

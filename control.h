@@ -31,7 +31,7 @@ struct CTRL_PARA
 	unsigned char rudder_mid_pos;
 
 	unsigned char work_mode;
-	float throttle_change_time;
+	unsigned char throttle_change_time_s; // [s] 自动驾驶时有效，作为改动百分之一油门量所需要的时间，单位是秒
 };
 
 struct T_PID

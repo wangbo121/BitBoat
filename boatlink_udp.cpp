@@ -58,11 +58,14 @@ int send_ap2gcs_real_udp()
     ap2gcs_real_udp.pack_func_flag=0;
     ap2gcs_real_udp.pack_func_info1 = 0;
     ap2gcs_real_udp.pack_func_info2 = 0;
-    ap2gcs_real_udp.lng = gps_data.longitude;
-    ap2gcs_real_udp.lat = gps_data.latitude;
+//    ap2gcs_real_udp.lng = gps_data.longitude;
+//    ap2gcs_real_udp.lat = gps_data.latitude;
+    ap2gcs_real_udp.lng = gps_data.longitude * 1e-2;
+    ap2gcs_real_udp.lat = gps_data.latitude * 1e-2;
     ap2gcs_real_udp.spd = gps_data.velocity;
     ap2gcs_real_udp.dir_gps=(short)(convert_radian_to_degree(gps_data.course_radian))*100;
-    ap2gcs_real_udp.dir_heading=(short)gps_data.yaw;
+    //ap2gcs_real_udp.dir_heading=(short)gps_data.yaw;
+    ap2gcs_real_udp.dir_heading=(short)(convert_radian_to_degree(gps_data.course_radian))*100;
     ap2gcs_real_udp.dir_target=global_bool_boatpilot.current_to_target_degree;
     ap2gcs_real_udp.dir_nav=global_bool_boatpilot.command_course_degree;
 
@@ -100,7 +103,12 @@ static int decode_gcs2ap_cmd_udp(struct GCS2AP_ALL_UDP *ptr_gcs2ap_all_udp, stru
 {
     unsigned char temp;
 
-    memcpy(&ptr_gcs2ap_all_udp->cmd, ptr_gcs2ap_cmd_udp, sizeof(struct GCS2AP_CMD_UDP)); // 把地面站传过来的命令包数据全盘接收
+    /*
+     * 把地面站传过来的命令包数据全盘接收
+     * 有一些数据不需要进行判断的，就从gcs2ap_all_udp->cmd中获取，比如throttle rudder等
+     * 有一些数据需要进行判断后的，比如workmode就是判断 位 的值然后决定workmode的值
+     */
+    memcpy(&ptr_gcs2ap_all_udp->cmd, ptr_gcs2ap_cmd_udp, sizeof(struct GCS2AP_CMD_UDP));
 
     if(ptr_gcs2ap_all_udp->cmd.master_ap_link_ack & 0x80)
     {
@@ -140,11 +148,8 @@ static int decode_gcs2ap_cmd_udp(struct GCS2AP_ALL_UDP *ptr_gcs2ap_all_udp, stru
         break;
     }
 
-
-
     temp = ptr_gcs2ap_all_udp->cmd.sail_mode & 0x0f;
-
-    printf("cmd.sail_mode = %d \n", temp = ptr_gcs2ap_all_udp->cmd.sail_mode);
+    DEBUG_PRINTF("decode_gcs2ap_cmd_udp   : cmd.sail_mode = %d \n", temp = ptr_gcs2ap_all_udp->cmd.sail_mode);
     switch(temp)
     {
     case SAIL_MODE_0:
@@ -218,7 +223,6 @@ static int decode_gcs2ap_cmd_udp(struct GCS2AP_ALL_UDP *ptr_gcs2ap_all_udp, stru
     default:
         break;
     }
-
 
     return 0;
 }
