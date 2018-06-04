@@ -8,6 +8,11 @@
 #ifndef LIBRARIES_SCHEDULER_H_
 #define LIBRARIES_SCHEDULER_H_
 
+typedef int wangbo_int;
+
+
+
+
 /*
  * 这是任务调度
  * 在开始的时候要调用scheduler.init()，然后每次循环都调用scheduler.tick()，每次循环时间大概是10ms

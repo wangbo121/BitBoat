@@ -47,9 +47,9 @@ const BIT_Scheduler::Task Boat::scheduler_tasks[] =
     { SCHED_TASK(get_timedata_now),                                             1,     1000 },
     { SCHED_TASK(loop_one_second),                                              1,     9000 },
 
-    //{ SCHED_TASK(record_log),                                                   1,    10000 },
-    //{ SCHED_TASK(record_wp),                                                    1,    10000 },
-    //{ SCHED_TASK(record_config),                                                1,    10000 },
+    { SCHED_TASK(record_log),                                                   1,    10000 },
+    { SCHED_TASK(record_wp),                                                    1,    10000 },
+    { SCHED_TASK(record_config),                                                1,    10000 },
 
     { SCHED_TASK(end_of_task),                                                  1,       10 }
 };
@@ -111,10 +111,10 @@ void Boat::loop_fast()
      */
     update_all_external_device_input();
 
-    /*1. decode_gcs2ap_radio*/
+    /* decode_gcs2ap_radio */
     decode_gcs2ap_udp();
 
-    /*3 control*/
+    /* control */
     control_loop();
 
     motros_arm_check();

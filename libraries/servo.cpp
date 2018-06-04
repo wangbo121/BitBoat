@@ -12,6 +12,7 @@
 #include "utility.h"
 #include "II2C.h"
 #include "BIT_Math.h"
+#include "global.h"
 
 #include "servo.h"
 
@@ -76,9 +77,11 @@ int set_motors_speed(float *motors_speed)
 
     voltage = pwm_left_normalize * MAX_THROTTLE;
     DAC7574_DA(DAC7574_DA1_ADDR, DA_CHANNEL_1, voltage); // left motor
+    global_bool_boatpilot.voltage0 = voltage;
 
     voltage = pwm_right_normalize * MAX_THROTTLE;
     DAC7574_DA(DAC7574_DA1_ADDR, DA_CHANNEL_0, voltage); // right motor
+    global_bool_boatpilot.voltage1 = voltage;
 
     return 0;
 }

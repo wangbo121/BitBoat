@@ -127,8 +127,6 @@ struct GCS2AP_ALL_UDP
 
     struct GCS2AP_CMD_UDP cmd; // 这个结构是76个字节
 
-    struct WAY_POINT      wp_data[MAX_WAYPOINT_NUM]; //  255个航点 255*12 = 3060个字节
-
     /*
      * 对master_ap_link_ack字节的翻译解释
      */
@@ -165,7 +163,9 @@ struct GCS2AP_ALL_UDP
     unsigned char rudder_right_pos;//方向舵处于最右边时，遥控器的数值，
     unsigned char rudder_mid_pos;//方向舵处于中间时，遥控器的数值，
 
+    unsigned char wp_total_num;
 
+    //struct WAY_POINT      wp_data[MAX_WAYPOINT_NUM]; //  255个航点 255*12 = 3060个字节
 
 
     //    unsigned char navigation_mode;//导航模式,1用航迹导航，0用偏航即船头导航
@@ -188,7 +188,7 @@ struct GCS2AP_ALL_UDP
  */
 struct T_CONFIG_UDP
 {
-    unsigned char work_mode;
+    unsigned char workmode;
     unsigned char rud_p;
     unsigned char rud_i;
     unsigned char rud_d;
@@ -237,6 +237,7 @@ extern struct GCS2AP_CMD_UDP gcs2ap_cmd_udp;
  */
 extern struct GCS2AP_ALL_UDP gcs2ap_all_udp;
 
+extern struct T_CONFIG_UDP boatpilot_config_udp_previous;
 extern struct T_CONFIG_UDP boatpilot_config_udp;
 
 #endif /* BOATLINK_UDP_H_ */

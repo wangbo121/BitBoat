@@ -63,7 +63,7 @@ static void nmea_GNVTG_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf);
 
 int gps_uart_init_UM220()
 {
-    uart_device_gps.uart_name = (char *)UART_GPS;
+    uart_device_gps.uart_name = (char *)UART_GPS_UM220;
 
     uart_device_gps.baudrate        = UART_GPS_BAUD_UM220;
     uart_device_gps.databits        = UART_GPS_DATABITS_UM220;
@@ -167,8 +167,8 @@ int read_gps_data_UM220_GPS_BD()
 
     recv_buf_real_len = read_uart_data(uart_device_gps.uart_name, recv_buf, max_wait_ms, recv_buf_require_len);
     recv_buf[recv_buf_real_len] = '\0';
-    DEBUG_PRINTF("GPS_UM220    :=\n");
-    DEBUG_PRINTF("%s \n", recv_buf);
+//    DEBUG_PRINTF("GPS_UM220    :=\n");
+//    DEBUG_PRINTF("%s \n", recv_buf);
     if( recv_buf_real_len > 0)
     {
         decode_data_gps_UM220_GPS_BD((unsigned char*)recv_buf, recv_buf_real_len);
@@ -179,7 +179,7 @@ int read_gps_data_UM220_GPS_BD()
 
 int gps_uart_close_UM220()
 {
-    uart_device_gps.uart_name = (char *)UART_GPS;
+    uart_device_gps.uart_name = (char *)UART_GPS_UM220;
     close_uart_dev(uart_device_gps.uart_name);
 
     return 0;

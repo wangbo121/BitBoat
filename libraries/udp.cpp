@@ -288,7 +288,7 @@ int decode_udp_data(char *buf, int len)
                     wp_num = (_pack_recv_real_len - 12) / sizeof(WAY_POINT);
                     DEBUG_PRINTF("decode_udp_data    :    receive %d waypoint \n", wp_num);
                     global_bool_boatpilot.wp_total_num = wp_num;
-                    //gcs2ap_all_udp.wp_num = wp_num;
+                    gcs2ap_all_udp.wp_total_num        = wp_num;
 
                     udp_recv_state = UDP_RECV_HEAD1;
 				}
@@ -326,40 +326,6 @@ int decode_udp_data(char *buf, int len)
 #endif
 			break;
 		}
-	}
-
-	return 0;
-}
-
-int read_socket_udp_data_old(int fd_socket)
-{
-	if( fd_socket < 0)
-	{
-		printf("read_socket_udp_data    :    fd_socket is invalid!!!\n");
-		return 0;
-	}
-
-	struct timeval timeout;
-	timeout.tv_sec = 0;//秒
-	timeout.tv_usec = UDP_RECVFROM_BLOCK_TIME; // 微秒
-	if (setsockopt(fd_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1)
-	{
-		printf("read_socket_udp_data    :    setsockopt failed \n");
-	}
-
-	char recv_buf[256];
-	int  recv_len = 0; // 20180530发现 这个必须置0 否则recv_len是个未知的长度导致decode_udp_data解析时间过长
-
-	struct sockaddr_in addr;
-	unsigned int       addr_len = sizeof(struct sockaddr_in);
-
-	printf("fd_socket    :    %d \n", fd_socket);
-	recv_len = recvfrom(fd_socket, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr, &addr_len);
-
-	if( recv_len > 0)
-	{
-		printf("read_socket_udp_data    :    recv_len = %d \n",recv_len);
-		decode_udp_data(recv_buf, recv_len);
 	}
 
 	return 0;

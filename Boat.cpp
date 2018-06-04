@@ -143,13 +143,13 @@ void Boat::setup( void )
      * 仿真时使用
      */
 #if SIMULATE_BOAT
-    //simulate_init();
+    simulate_init();
 #endif
 }
 
 void Boat::simulate_init()
 {
-#if 1
+#if SIMULATE_BOAT
     unsigned int lng_start = 116.31574 * 1e5;
     unsigned int lat_start = 39.95635 * 1e5;
     unsigned char wp_total_num_test = 5;
@@ -426,19 +426,11 @@ void Boat::motors_set()
      */
     global_bool_boatpilot.motor_left  = motors_speed[0];
     global_bool_boatpilot.motor_right = motors_speed[1];
-
-    /*
-     * 最终输出左右推进器
-     */
-    //set_throttle_left_right(motor_left_pwm_out, motor_right_pwm_out, DEFAULT_DEVICE_NUM);
-
-
 #endif
 }
 
 void Boat::write_device_motors_output()
 {
-    //execute_ctrloutput(&ctrloutput);
     set_motors_speed(boat.motors_speed);
 }
 
@@ -473,6 +465,9 @@ void Boat::record_log()
      * 尽量把sizeof(boatpilot_log)作为4字节对齐，勿删
      */
 
+    unsigned char boatpilot_log_save[1024] = {'*'};
+    int save_bytes_cnt;
+
 	//DEBUG_PRINTF("记录日志\n");
 	global_bool_boatpilot.save_boatpilot_log_req = TRUE;
     if(global_bool_boatpilot.save_boatpilot_log_req)
@@ -488,15 +483,51 @@ void Boat::record_log()
 
         memcpy(&boatpilot_log.global_bool_boatpilot, &global_bool_boatpilot, sizeof(global_bool_boatpilot));
 
-        save_data_to_binary_log(fd_boatpilot_log, &boatpilot_log, sizeof(boatpilot_log));
+        memcpy(boatpilot_log_save, &boatpilot_log, sizeof(boatpilot_log));
+        memcpy(&boatpilot_log_save[(int)sizeof(boatpilot_log) + 1], &gcs2ap_all_udp, sizeof(gcs2ap_all_udp));
+        save_bytes_cnt = save_data_to_binary_log(fd_boatpilot_log, boatpilot_log_save, (int)sizeof(boatpilot_log) + 1 + (int)sizeof(gcs2ap_all_udp));
 
-        global_bool_boatpilot.save_boatpilot_log_req=FALSE;
+        //DEBUG_PRINTF("boatpilot_log_save    : save %u bytes \n", save_bytes_cnt);
+
+        global_bool_boatpilot.save_boatpilot_log_req = FALSE;
     }
 }
 
 void Boat::record_config()
 {
 
+    boatpilot_config_udp.workmode                   = gcs2ap_all_udp.workmode;
+    boatpilot_config_udp.rud_p                      = gcs2ap_all_udp.rud_p;
+    boatpilot_config_udp.rud_i                      = gcs2ap_all_udp.rud_i;
+    boatpilot_config_udp.rud_d                      = gcs2ap_all_udp.rud_d;
+    boatpilot_config_udp.cte_p                      = gcs2ap_all_udp.cte_p;
+    boatpilot_config_udp.cte_i                      = gcs2ap_all_udp.cte_i;
+    boatpilot_config_udp.cte_d                      = gcs2ap_all_udp.cte_d;
+    boatpilot_config_udp.cruise_throttle_percent    = gcs2ap_all_udp.cruise_throttle_percent;
+    boatpilot_config_udp.arrive_radius              = gcs2ap_all_udp.arrive_radius;
+
+    boatpilot_config_udp.total_wp_num               = gcs2ap_all_udp.wp_total_num;
+
+
+    if(memcmp(&boatpilot_config_udp_previous, &boatpilot_config_udp,sizeof(boatpilot_config_udp))==0)
+    {
+        //printf("config没有变化，不保存\n");
+    }
+    else
+    {
+        printf("config发生了变化，需要重新保存\n"); // 20170413已测试，可以在参数更改后保存boatpilot_config
+        global_bool_boatpilot.save_config_req=TRUE;
+    }
+    if(global_bool_boatpilot.save_config_req)
+    {
+        int write_len;
+
+        write_len=write(fd_config, &boatpilot_config_udp, sizeof(struct T_CONFIG));
+        printf("config写入了%d个字节的数据\n",write_len);
+
+        boatpilot_config_udp_previous = boatpilot_config_udp;
+        global_bool_boatpilot.save_config_req=FALSE;
+    }
 }
 
 void Boat::read_device_gps()
@@ -569,6 +600,8 @@ void Boat::loop_one_second()
     //DEBUG_PRINTF("RC rudder    := %d, RC throttle    := %d \n", gcs2ap_all_udp.cmd.rudder, gcs2ap_all_udp.cmd.throttle);
     //DEBUG_PRINTF("ctrlout rudder := %d, ctrlout throttle := %d \n", (int)ctrloutput.rudder_pwm, (int)ctrloutput.mmotor_onoff_pwm);
     //DEBUG_PRINTF("left motor = %4.2f, right motor = %4.2f \n", global_bool_boatpilot.motor_left, global_bool_boatpilot.motor_right);
+
+    //DEBUG_PRINTF("left volatage = %4.2f, right voltage = %4.2f \n", global_bool_boatpilot.voltage0, global_bool_boatpilot.voltage0);
 }
 
 void Boat::write_motors_device_init()

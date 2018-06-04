@@ -35,7 +35,9 @@
 struct AP2GCS_REAL_UDP ap2gcs_real_udp;
 struct GCS2AP_CMD_UDP gcs2ap_cmd_udp;
 struct GCS2AP_ALL_UDP gcs2ap_all_udp;
+struct T_CONFIG_UDP boatpilot_config_udp_previous;
 struct T_CONFIG_UDP boatpilot_config_udp;
+
 
 #define REAL_DATA_BUF_SIZE 256
 int send_ap2gcs_real_udp()
@@ -80,7 +82,7 @@ int send_ap2gcs_real_udp()
 
     memcpy(real, &ap2gcs_real_udp, sizeof (struct AP2GCS_REAL_UDP));
     ret = sizeof (struct AP2GCS_REAL_UDP);
-    send_socket_udp_data(fd_socket_generic, real, ret, AP_SENDTO_UDP_IP, AP_SENDTO_UDP_PORT );
+    send_socket_udp_data(fd_socket_generic, real, ret, (char *)AP_SENDTO_UDP_IP, AP_SENDTO_UDP_PORT);
 
     return 0;
 }
@@ -149,7 +151,6 @@ static int decode_gcs2ap_cmd_udp(struct GCS2AP_ALL_UDP *ptr_gcs2ap_all_udp, stru
     }
 
     temp = ptr_gcs2ap_all_udp->cmd.sail_mode & 0x0f;
-    DEBUG_PRINTF("decode_gcs2ap_cmd_udp   : cmd.sail_mode = %d \n", temp = ptr_gcs2ap_all_udp->cmd.sail_mode);
     switch(temp)
     {
     case SAIL_MODE_0:

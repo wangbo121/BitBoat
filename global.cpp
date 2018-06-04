@@ -17,3 +17,5 @@ int fd_socket_generic;
 
 struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
 struct T_BIT_LOG boatpilot_log;
+//struct T_CONFIG                 boatpilot_config_previous;
+//struct T_CONFIG                 boatpilot_config;

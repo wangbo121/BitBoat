@@ -80,6 +80,7 @@ int get_navigation_parameter()
     navi_para.CTE_D         = (float)gcs2ap_all_udp.cte_d * 0.1;
 
     navi_para.total_wp_num  = global_bool_boatpilot.wp_total_num;
+    navi_para.total_wp_num  = gcs2ap_all_udp.wp_total_num;
 
 
     return 0;
@@ -163,8 +164,6 @@ static int get_navigation_output(struct T_NAVI_OUTPUT    *ptr_navi_output,\
         ptr_navi_output->current_target_loc->lng = ((float)ptr_navi_input->ptr_wp_data[target_wp_num].lng) * WP_SCALE;
         ptr_navi_output->current_target_loc->lat = ((float)ptr_navi_input->ptr_wp_data[target_wp_num].lat) * WP_SCALE;
 
-        DEBUG_PRINTF("ptr_navi_output->current_target_loc->lng = %f \n", ptr_navi_output->current_target_loc->lng);
-
         if(target_wp_num>=1)
         {
             ptr_navi_output->previous_target_loc->lng = ((float)ptr_navi_input->ptr_wp_data[target_wp_num-1].lng) * WP_SCALE;
@@ -242,8 +241,8 @@ static unsigned int get_next_wp_num(struct WAY_POINT *ptr_wp_data,\
     specific_loc->lng = ((float)ptr_wp_data[current_target_wp_cnt].lng) * WP_SCALE;
     specific_loc->lat = ((float)ptr_wp_data[current_target_wp_cnt].lat) * WP_SCALE;
 
-    bool_arrive_point_radius = arrive_specific_location_radius(current_loc, specific_loc, arrive_radius);//这是利用  到达半径  判断
-    bool_arrive_point        = arrive_specific_location_over_line_project_NED(&last_target, current_loc, specific_loc);//这是利用  过线  判断
+    bool_arrive_point_radius = arrive_specific_location_radius(current_loc, specific_loc, arrive_radius);               //这是利用  到达半径  判断
+    bool_arrive_point        = arrive_specific_location_over_line_project_NED(&last_target, current_loc, specific_loc); //这是利用  过线  判断
 
     /*
      * 或者到达指定航点的某个半径范围的圆圈内
@@ -254,18 +253,12 @@ static unsigned int get_next_wp_num(struct WAY_POINT *ptr_wp_data,\
     {
         if (current_target_wp_cnt >= (total_wp_num - 1))
         {
-//            auto_navigation.previous_target_loc->lng = (float)(ptr_wp_data[current_target_wp_cnt].lng)*GPS_LOCATION_SCALE;
-//            auto_navigation.previous_target_loc->lat = (float)(ptr_wp_data[current_target_wp_cnt].lat)*GPS_LOCATION_SCALE;
             current_target_wp_cnt = 0;
         }
         else
         {
-//            auto_navigation.previous_target_loc->lng = (float)(ptr_wp_data[current_target_wp_cnt].lng)*GPS_LOCATION_SCALE;
-//            auto_navigation.previous_target_loc->lat = (float)(ptr_wp_data[current_target_wp_cnt].lat)*GPS_LOCATION_SCALE;
             current_target_wp_cnt++;
         }
-
-        global_bool_boatpilot.cnt_test ++;
     }
 
     return current_target_wp_cnt;
@@ -302,18 +295,9 @@ static float get_command_course_radian_NED(struct T_LOCATION *previous_target_lo
      * 例如从当前位置直接到目标航点的角度为175度
      * 如果经过偏航距离修正后，成为185度，wrap_PI函数会导致目标航向-175度，这不行，得还是朝着175的那个小圈走
      */
-    //command_heading_radian = wrap_PI(command_heading_radian);/不需要这个wrap_PI函数，用了反而错误 要朝着小圈走 暂时勿删除
+    //command_heading_radian = wrap_PI(command_heading_radian); // 暂时勿删除，不需要这个wrap_PI函数，用了反而错误 要朝着小圈走
     command_course_radian = current_to_target_radian + cross_track_error_correct_radian;
     command_course_radian = constrain_value(command_course_radian, -(float)M_PI, (float)M_PI);
-
-//    if(command_course_radian>M_PI)
-//    {
-//        command_course_radian=M_PI;
-//    }
-//    else if(command_course_radian<-M_PI)
-//    {
-//        command_course_radian=-M_PI;
-//    }
 
     /*
      * 把一些计算得到的中间变量送出去
@@ -326,175 +310,6 @@ static float get_command_course_radian_NED(struct T_LOCATION *previous_target_lo
     return command_course_radian;
 }
 
-
-
-
-
-
-#if 0
-#define MIN_ARRIVE_RADIUS 20
-static int get_navigation_output_old(struct T_NAVIGATION *ptr_auto_navigation,\
-                                     struct WAY_POINT *ptr_wp_data,\
-                                     nmea_msg *ptr_gps_data)
-{
-	unsigned int target_wp_num = 0;
-	static struct T_GUIDANCE_CONTROLLER guidance_ctrl;//局部变量
-
-	ptr_auto_navigation->arrive_radius = ptr_auto_navigation->in_arrive_radius;
-	//到达半径
-	if(ptr_auto_navigation->arrive_radius < MIN_ARRIVE_RADIUS)
-	{
-		ptr_auto_navigation->arrive_radius = MIN_ARRIVE_RADIUS;
-	}
-
-	//总航点数
-	ptr_auto_navigation->total_wp_num = ptr_auto_navigation->in_total_wp_num;
-
-	//引导航点编号
-	ptr_auto_navigation->wp_guide_no = ptr_auto_navigation->in_wp_guide_no;
-
-	//控制模式，因为不同的控制模式需要不同的制导方式，path following 和 guide模式是不一样的
-	ptr_auto_navigation->work_mode = ptr_auto_navigation->in_workmode;
-	ptr_auto_navigation->auto_work_mode = ptr_auto_navigation->in_auto_workmode;
-
-	ptr_auto_navigation->CTE_p = ptr_auto_navigation->in_CTE_p;
-	ptr_auto_navigation->CTE_i = ptr_auto_navigation->in_CTE_i;
-	ptr_auto_navigation->CTE_d = ptr_auto_navigation->in_CTE_d;
-	guidance_ctrl.in_CTE_p = ptr_auto_navigation->CTE_p;
-	guidance_ctrl.in_CTE_i = ptr_auto_navigation->CTE_i;
-	guidance_ctrl.in_CTE_d = ptr_auto_navigation->CTE_d;
-
-	//当前位置
-	ptr_auto_navigation->current_loc->lng = (float)(ptr_gps_data->longitude) * GPS_LOCATION_SCALE;
-	ptr_auto_navigation->current_loc->lat = (float)(ptr_gps_data->latitude)  * GPS_LOCATION_SCALE;
-
-	switch(ptr_auto_navigation->work_mode)
-	{
-	case STOP_MODE:
-		//推进器停止，方向舵停止
-		break;
-	case RC_MODE:
-		break;
-	case AUTO_MODE:
-		switch(ptr_auto_navigation->auto_work_mode)
-		{
-		case AUTO_MISSION_MODE:
-			break;
-		case AUTO_GUIDE_MODE:
-			ptr_auto_navigation->current_target_wp_cnt = ptr_auto_navigation->wp_guide_no;
-
-			guidance_ctrl.in_CTE_p = 0.0;
-			guidance_ctrl.in_CTE_i = 0.0;
-			guidance_ctrl.in_CTE_d = 0.0;
-			break;
-		case AUTO_LOITER_MODE:
-			break;
-		default:
-			break;
-		}
-
-		if (ptr_auto_navigation->current_target_wp_cnt >= ptr_auto_navigation->total_wp_num)
-		{
-		   ptr_auto_navigation->current_target_wp_cnt = 0;
-		}
-
-		/*1. 获取目标航点*/
-		target_wp_num=get_next_wp_num(ptr_wp_data,\
-									 ptr_auto_navigation->current_loc,\
-									 ptr_auto_navigation->current_target_wp_cnt,\
-									 ptr_auto_navigation->total_wp_num,\
-									 ptr_auto_navigation->arrive_radius);
-
-		/*2. 更新上一航点，当前航点的信息*/
-		ptr_auto_navigation->current_target_wp_cnt = target_wp_num;
-
-		global_bool_boatpilot.wp_next = target_wp_num;
-		ptr_auto_navigation->current_target_loc->lng = ((float)ptr_wp_data[target_wp_num].lng)*GPS_LOCATION_SCALE;
-		ptr_auto_navigation->current_target_loc->lat = ((float)ptr_wp_data[target_wp_num].lat)*GPS_LOCATION_SCALE;
-
-		if(target_wp_num>=1)
-		{
-		   ptr_auto_navigation->previous_target_loc->lng=((float)ptr_wp_data[target_wp_num-1].lng)*GPS_LOCATION_SCALE;
-		   ptr_auto_navigation->previous_target_loc->lat=((float)ptr_wp_data[target_wp_num-1].lat)*GPS_LOCATION_SCALE;
-		}
-		else
-		{
-		   ptr_auto_navigation->previous_target_loc->lng=((float)ptr_wp_data[ptr_auto_navigation->total_wp_num-1].lng)*GPS_LOCATION_SCALE;
-		   ptr_auto_navigation->previous_target_loc->lat=((float)ptr_wp_data[ptr_auto_navigation->total_wp_num-1].lat)*GPS_LOCATION_SCALE;
-		}
-
-		/*3. 获取 1期望course angle 2当前实际course angle 3期望heading angle 4当前实际heading angle */
-		if ((ptr_gps_data->longitude != 0 )&& (ptr_gps_data->latitude != 0))
-		{
-		   ptr_auto_navigation->command_course_angle_radian = get_command_course_radian_NED(ptr_auto_navigation->previous_target_loc,\
-																					  ptr_auto_navigation->current_loc,\
-																					  ptr_auto_navigation->current_target_loc,\
-																					  &guidance_ctrl);
-		   ptr_auto_navigation->gps_course_angle_radian=ptr_gps_data->course_radian;
-		}
-		ptr_auto_navigation->out_current_target_wp_cnt = ptr_auto_navigation->current_target_wp_cnt;
-		ptr_auto_navigation->out_current_to_target_radian = guidance_ctrl.out_current_to_target_radian;
-		ptr_auto_navigation->out_current_to_target_degree = guidance_ctrl.out_current_to_target_degree;
-		ptr_auto_navigation->out_command_course_radian = guidance_ctrl.out_command_course_radian;
-		ptr_auto_navigation->out_command_course_degree = guidance_ctrl.out_command_course_degree;
-		break;
-	case RTL_MODE:
-		ptr_auto_navigation->current_target_wp_cnt = 0;
-
-		guidance_ctrl.in_CTE_p = 0.0;
-		guidance_ctrl.in_CTE_i = 0.0;
-		guidance_ctrl.in_CTE_d = 0.0;
-
-		if (ptr_auto_navigation->current_target_wp_cnt >= ptr_auto_navigation->total_wp_num)
-		{
-			ptr_auto_navigation->current_target_wp_cnt = 0;
-		}
-
-		/*1. 获取目标航点*/
-		target_wp_num=get_next_wp_num(ptr_wp_data,\
-									  ptr_auto_navigation->current_loc,\
-									  ptr_auto_navigation->current_target_wp_cnt,\
-									  ptr_auto_navigation->total_wp_num,\
-									  ptr_auto_navigation->arrive_radius);
-
-		/*2. 更新上一航点，当前航点的信息*/
-		ptr_auto_navigation->current_target_wp_cnt = target_wp_num;
-		ptr_auto_navigation->current_target_loc->lng = ((float)ptr_wp_data[target_wp_num].lng)*GPS_LOCATION_SCALE;
-		ptr_auto_navigation->current_target_loc->lat = ((float)ptr_wp_data[target_wp_num].lat)*GPS_LOCATION_SCALE;
-
-		if(target_wp_num>=1)
-		{
-			ptr_auto_navigation->previous_target_loc->lng=((float)ptr_wp_data[target_wp_num-1].lng)*GPS_LOCATION_SCALE;
-			ptr_auto_navigation->previous_target_loc->lat=((float)ptr_wp_data[target_wp_num-1].lat)*GPS_LOCATION_SCALE;
-		}
-		else
-		{
-			ptr_auto_navigation->previous_target_loc->lng=((float)ptr_wp_data[ptr_auto_navigation->total_wp_num-1].lng)*GPS_LOCATION_SCALE;
-			ptr_auto_navigation->previous_target_loc->lat=((float)ptr_wp_data[ptr_auto_navigation->total_wp_num-1].lat)*GPS_LOCATION_SCALE;
-		}
-
-		/*3. 获取 1期望course angle 2当前实际course angle 3期望heading angle 4当前实际heading angle */
-		if ((ptr_gps_data->longitude != 0 )&& (ptr_gps_data->latitude != 0))
-		{
-			ptr_auto_navigation->command_course_angle_radian = get_command_course_radian_NED(ptr_auto_navigation->previous_target_loc,\
-																					   ptr_auto_navigation->current_loc,\
-																					   ptr_auto_navigation->current_target_loc,\
-																					   &guidance_ctrl);
-			ptr_auto_navigation->gps_course_angle_radian=ptr_gps_data->course_radian;
-		}
-		ptr_auto_navigation->out_current_target_wp_cnt = ptr_auto_navigation->current_target_wp_cnt;
-		ptr_auto_navigation->out_current_to_target_radian = guidance_ctrl.out_current_to_target_radian;
-		ptr_auto_navigation->out_current_to_target_degree = guidance_ctrl.out_current_to_target_degree;
-		ptr_auto_navigation->out_command_course_radian = guidance_ctrl.out_command_course_radian;
-		ptr_auto_navigation->out_command_course_degree = guidance_ctrl.out_command_course_degree;
-		break;
-	default:
-		break;
-	}
-
-	return 0;
-}
-#endif
 
 
 
