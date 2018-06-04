@@ -209,15 +209,15 @@ void Boat::update_all_external_device_input( void )
 	/*
 	 * 获取遥控器的信号
 	 */
-	all_external_device_input.rc_raw_in_0 = 1500;
-	all_external_device_input.rc_raw_in_1 = 1500;
-	all_external_device_input.rc_raw_in_2 = 1500;
-	all_external_device_input.rc_raw_in_3 = 1500;
-	all_external_device_input.rc_raw_in_4 = 1990;//绕航点飞行模式
-	all_external_device_input.rc_raw_in_5 = 1500;
-	all_external_device_input.rc_raw_in_6 = 1500;
-	all_external_device_input.rc_raw_in_7 = 1500;
-	all_external_device_input.rc_raw_in_8 = 1500;
+//	all_external_device_input.rc_raw_in_0 = 1500;
+//	all_external_device_input.rc_raw_in_1 = 1500;
+//	all_external_device_input.rc_raw_in_2 = 1500;
+//	all_external_device_input.rc_raw_in_3 = 1500;
+//	all_external_device_input.rc_raw_in_4 = 1990;//绕航点飞行模式
+//	all_external_device_input.rc_raw_in_5 = 1500;
+//	all_external_device_input.rc_raw_in_6 = 1500;
+//	all_external_device_input.rc_raw_in_7 = 1500;
+//	all_external_device_input.rc_raw_in_8 = 1500;
 
 	/*
 	 * 这里使用仿真sim_water_craft的数据
@@ -238,10 +238,10 @@ void Boat::update_all_external_device_input( void )
 	/*
 	 * 20180601 下面是更新使用真实的外部设备
 	 */
-	all_external_device_input.latitude              = ((float)gps_data_UM220.latitude)  * 1e-5;
-    all_external_device_input.longitude             = ((float)gps_data_UM220.longitude) * 1e-5;
+	all_external_device_input.latitude              = ((float)gps_data_UM220.latitude)  * GPS_SCALE;
+    all_external_device_input.longitude             = ((float)gps_data_UM220.longitude) * GPS_SCALE;
     all_external_device_input.altitude              = gps_data_UM220.altitude;
-    all_external_device_input.speed                 = gps_data_UM220.velocity;
+    all_external_device_input.speed                 = ((float)gps_data_UM220.velocity) * 0.1;
     all_external_device_input.course                = gps_data_UM220.course_radian;
 
     all_external_device_input.phi = (float)stcAngle.Angle[1]/32768*180;
@@ -295,6 +295,7 @@ void Boat::update_mpu6050()
 
 void Boat::update_sim_water_craft()
 {
+#if SIMULATE_BOAT
 
     /*
      * 下面是把驾驶仪计算得到的电机或者舵机的输出给到simulator模拟器中
@@ -305,6 +306,7 @@ void Boat::update_sim_water_craft()
     memcpy(input.servos, servos_set_out, sizeof(servos_set_out));
     sim_water_craft.update(input);
     sim_water_craft.fill_fdm(fdm);
+#endif
 }
 
 void Boat::read_device_gps_JY901()
@@ -334,9 +336,110 @@ void Boat::motros_arm_check()
 
 }
 
+#define MOTORS_SET_NUM 4
+void Boat::motors_set()
+{
+    /*
+     * 这个函数的作用是把throttle 和 rudder
+     * 映射成为左电机 和 右电机的输出
+     */
+#if 0
+    /*
+     * servos_input表示输入控制量
+     * 对于船而言servos_input[2] 表示 油门throttle
+     *         servos_input[3] 表示 方向rudder
+     *         servos_input[0] 表示 滚转aileron
+     *         servos_input[1] 表示 俯仰elevator
+     */
+    float                   _throttle_factor[MOTORS_SET_NUM];
+    float                   _yaw_factor[MOTORS_SET_NUM];  // each motors contribution to yaw (normally 1 or -1)
+
+    servos_input[2]         = constrain_value(ctrloutput.mmotor_onoff_pwm, 1000.0, 2000.0);
+    servos_input[3]         = constrain_value(ctrloutput.rudder_pwm, 1000.0, 2000.0);
+
+    // 油门量是百分之百 方向则需要有正负
+    servos_input[3] = servos_input[3] - 1500.0f; // 转为-500 ~ +500
+
+    //这个是针对电机的系数，如果左右各2个电机，则需要用四个了
+    _throttle_factor[0]= +1;  _yaw_factor[0]  = +1; // 0 : left motor
+    _throttle_factor[1]= +1;  _yaw_factor[1]  = -1; // 1 : left motor
+//    _throttle_factor[2]= +1;  _yaw_factor[2]  = +1; // 2 : left motor
+//    _throttle_factor[3]= +1;  _yaw_factor[3]  = -1; // 3 : right motor
+
+    for(int i=0;i<4;i++)
+    {
+        motors_speed[i] = servos_input[2] * _throttle_factor[i]+ \
+                          servos_input[3] * _yaw_factor[i];
+    }
+#else
+    float motor_left_pwm_out  = 0.0;
+    float motor_right_pwm_out = 0.0;
+    float rudder2motor        = 0.0;
+    int   delta_rudder        = 0;
+    float throttle_scale      = 0.95;
+
+    servos_input[2]         = constrain_value(ctrloutput.mmotor_onoff_pwm, 1000.0, 2000.0);
+    servos_input[3]         = constrain_value(ctrloutput.rudder_pwm, 1000.0, 2000.0);
+
+    /*
+     * 增加差速，在油门的基础上，添加舵效，分为5个档位
+     */
+    motor_left_pwm_out  = servos_input[2]; //先把油门加上
+    motor_right_pwm_out = servos_input[2];
+    if(servos_input[2] > 1900)
+    {
+        motor_left_pwm_out  = servos_input[2] * throttle_scale; //油门最大时也要保证能转向，所以缩小了油门量，当油门量大于1900时，乘以系数
+        motor_right_pwm_out = servos_input[2] * throttle_scale;
+    }
+
+    /*
+     * 下面程序是为了阶梯性变化油门，是为了避免油门变化太快，
+     * 但是如果电调电机性能都很好，那就不用阶梯性变化油门
+     */
+    rudder2motor = servos_input[3] - 1500;
+    if(rudder2motor > 50)
+    {
+        //右舵
+        delta_rudder        =   (int)rudder2motor;
+        delta_rudder        =   fabs(delta_rudder);
+        motor_left_pwm_out  =   motor_left_pwm_out  + (delta_rudder / 100) * 100;
+        motor_right_pwm_out =   motor_right_pwm_out - (delta_rudder / 100) * 100;
+    }
+    else if(rudder2motor < -50)
+    {
+        //左舵
+        delta_rudder        =   (int)rudder2motor;
+        delta_rudder        =   fabs(delta_rudder);
+        motor_left_pwm_out  =   motor_left_pwm_out  - (delta_rudder / 100) * 100;
+        motor_right_pwm_out =   motor_right_pwm_out + (delta_rudder / 100) * 100;
+    }
+
+    motor_left_pwm_out  = constrain_value(motor_left_pwm_out,  1000.0, 2000.0);
+    motor_right_pwm_out = constrain_value(motor_right_pwm_out, 1000.0, 2000.0);
+
+    motors_speed[0]  = motor_left_pwm_out;
+    motors_speed[1]  = motor_right_pwm_out;
+
+    /*
+     * 把motor_left_pwm_out和motor_right_pwm_out值存储到global中
+     * 然后在one_second_loop中打印
+     */
+    global_bool_boatpilot.motor_left  = motors_speed[0];
+    global_bool_boatpilot.motor_right = motors_speed[1];
+
+    /*
+     * 最终输出左右推进器
+     */
+    //set_throttle_left_right(motor_left_pwm_out, motor_right_pwm_out, DEFAULT_DEVICE_NUM);
+
+
+#endif
+}
+
 void Boat::write_device_motors_output()
 {
-    execute_ctrloutput(&ctrloutput);
+    //execute_ctrloutput(&ctrloutput);
+    set_motors_speed(boat.motors_speed);
 }
 
 void Boat::write_device_motors_on()
@@ -413,24 +516,24 @@ void Boat::read_device_mpu6050()
 
 void Boat::set_device_rc_out()
 {
-    float rc_raw_out_0;
-    float rc_raw_out_1;
-    float rc_raw_out_2;
-    float rc_raw_out_3;
-    float rc_raw_out_4;
-    float rc_raw_out_5;
-    float rc_raw_out_6;
-    float rc_raw_out_7;
-    float rc_raw_out_8;
-
-    rc_raw_out_0 = all_external_device_output.rc_raw_out_0;
-    rc_raw_out_1 = all_external_device_output.rc_raw_out_1;
-    rc_raw_out_2 = all_external_device_output.rc_raw_out_2;
-    rc_raw_out_3 = all_external_device_output.rc_raw_out_3;
-    rc_raw_out_4 = all_external_device_output.rc_raw_out_4;
-    rc_raw_out_5 = all_external_device_output.rc_raw_out_5;
-    rc_raw_out_6 = all_external_device_output.rc_raw_out_6;
-    rc_raw_out_7 = all_external_device_output.rc_raw_out_7;
+//    float rc_raw_out_0;
+//    float rc_raw_out_1;
+//    float rc_raw_out_2;
+//    float rc_raw_out_3;
+//    float rc_raw_out_4;
+//    float rc_raw_out_5;
+//    float rc_raw_out_6;
+//    float rc_raw_out_7;
+//    float rc_raw_out_8;
+//
+//    rc_raw_out_0 = all_external_device_output.rc_raw_out_0;
+//    rc_raw_out_1 = all_external_device_output.rc_raw_out_1;
+//    rc_raw_out_2 = all_external_device_output.rc_raw_out_2;
+//    rc_raw_out_3 = all_external_device_output.rc_raw_out_3;
+//    rc_raw_out_4 = all_external_device_output.rc_raw_out_4;
+//    rc_raw_out_5 = all_external_device_output.rc_raw_out_5;
+//    rc_raw_out_6 = all_external_device_output.rc_raw_out_6;
+//    rc_raw_out_7 = all_external_device_output.rc_raw_out_7;
 
     //然后把rc_raw_out_0输出给舵机或者电机，频率是50hz，勿删
 }
@@ -440,18 +543,32 @@ void Boat::set_device_gpio()
 
 }
 
+void Boat::update_navigation_loop()
+{
+    navigation_loop();
+
+    global_bool_boatpilot.current_to_target_radian    = (short)(navi_output.current_to_target_radian * 100.0);
+    global_bool_boatpilot.current_to_target_degree    = (short)(navi_output.current_to_target_degree * 100);
+    global_bool_boatpilot.command_course_radian       = (short)(navi_output.command_course_angle_radian * 100.0);
+    global_bool_boatpilot.command_course_degree       = (short)(navi_output.command_course_angle_degree * 100.0);
+    global_bool_boatpilot.wp_next                     = navi_output.current_target_wp_cnt;
+}
+
 void Boat::loop_one_second()
 {
     //DEBUG_PRINTF("Hello loop_slow\n");
 
     //print_data_gps_Y901(); // do not delete, test for GPS_JY901
 
-    //DEBUG_PRINTF("GPS_DATA: longitude:=%d, latitude:%d \n", gps_data.longitude, gps_data.latitude); // do not delete, test for GPS signal
+    //DEBUG_PRINTF("GPS_DATA_UM220: longitude:=%lld, latitude:%lld \n  gps.nshemi = %c, gps.ewhemi = %c, gps.gpssta = %c gps.posslnum = %d\n", \
+                 gps_data_UM220.longitude, gps_data_UM220.latitude, \
+                 gps_data_UM220.nshemi, gps_data_UM220.ewhemi, gps_data_UM220.gpssta, \
+                 gps_data_UM220.posslnum); // do not delete, test for GPS signal
 
 
-    //DEBUG_PRINTF("rudder    := %d, throttle    := %d \n", gcs2ap_all_udp.cmd.rudder, gcs2ap_all_udp.cmd.throttle);
-
-    DEBUG_PRINTF("left motor = %f, right motor = %f \n", global_bool_boatpilot.motor_left, global_bool_boatpilot.motor_right);
+    //DEBUG_PRINTF("RC rudder    := %d, RC throttle    := %d \n", gcs2ap_all_udp.cmd.rudder, gcs2ap_all_udp.cmd.throttle);
+    //DEBUG_PRINTF("ctrlout rudder := %d, ctrlout throttle := %d \n", (int)ctrloutput.rudder_pwm, (int)ctrloutput.mmotor_onoff_pwm);
+    //DEBUG_PRINTF("left motor = %4.2f, right motor = %4.2f \n", global_bool_boatpilot.motor_left, global_bool_boatpilot.motor_right);
 }
 
 void Boat::write_motors_device_init()

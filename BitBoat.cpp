@@ -22,8 +22,8 @@
 const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 {
     //真正读取传感器函数
-    { SCHED_TASK(read_device_gps_JY901),                                         11,     6000 },
-    { SCHED_TASK(read_device_gps_UM220),                                          10,     4000 },
+    { SCHED_TASK(read_device_gps_JY901),                                         1,     6000 },
+    { SCHED_TASK(read_device_gps_UM220),                                          1,     9000 },
     { SCHED_TASK(read_device_IMU_mpu6050),                                         10,     100 },
 
     //真正写入外部设备的函数，比如设置继电器让方向舵切换左右转
@@ -40,6 +40,8 @@ const BIT_Scheduler::Task Boat::scheduler_tasks[] =
     //{ SCHED_TASK(update_external_device),                                    10,      100 },
 
     { SCHED_TASK(get_gcs_udp),                                                  10,      1000 },
+    { SCHED_TASK(update_navigation_loop),                                        1,      1000 },
+
     { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),                    1,     1000 },
 
     { SCHED_TASK(get_timedata_now),                                             1,     1000 },
@@ -81,11 +83,7 @@ void Boat::loop( void )
 {
     uint32_t timer = (uint32_t)gettimeofday_us(); //当前系统运行时间精确到微秒
 
-#ifdef SIMULATE_BOAT
-    loop_fast_simulate(); //在无人机中是姿态控制内环，在无人船中是制导控制环
-#else
     loop_fast(); //在无人机中是姿态控制内环，在无人船中是制导控制环
-#endif
 
     scheduler.tick(); // 告诉调度器scheduler一个tick已经过去了，目前1个tick指的是10毫秒
 
@@ -102,9 +100,7 @@ void Boat::loop( void )
     scheduler.run(time_available > loop_us ? 0u : time_available);
 }
 
-
-
-void Boat::loop_fast_simulate()
+void Boat::loop_fast()
 {
     fastloop_cnt ++;
 
@@ -118,59 +114,18 @@ void Boat::loop_fast_simulate()
     /*1. decode_gcs2ap_radio*/
     decode_gcs2ap_udp();
 
-    /*2. navigation*/
-    if( ! (fastloop_cnt % 100) )
-    {
-        navigation_loop();
-    }
-//    navigation_loop();
-
-    global_bool_boatpilot.current_to_target_radian    = (short)(navi_output.current_to_target_radian * 100.0);
-    global_bool_boatpilot.current_to_target_degree    = (short)(navi_output.current_to_target_degree * 100);
-    global_bool_boatpilot.command_course_radian       = (short)(navi_output.command_course_angle_radian * 100.0);
-    global_bool_boatpilot.command_course_degree       = (short)(navi_output.command_course_angle_degree * 100.0);
-    global_bool_boatpilot.wp_next                     = navi_output.current_target_wp_cnt;
-
     /*3 control*/
     control_loop();
+
+    motros_arm_check();
+    motors_set();
 
     /*
      * 下面是把驾驶仪计算得到的电机或者舵机的输出给到simulator模拟器中
      */
+#if SIMULATE_BOAT
     update_sim_water_craft();
-}
-
-
-
-
-void Boat::loop_fast()
-{
-    fastloop_cnt ++;
-
-    /*1. decode_gcs2ap_radio*/
-    decode_gcs2ap_udp();
-
-    /*2. navigation*/
-    if( !(fastloop_cnt % 100) )
-    {
-        navigation_loop();
-    }
-
-    global_bool_boatpilot.current_to_target_radian = (short)(navi_output.current_to_target_radian * 100.0);
-    global_bool_boatpilot.current_to_target_degree = (short)(navi_output.current_to_target_degree * 100);
-    global_bool_boatpilot.command_course_radian = (short)(navi_output.command_course_angle_radian);
-    global_bool_boatpilot.command_course_degree = (short)(navi_output.command_course_angle_degree * 100);
-    global_bool_boatpilot.wp_next = navi_output.current_target_wp_cnt;
-
-    /*3 control*/
-    control_loop();
-
-    /*4 motors output*/
-    motros_arm_check();
-    //motors_output();
-
-    /*5 update sensors*/
-    //update_sensors;
+#endif
 }
 
 

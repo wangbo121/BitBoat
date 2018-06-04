@@ -67,7 +67,7 @@ int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput)
         motor_right_pwm_out = ptr_ctrloutput->mmotor_onoff_pwm;
 
         rudder2motor = ptr_ctrloutput->rudder_pwm-1500;
-        DEBUG_PRINTF("ptr_ctrloutput->rudder_pwm = %f \n",ptr_ctrloutput->rudder_pwm);
+        //DEBUG_PRINTF("ptr_ctrloutput->rudder_pwm = %f \n",ptr_ctrloutput->rudder_pwm);
         if(rudder2motor > 50)
         {
             //右舵

@@ -114,6 +114,7 @@ private:
     void out_execute_ctrloutput();
 
     void motros_arm_check();
+    void motors_set();
     static void write_device_motors_output();
 
     void write_device_motors_on();
@@ -150,18 +151,28 @@ private:
 
 
 
-
+    static void update_navigation_loop();
 
     void start_central_control_computer();
 
     void write_motors_device_init();
 
+public:
+    /*
+     * input_servos表示输入控制量
+     * 对于船而言input_servos[2] 表示 油门throttle
+     *         input_servos[3] 表示 方向rudder
+     *         input_servos[0] 表示 滚转aileron
+     *         input_servos[1] 表示 俯仰elevator
+     */
+    float servos_input[4];
+    float motors_speed[4];
 
 public:
     /*
      * 仿真测试时使用
      */
-    void loop_fast_simulate();
+    //void loop_fast_simulate();
     void update_sim_water_craft();
     void simulate_init();
 

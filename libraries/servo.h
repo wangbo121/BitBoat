@@ -27,6 +27,9 @@ int set_motor_off();
  */
 int set_throttle_left_right(float pwm_left, float pwm_right, int device_num);
 
+int set_motors_speed(float *motors_speed);
+
+
 int set_motor_forward();
 
 int set_motor_backward();

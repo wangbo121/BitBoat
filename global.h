@@ -42,7 +42,8 @@
  * 下面是与控制相关的
  */
 #define TEST 0
-#define SIMULATE_BOAT 1
+//#define SIMULATE_BOAT 1
+#define SIMULATE_BOAT 0
 
 
 

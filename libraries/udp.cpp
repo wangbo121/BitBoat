@@ -288,6 +288,7 @@ int decode_udp_data(char *buf, int len)
                     wp_num = (_pack_recv_real_len - 12) / sizeof(WAY_POINT);
                     DEBUG_PRINTF("decode_udp_data    :    receive %d waypoint \n", wp_num);
                     global_bool_boatpilot.wp_total_num = wp_num;
+                    //gcs2ap_all_udp.wp_num = wp_num;
 
                     udp_recv_state = UDP_RECV_HEAD1;
 				}

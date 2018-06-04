@@ -17,7 +17,8 @@
 #include "global.h"
 #include "uart.h"
 
-#define GPS_DATA_LEN_UM220 1024   // UM220 每次发送的数据最大长度 其实有可能比1024少 这里表示串口每次读取时想要获取的数据字节个数
+//#define GPS_DATA_LEN_UM220 1024   // UM220 每次发送的数据最大长度 其实有可能比1024少 这里表示串口每次读取时想要获取的数据字节个数
+#define GPS_DATA_LEN_UM220 256   // UM220 每次发送的数据最大长度
 /*
  * 我们要求读取1024个字节 但是不知道UM220什么时候能够发送够1024个字节来，不能一直傻等着，
  * 所以设置最大等待时间，如果在该时间内没有收够1024个字节，就不再继续等待
@@ -54,6 +55,11 @@ static void nmea_GPRMC_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf);
 static void nmea_GPVTG_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf);
 
 
+static void nmea_GNGSV_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf);
+static void nmea_GNGGA_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf);
+static void nmea_GNRMC_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf);
+static void nmea_GNVTG_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf);
+
 
 int gps_uart_init_UM220()
 {
@@ -89,7 +95,8 @@ int write_gps_data_UM220()
 #define POSITION_SYS_GPS_BD    2
 int read_gps_data_UM220()
 {
-    uint8_t positioning_system = 0; // 定位系统
+    //uint8_t positioning_system = 0; // 定位系统
+    uint8_t positioning_system = 2; // 定位系统 GPS 和 北斗双定位
 
     switch(positioning_system)
     {
@@ -159,6 +166,9 @@ int read_gps_data_UM220_GPS_BD()
     static uint8_t     max_wait_ms = GPS_DATA_WAIT_TIME_MS_UM220;//最大等待时间ms
 
     recv_buf_real_len = read_uart_data(uart_device_gps.uart_name, recv_buf, max_wait_ms, recv_buf_require_len);
+    recv_buf[recv_buf_real_len] = '\0';
+    DEBUG_PRINTF("GPS_UM220    :=\n");
+    DEBUG_PRINTF("%s \n", recv_buf);
     if( recv_buf_real_len > 0)
     {
         decode_data_gps_UM220_GPS_BD((unsigned char*)recv_buf, recv_buf_real_len);
@@ -177,8 +187,8 @@ int gps_uart_close_UM220()
 
 int decode_data_gps_UM220_GPS(unsigned char *buf, int len)
 {
-    nmea_GPVTG_analysis(&gpsx, buf);
-    nmea_GPGSV_analysis(&gpsx, buf);
+//    nmea_GPVTG_analysis(&gpsx, buf);
+//    nmea_GPGSV_analysis(&gpsx, buf);
     nmea_GPGGA_analysis(&gpsx, buf);
     nmea_GPRMC_analysis(&gpsx, buf);
 
@@ -206,7 +216,22 @@ int decode_data_gps_UM220_BD(unsigned char *buf, int len)
 int decode_data_gps_UM220_GPS_BD(unsigned char *buf, int len)
 {
 
+//    nmea_GNVTG_analysis(&gpsx, buf);
+//    nmea_GNGSV_analysis(&gpsx, buf);
+    nmea_GNGGA_analysis(&gpsx, buf);
+    nmea_GNRMC_analysis(&gpsx, buf);
 
+    /*
+     * 这里需要加个判断
+     * 有这么几种数据错误的可能
+     * 1 速度过大
+     * 2 经纬度跳变 突然从116跳到了0
+     * 如果经纬度小于50度，也不赋值
+     */
+    if((gpsx.latitude != 0) && (gpsx.longitude != 0) )
+    {
+        memcpy(&gps_data_UM220, &gpsx, sizeof(gpsx));
+    }
 
     return 0;
 }
@@ -235,7 +260,7 @@ static void nmea_GPGGA_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf)
         posx = nmea_comma_pos(p, 7);
         if (posx != 0XFF)gpsx->posslnum = nmea_str2num(p + posx, &dx); // 参与定位的卫星数量
         posx = nmea_comma_pos(p, 8);
-        if (posx != 0XFF)gpsx->HDOP = nmea_str2num(p + posx, &dx); // 参与定位的卫星数量
+        if (posx != 0XFF)gpsx->HDOP = nmea_str2num(p + posx, &dx); // HDOP 水平精度因子 0.0 ~ 99.999
         posx = nmea_comma_pos(p, 9);
         if (posx != 0XFF)
         {
@@ -284,7 +309,7 @@ static void nmea_GPRMC_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf)
             temp          = nmea_str2num(p + posx, &dx);
             temp_require = convert_to_require(temp, dx, 7);
 
-            tmp_d = (temp_require * 1e-9) * 1e9;
+            tmp_d = (int64_t)(temp_require * 1e-9) * 1e9;
             tmp_m = temp_require - tmp_d;
         }
 
@@ -308,7 +333,7 @@ static void nmea_GPRMC_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf)
             temp = nmea_str2num(p + posx, &dx);
             temp_require = convert_to_require(temp, dx, 7);
 
-            tmp_d = ((uint64_t)(temp_require * 1e-9)) * 1e9;
+            tmp_d = (int64_t)(temp_require * 1e-9) * 1e9;
             tmp_m = temp_require - tmp_d;
         }
 
@@ -364,13 +389,13 @@ static void nmea_GPRMC_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf)
 
 static void nmea_GPVTG_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf)
 {
-    unsigned char *p, dx,posx;
-    unsigned int temp;
-
-    if ((p = (unsigned char*)strstr((const char *)buf, "$GPVTG")) != NULL)
-    {
-
-    }
+//    unsigned char *p, dx,posx;
+//    unsigned int temp;
+//
+//    if ((p = (unsigned char*)strstr((const char *)buf, "$GPVTG")) != NULL)
+//    {
+//
+//    }
 }
 
 /*
@@ -487,6 +512,168 @@ static int64_t convert_to_require(int64_t x, unsigned char float_num, unsigned c
         return x;
     }
 }
+
+
+static void nmea_GNGSV_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf)
+{
+    unsigned char *p, dx,posx;
+    if ((p = (unsigned char*)strstr((const char *)buf, "$GNGSV")) != NULL)
+    {
+        posx = nmea_comma_pos(p, 3);
+        if (posx != 0xff)gpsx->svnum = nmea_str2num(p + posx, &dx); // 本系统可见卫星的总数 这个值和GPGGA中的 参与定位的星数不一样
+    }
+}
+
+static void nmea_GNGGA_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf)
+{
+    unsigned char *p, dx,posx;
+    int64_t temp; // 小数点后有n位 就放大10的n次方倍
+    int64_t temp_require; // 实际需要放大的倍数，因为temp也许放大的倍数太多，我们并不需要
+
+    if ((p = (unsigned char*)strstr((const char *)buf, "$GNGGA")) != NULL) // 单独gps 勿删除
+    {
+        posx = nmea_comma_pos(p, 7);
+        if (posx != 0XFF)gpsx->posslnum = nmea_str2num(p + posx, &dx); // 参与定位的卫星数量
+        posx = nmea_comma_pos(p, 8);
+        if (posx != 0XFF)gpsx->HDOP = nmea_str2num(p + posx, &dx); // HDOP 水平精度因子 0.0 ~ 99.999
+        posx = nmea_comma_pos(p, 9);
+        if (posx != 0XFF)
+        {
+            temp = nmea_str2num(p + posx, &dx);
+            temp_require  = convert_to_require(temp, dx, 1);
+
+            gpsx->altitude = (int64_t)((float)temp_require * 0.1);
+        }
+    }
+}
+
+
+static void nmea_GNRMC_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf)
+{
+    unsigned char *p, dx;
+    unsigned char posx;
+    int64_t temp; // 小数点后有n位 就放大10的n次方倍
+    int64_t temp_require; // 实际需要放大的倍数，因为temp也许放大的倍数太多，我们并不需要
+    int64_t temp_require_int; // 计算时有可能会有负数，用这个
+
+
+    int64_t tmp_d, tmp_m;
+
+    if ((p = (unsigned char*)strstr((const char *)buf, "GNRMC")) != NULL) // 单独gps 勿删除
+    {
+        posx = nmea_comma_pos(p, 1);
+        if (posx != 0xff)
+        {
+            temp          = nmea_str2num(p + posx, &dx);
+            temp_require  = convert_to_require(temp, dx, 0);
+
+            gpsx->hour    = (unsigned char)(temp / 1e4);
+            gpsx->min     = (unsigned char)((temp / 100) % 100);
+            gpsx->sec     = (unsigned char)(temp % 100);
+        }
+
+        posx = nmea_comma_pos(p, 2);
+        if (posx != 0xff)
+        {
+            gpsx->gpssta = *(p + posx);
+        }
+
+        posx = nmea_comma_pos(p, 3);
+        if (posx != 0xff)
+        {
+            temp          = nmea_str2num(p + posx, &dx);
+            temp_require  = convert_to_require(temp, dx, 7);
+
+            tmp_d         = (int64_t)(temp_require * 1e-9) * 1e9; // 因为1e9 是double类型的，必须先转换为int64_t才能达到这条语句的目的
+            tmp_m         = temp_require - tmp_d;
+        }
+
+        posx = nmea_comma_pos(p, 4); // 北纬 还是 南纬度
+        if (posx != 0xff)
+        {
+            gpsx->nshemi = *(p + posx);
+        }
+        if( gpsx->nshemi == 'S')
+        {
+            gpsx->latitude = - (int64_t)((float)tmp_d * 0.01) + ((float)tmp_m * GPS_MINUTE_TO_DEGREE);
+        }
+        else
+        {
+            gpsx->latitude = (int64_t)((float)tmp_d * 0.01) + ((float)tmp_m * GPS_MINUTE_TO_DEGREE);
+        }
+
+        posx = nmea_comma_pos(p, 5);
+        if (posx != 0xff)
+        {
+            temp            = nmea_str2num(p + posx, &dx);
+            temp_require    = convert_to_require(temp, dx, 7);
+
+            tmp_d = ((int64_t)(temp_require * 1e-9)) * 1e9;
+            tmp_m = temp_require - tmp_d;
+        }
+
+        posx = nmea_comma_pos(p, 6); // 东经 还是 西经
+        if (posx != 0xff)
+        {
+            gpsx->ewhemi = *(p + posx);
+        }
+        if( gpsx->ewhemi == 'W')
+        {
+            gpsx->longitude = - (int64_t)((float)tmp_d * 0.01) + ((float)tmp_m * 0.01666667);
+        }
+        else
+        {
+            gpsx->longitude = (int64_t)((float)tmp_d * 0.01) + ((float)tmp_m * 0.01666667);
+        }
+
+        posx = nmea_comma_pos(p, 7);
+        if (posx != 0xff)
+        {
+          temp = nmea_str2num(p + posx, &dx);
+          temp_require = convert_to_require(temp, dx, 1); // 扩大10倍
+          gpsx->velocity = (unsigned int)((float)temp_require * Knot_2_Meter);
+        }
+
+        posx = nmea_comma_pos(p, 8);
+        if (posx != 0xff)
+        {
+            temp = nmea_str2num(p + posx, &dx);
+            temp_require = convert_to_require(temp, dx, 2); // 扩大100倍
+
+            if(temp_require > 18000)
+            {
+                temp_require_int = (int64_t)temp_require - 36000;
+            }
+            else
+            {
+                temp_require_int = (int64_t)temp_require;
+            }
+            gpsx->course_radian = (float)temp_require_int * 0.01 * DEG2RAD;
+        }
+
+        posx = nmea_comma_pos(p, 9);
+        if (posx != 0xff)
+        {
+            temp = nmea_str2num(p + posx, &dx);
+            gpsx->day        = (unsigned char)(temp / 10000);
+            gpsx->month      = (unsigned char)((temp / 100) % 100);
+            gpsx->year       = (unsigned short)(2000 + temp % 100);
+        }
+    }
+}
+
+static void nmea_GNVTG_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf)
+{
+//    unsigned char *p, dx,posx;
+//    unsigned int temp;
+//
+//    if ((p = (unsigned char*)strstr((const char *)buf, "$GNVTG")) != NULL)
+//    {
+//
+//    }
+}
+
+
 
 
 

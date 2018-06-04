@@ -11,6 +11,7 @@
 
 #include "utility.h"
 #include "II2C.h"
+#include "BIT_Math.h"
 
 #include "servo.h"
 
@@ -57,6 +58,32 @@ int set_motor_off()
 
     return 0;
 }
+
+
+int set_motors_speed(float *motors_speed)
+{
+    motors_speed[0] = constrain_value(motors_speed[0], 1000.0f, 2000.0f);
+    motors_speed[1] = constrain_value(motors_speed[1], 1000.0f, 2000.0f);
+
+    float pwm_left_normalize=0.0;
+    float pwm_right_normalize=0.0;
+
+    float voltage;
+
+    /*pwm within 1000-2000 to 0-1000 to 0--+1*/
+    pwm_left_normalize  = ((float)motors_speed[0] - 1000) / 1000;
+    pwm_right_normalize = ((float)motors_speed[1] - 1000) / 1000;
+
+    voltage = pwm_left_normalize * MAX_THROTTLE;
+    DAC7574_DA(DAC7574_DA1_ADDR, DA_CHANNEL_1, voltage); // left motor
+
+    voltage = pwm_right_normalize * MAX_THROTTLE;
+    DAC7574_DA(DAC7574_DA1_ADDR, DA_CHANNEL_0, voltage); // right motor
+
+    return 0;
+}
+
+
 
 int set_throttle_left_right(float pwm_left, float pwm_right, int device_num)
 {

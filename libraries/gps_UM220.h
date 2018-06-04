@@ -10,10 +10,17 @@
 
 #include <stdint.h>
 
-#define UART_GPS_BAUD_UM220              9600
+#define UART_GPS_BAUD_UM220              115200
 #define UART_GPS_DATABITS_UM220          8 //8 data bit
 #define UART_GPS_STOPBITS_UM220          1 //1 stop bit
 #define UART_GPS_PARITY_UM220            0 //no parity
+
+#define GPS_MINUTE_TO_DEGREE   0.016666666f
+
+/*
+ * 该设备目前是115200波特率 1hz的
+ * 可以改为其他波特率和频率
+ */
 
 struct T_GPS_UM220
 {
@@ -37,7 +44,7 @@ struct T_GPS_UM220
 
     unsigned char posslnum1;
     unsigned char posslnum2;
-
+    unsigned char spare;
 
     unsigned char ewhemi;
     unsigned char nshemi;
@@ -61,10 +68,10 @@ struct T_GPS_UM220
     unsigned char hour;
     unsigned char min;
     unsigned char sec;
+    unsigned char mag_east; //磁偏角是东还是西
 
 
     int Magnetic_declination; // 磁偏角
-    unsigned char mag_east; //磁偏角是东还是西
     unsigned int HDOP;
 
 };
