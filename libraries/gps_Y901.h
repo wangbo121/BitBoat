@@ -13,6 +13,12 @@
 #define UART_GPS_STOPBITS_Y901 1 //1 stop bit
 #define UART_GPS_PARITY_Y901 0 //no parity
 
+
+
+#define DATA_RECV_BUF_SIZE_Y901     512         // UM220 每次期望读取的字节数
+#define DATA_TO_RECV_LEN_Y901       256         // UM220 每次期望读取的字节数
+#define MAX_WAIT_TIME_US_Y901       200    // 读取UM220时允许等待的最大时间[us]  波特率是115200的 1ms大概1万个字节
+
 typedef struct
 {
     unsigned short year;
@@ -82,7 +88,6 @@ int read_gps_data_Y901();
 int gps_uart_close_Y901();
 
 void print_data_gps_Y901();
-
 
 
 /****************/

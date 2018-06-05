@@ -189,10 +189,10 @@ int read_radio_data()
 {
 	int read_len;
 	static char _buffer[RADIO_RECV_BUF_SIZE];
-	int time_out_ms = 200;//最长等待200ms
+	int time_out_us = 200;//最长等待200ms
 
 	uart_device_radio.uart_name = UART_RADIO;
-	read_len = read_uart_data(uart_device_radio.uart_name, _buffer, time_out_ms, sizeof(_buffer));
+	read_len = read_uart_data(uart_device_radio.uart_name, _buffer, time_out_us, sizeof(_buffer));
 
 	if(read_len > 0)
 	decode_radio_data((unsigned char*)_buffer, read_len);

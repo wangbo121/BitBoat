@@ -316,7 +316,66 @@ int send_uart_data(char *uart_name, char *send_buf, int buf_len)
  * 这个函数一定会读取到buf_len个数据到rcv_buf后才会结束，
  * 除非到达time_out_ms时间后，还没有收到buf_len个数的数据才会结束
  */
-int read_uart_data(char *uart_name, char *rcv_buf, int time_out_ms, int buf_len)
+int read_uart_data(char *uart_name, char *rcv_buf, int time_out_us, int buf_len)
+{
+    int fd=0;
+    int retval;
+    static fd_set rfds;
+    struct timeval tv;
+    int ret, pos;
+    tv.tv_sec = time_out_us / 1000000;  //set the rcv wait time 1e6us = 1s
+    tv.tv_usec = time_out_us ;  //
+
+    struct stat temp_stat;
+
+    fd=get_uart_fd(uart_name);
+    pos = 0;
+
+    while (1)
+    {
+        FD_ZERO(&rfds);
+        FD_SET(fd, &rfds);
+
+        if(-1==fstat(fd,&temp_stat))
+        {
+            printf("fstat %d error:%s",fd,strerror(errno));
+        }
+
+        retval = select(fd + 1, &rfds, NULL, NULL, &tv);//非堵塞模式读取串口数据
+
+        if (retval == -1)
+        {
+            perror("select()");
+            break;
+        }
+        else if (retval)
+        {
+            ret = read(fd, rcv_buf + pos, 1);
+            if (-1 == ret)
+            {
+                break;
+            }
+
+            pos++;
+            if (buf_len <= pos)
+            {
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    return pos;
+}
+
+/*
+ * 这个函数一定会读取到buf_len个数据到rcv_buf后才会结束，
+ * 除非到达time_out_ms时间后，还没有收到buf_len个数的数据才会结束
+ */
+int read_uart_data_ms(char *uart_name, char *rcv_buf, int time_out_ms, int buf_len)
 {
     int fd=0;
     int retval;

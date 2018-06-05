@@ -17,13 +17,8 @@
 #include "global.h"
 #include "uart.h"
 
-//#define GPS_DATA_LEN_UM220 1024   // UM220 每次发送的数据最大长度 其实有可能比1024少 这里表示串口每次读取时想要获取的数据字节个数
-#define GPS_DATA_LEN_UM220 256   // UM220 每次发送的数据最大长度
-/*
- * 我们要求读取1024个字节 但是不知道UM220什么时候能够发送够1024个字节来，不能一直傻等着，
- * 所以设置最大等待时间，如果在该时间内没有收够1024个字节，就不再继续等待
- */
-#define GPS_DATA_WAIT_TIME_MS_UM220 3
+
+
 #define Knot_2_Meter 0.51444// 速度转换 节 到 米每秒
 #define DEG2RAD 0.017444
 
@@ -122,12 +117,13 @@ int read_gps_data_UM220()
  */
 int read_gps_data_UM220_GPS()
 {
-    static char        recv_buf[GPS_DATA_LEN_UM220];
-    static uint16_t    recv_buf_require_len = GPS_DATA_LEN_UM220;// 请求接收的字节数目
-    static uint16_t    recv_buf_real_len = 0; //实际接收的字节数目
-    static uint8_t     max_wait_ms = GPS_DATA_WAIT_TIME_MS_UM220;//最大等待时间ms
+    static char     recv_buf[DATA_RECV_BUF_SIZE_UM220];
+    int             recv_buf_require_len  = DATA_TO_RECV_LEN_UM220; // 请求接收的字节数目
+    int             recv_buf_real_len     = 0;   //实际接收的字节数目
+    int             max_wait_us           = MAX_WAIT_TIME_US_UM220; // 最大等待时间us
 
-    recv_buf_real_len = read_uart_data(uart_device_gps.uart_name, recv_buf, max_wait_ms, recv_buf_require_len);
+    memset(recv_buf, 0, sizeof(recv_buf));
+    recv_buf_real_len = read_uart_data(uart_device_gps.uart_name, recv_buf, max_wait_us, recv_buf_require_len);
     if( recv_buf_real_len > 0)
     {
         decode_data_gps_UM220_GPS((unsigned char*)recv_buf, recv_buf_real_len);
@@ -141,12 +137,14 @@ int read_gps_data_UM220_GPS()
  */
 int read_gps_data_UM220_BD()
 {
-    static char        recv_buf[GPS_DATA_LEN_UM220];
-    static uint16_t    recv_buf_require_len = GPS_DATA_LEN_UM220;// 请求接收的字节数目
-    static uint16_t    recv_buf_real_len = 0; //实际接收的字节数目
-    static uint8_t     max_wait_ms = GPS_DATA_WAIT_TIME_MS_UM220;//最大等待时间ms
+    static char     recv_buf[DATA_RECV_BUF_SIZE_UM220];
+    int             recv_buf_require_len  = DATA_TO_RECV_LEN_UM220; // 请求接收的字节数目
+    int             recv_buf_real_len     = 0;   //实际接收的字节数目
+    int             max_wait_us           = MAX_WAIT_TIME_US_UM220; // 最大等待时间us
 
-    recv_buf_real_len = read_uart_data(uart_device_gps.uart_name, recv_buf, max_wait_ms, recv_buf_require_len);
+    memset(recv_buf, 0, sizeof(recv_buf));
+
+    recv_buf_real_len = read_uart_data(uart_device_gps.uart_name, recv_buf, max_wait_us, recv_buf_require_len);
     if( recv_buf_real_len > 0)
     {
         decode_data_gps_UM220_BD((unsigned char*)recv_buf, recv_buf_real_len);
@@ -160,15 +158,17 @@ int read_gps_data_UM220_BD()
  */
 int read_gps_data_UM220_GPS_BD()
 {
-    static char        recv_buf[GPS_DATA_LEN_UM220];
-    static uint16_t    recv_buf_require_len = GPS_DATA_LEN_UM220;// 请求接收的字节数目
-    static uint16_t    recv_buf_real_len = 0; //实际接收的字节数目
-    static uint8_t     max_wait_ms = GPS_DATA_WAIT_TIME_MS_UM220;//最大等待时间ms
+    static char     recv_buf[DATA_RECV_BUF_SIZE_UM220];
+    int             recv_buf_require_len  = DATA_TO_RECV_LEN_UM220; // 请求接收的字节数目
+    int             recv_buf_real_len     = 0;   //实际接收的字节数目
+    int             max_wait_us           = MAX_WAIT_TIME_US_UM220; // 最大等待时间us
 
-    recv_buf_real_len = read_uart_data(uart_device_gps.uart_name, recv_buf, max_wait_ms, recv_buf_require_len);
+    memset(recv_buf, 0, sizeof(recv_buf));
+
+    recv_buf_real_len = read_uart_data(uart_device_gps.uart_name, recv_buf, max_wait_us, recv_buf_require_len);
     recv_buf[recv_buf_real_len] = '\0';
-//    DEBUG_PRINTF("GPS_UM220    :=\n");
-//    DEBUG_PRINTF("%s \n", recv_buf);
+    //DEBUG_PRINTF("GPS_UM220    :=\n");
+    //DEBUG_PRINTF("%s \n", recv_buf);
     if( recv_buf_real_len > 0)
     {
         decode_data_gps_UM220_GPS_BD((unsigned char*)recv_buf, recv_buf_real_len);

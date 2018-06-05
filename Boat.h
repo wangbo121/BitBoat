@@ -42,6 +42,8 @@
 #include "gps_UM220.h"
 #include "gps_XW5651.h"
 
+#include "IMU.h"
+
 #include "servo.h"
 #include "udp.h"
 

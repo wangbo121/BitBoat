@@ -41,7 +41,9 @@ int set_uart_opt(char *uart_name, int speed, int bits, char event, int stop);
 /*
  * 读取串口设备的数据，buf_len是设置的想要读取的字节数，time_out_ms是设置的最大等待时间
  */
-int read_uart_data(char *uart_name, char *rcv_buf, int time_out_ms, int buf_len);
+//int read_uart_data_ms(char *uart_name, char *rcv_buf, int time_out_ms, int buf_len);
+int read_uart_data(char *uart_name, char *rcv_buf, int time_out_us, int buf_len);
+
 
 /*
  * 根据串口名字，向外发送数据

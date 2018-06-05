@@ -244,9 +244,21 @@ void Boat::update_all_external_device_input( void )
     all_external_device_input.speed                 = ((float)gps_data_UM220.velocity) * 0.1;
     all_external_device_input.course                = gps_data_UM220.course_radian;
 
-    all_external_device_input.phi = (float)stcAngle.Angle[1]/32768*180;
-    all_external_device_input.theta = (float)stcAngle.Angle[0]/32768*180;
-    all_external_device_input.psi = (float)stcAngle.Angle[2]/32768*180;
+    all_external_device_input.phi                   = (float)stcAngle.Angle[1]/32768*180;
+    all_external_device_input.theta                 = (float)stcAngle.Angle[0]/32768*180;
+    all_external_device_input.psi                   = (float)stcAngle.Angle[2]/32768*180;
+
+
+    all_external_device_input._accel_x              = 0;
+    all_external_device_input._accel_y              = 0;
+    all_external_device_input._accel_z              = 0;
+
+    all_external_device_input._gyro_x               = 0;
+    all_external_device_input._gyro_y               = 0;
+    all_external_device_input._gyro_z               = 0;
+
+
+
 #endif
 }
 
@@ -283,6 +295,17 @@ void Boat::update_GPS()
 
 void Boat::update_IMU()
 {
+    IMU_data.acc_x    = all_external_device_input._accel_x; // 暂时不需要 所以是0
+    IMU_data.acc_y    = all_external_device_input._accel_y;
+    IMU_data.acc_z    = all_external_device_input._accel_z;
+
+    IMU_data.gyro_x   = all_external_device_input._gyro_x;  // 暂时不许要 所以是0
+    IMU_data.gyro_x   = all_external_device_input._gyro_y;
+    IMU_data.gyro_x   = all_external_device_input._gyro_z;
+
+    IMU_data.roll     = (int)(all_external_device_input.phi   * 1e2);
+    IMU_data.pitch    = (int)(all_external_device_input.theta * 1e2);
+    IMU_data.yaw      = (int)(all_external_device_input.psi   * 1e2);
 
 
 
@@ -451,7 +474,6 @@ void Boat::record_wp()
 
 	if(global_bool_boatpilot.save_wp_req)
 	{
-		//write_len=write(fd_waypoint,(char *)wp_data,sizeof(struct WAY_POINT)*MAX_WAYPOINT_NUM);
 		write_len = save_data_to_binary_log(fd_waypoint, &wp_data, sizeof(wp_data));
 		printf("Boat::record_wp()    :    write_len = %d \n",write_len);
 		global_bool_boatpilot.save_wp_req = FALSE;

@@ -345,7 +345,7 @@ int read_socket_udp_data(int fd_socket)
 
     struct timeval timeout;
     timeout.tv_sec = 0;//秒
-    timeout.tv_usec = UDP_RECVFROM_BLOCK_TIME; // 微秒
+    timeout.tv_usec = MAX_WAIT_TIME_US_UDP; // 微秒
     select(fd_socket+1, &read_fds, NULL, NULL, &timeout); // select系统检测从0到fd_socket+1的所有文件描述符，如果fd_socket有事件发生，就把read_fds置1
 
     char recv_buf[256];

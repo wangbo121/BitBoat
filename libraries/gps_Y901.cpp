@@ -16,6 +16,8 @@
 
 #include "gps_Y901.h"
 
+
+
 struct STime        stcTime;
 struct SAcc         stcAcc;
 struct SGyro        stcGyro;
@@ -204,16 +206,17 @@ void print_data_gps_Y901()
 
 int read_gps_data_Y901()
 {
-    static char recv_buf[256];
-    static int recv_buf_require_len = 256;// 请求接收的字节数目
-    static int recv_buf_real_len = 0; //实际接收的字节数目
-    static int max_wait_ms = 2;//最大等待时间ms
+    static char     recv_buf[DATA_RECV_BUF_SIZE_Y901];
+    int             recv_buf_require_len  = DATA_TO_RECV_LEN_Y901; // 请求接收的字节数目
+    int             recv_buf_real_len     = 0;   //实际接收的字节数目
+    int             max_wait_us           = MAX_WAIT_TIME_US_Y901; // 最大等待时间us
 
-    recv_buf_real_len = read_uart_data(uart_device_gps_Y901.uart_name, recv_buf, max_wait_ms, recv_buf_require_len);
+    memset(recv_buf, 0, sizeof(recv_buf));
+    recv_buf_real_len = read_uart_data(uart_device_gps_Y901.uart_name, recv_buf, max_wait_us, recv_buf_require_len);
 
     if( recv_buf_real_len > 0)
     {
-        //DEBUG_PRINTF("read_gps_data_Y901    :    receive %d bytes\n",recv_buf_real_len);
+        //DEBUG_PRINTF("read_gps_data_Y901    :    receive %d bytes\n", recv_buf_real_len);
         decode_data_gps_Y901((unsigned char*)recv_buf, recv_buf_real_len);
     }
 

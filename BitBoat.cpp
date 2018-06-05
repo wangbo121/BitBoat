@@ -9,11 +9,11 @@
 
 /*
  * 这是任务调度表，除了fast_loop中的任务，其他任务都在这里执行
- * 中间的数字是执行频率，最慢1hz，最快100hz
- * 最右边的数字是最大允许的时间，单位是微妙
- * 每个函数的执行时间必须小于最大允许的时间
+ * 第1个字段是task的函数名称，第2个字段是该函数执行频率[hz]，第3个字段是分配给该函数的最大可执行时间[us]
+ * 第2个字段执行频率，最慢1hz，最快100hz
+ * 第3个字段的数字是最大允许的时间，单位是[微秒]
  * 每个任务都需要测试一下实际需要多长时间，如果大于每个tick所允许的剩余时间，就会出现Scheduler overrun task
- * 因此需要特别注意串口读取 udp读取等阻塞式的读取方式，阻塞等待的时间需要小于这个任务调度允许的最大时间
+ * 因此需要特别注意串口读取 以及 udp读取等阻塞式的读取方式，阻塞等待的时间需要小于这个任务调度允许的最大时间
  * gps_Y901我给的最大允许是3000微秒，而gps_Y901是在10hz循环中的，因此该10hz循环中最多能有3个gps_Y901这种
  * 读取函数，否则就会把10ms全部占用了
  */
@@ -22,25 +22,25 @@
 const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 {
     //真正读取传感器函数
-    { SCHED_TASK(read_device_gps_JY901),                                         1,     6000 },
-    { SCHED_TASK(read_device_gps_UM220),                                          1,     9000 },
-    { SCHED_TASK(read_device_IMU_mpu6050),                                         10,     100 },
+    { SCHED_TASK(read_device_gps_JY901),                                        1,      MAX_WAIT_TIME_US_Y901 + 10 },
+    { SCHED_TASK(read_device_gps_UM220),                                        1,      MAX_WAIT_TIME_US_UM220 + 10 },
+    { SCHED_TASK(read_device_IMU_mpu6050),                                     10,      100 },
 
     //真正写入外部设备的函数，比如设置继电器让方向舵切换左右转
-    { SCHED_TASK(write_device_motors_output),                                    20,     3000 },
+    { SCHED_TASK(write_device_motors_output),                                  20,     3000 },
 
 
 
 
     // 自驾仪虚拟地获取传感器数据，从all_external_device_input虚拟获取
-    { SCHED_TASK(update_GPS),                                                    10,      100 },
-    { SCHED_TASK(update_IMU),                                                      1,      20 },
+    { SCHED_TASK(update_GPS),                                                  10,      200 },
+    { SCHED_TASK(update_IMU),                                                   1,      200 },
 
     //自驾仪虚拟地输出数据，把控制量啥的输出到all_external_device_output
     //{ SCHED_TASK(update_external_device),                                    10,      100 },
 
-    { SCHED_TASK(get_gcs_udp),                                                  10,      1000 },
-    { SCHED_TASK(update_navigation_loop),                                        1,      1000 },
+    { SCHED_TASK(get_gcs_udp),                                                 10,     1000 },
+    { SCHED_TASK(update_navigation_loop),                                       1,     1000 },
 
     { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),                    1,     1000 },
 

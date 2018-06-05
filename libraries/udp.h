@@ -30,6 +30,8 @@
 #define PORT_SENT_TO 49000
 #define PORT_RECEIVE 49005
 
+#define MAX_WAIT_TIME_US_UDP    200    // 通过udp获取地面站数据允许等待的最大时间
+
 struct T_UDP_DEVICE
 {
     unsigned long int fd;

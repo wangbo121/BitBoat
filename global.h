@@ -41,8 +41,8 @@
 /*
  * 下面是与控制相关的
  */
-#define SIMULATE_BOAT 1
-//#define SIMULATE_BOAT 0
+//#define SIMULATE_BOAT 1
+#define SIMULATE_BOAT 0
 
 #define __RADIO_
 
@@ -57,6 +57,9 @@
 
 #define UART_GPS_UM220         "/dev/ttyO2"
 #define UART_GPS_Y901          "/dev/ttyO1"
+
+//#define GPS_DATA_WAIT_TIME_MS_UM220 3
+//#define MAX_WAIT_TIME_US_Y901   2000    // 目前设置的至少1ms  读取JY901时允许等待的最大时间 波特率是115200的 1ms大概1万个字节
 
 
 
@@ -134,7 +137,7 @@
  * 地面站命令包 76个字节，航点包可能会多一点，所以如果将来发送的航点数非常大，
  * 则需要重新考虑等待时间，请求读取的数据大小，目前请求读取1024个
  */
-#define UDP_RECVFROM_BLOCK_TIME 200
+//#define UDP_RECVFROM_BLOCK_TIME 200
 
 #define TURN_MODE_DIFFSPD 0
 #define TURN_MODE_RUDDER  1

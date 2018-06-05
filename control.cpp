@@ -138,7 +138,7 @@ static int get_ctrlpara()
 
     ctrlpara.work_mode = gcs2ap_all_udp.workmode;
     //ctrlpara.throttle_change_time = gcs2ap_all_udp.throttle_change_time;
-    ctrlpara.throttle_change_time_s = 5; //
+    ctrlpara.throttle_change_time_s = 1; //
 
 	return 0;
 }
@@ -156,9 +156,7 @@ static int get_ctrlinput()
     /*
      * 1. 获取期望航迹角course angle 或者 期望航向角heading angle
      */
-    //ctrlinput.command_course_angle_radian = auto_navigation.command_course_angle_radian;
 	ctrlinput.command_course_angle_radian = navi_output.command_course_angle_radian;
-    //ctrlinput.command_heading_angle_radian = auto_navigation.command_heading_angle_radian;
 
     /*
      * 2. 获取当前实际的航迹角course angle 或者 当前实际的航向角heading
