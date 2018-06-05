@@ -43,7 +43,12 @@ struct AP2GCS_REAL_UDP
     unsigned char form_type;
     unsigned char pilot_vessel;                                                                                //到此40给字节
 
-    unsigned int spare1;
+    unsigned char wp_success_cnt;
+    unsigned char spare_char_0;
+    unsigned char spare_char_1;
+    unsigned char spare_char_2;
+
+
     unsigned int spare2;
     unsigned int spare3;
     unsigned int spare4;

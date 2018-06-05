@@ -47,38 +47,37 @@ int send_ap2gcs_real_udp()
     static unsigned int real_udp_cnt;
 
     real_udp_cnt++;
-    ap2gcs_real_udp.head1 = 0xaa;
-    ap2gcs_real_udp.head2 = 0x55;
-    ap2gcs_real_udp.len = 76;
-    ap2gcs_real_udp.type = COMMAND_AP2GCS_REAL_UDP;
-    ap2gcs_real_udp.vessel = 1;  //发送数据的船的ID编号，从1开始，最多到100,0为无效船
-    //ap2gcs_real_udp.master_ap_link_ack = 0x10;//D7:主/备自驾仪(1主,0备);D6~4:自驾仪编号(0..7);D3~1:链路编号(0:局域网;1:北斗;2:串口数传电台);D0:是否需要返回确认包(1:需要;0:不需)
-    ap2gcs_real_udp.master_ap_link_ack = 0x90;//D7:主/备自驾仪(1主,0备);D6~4:自驾仪编号(0..7);D3~1:链路编号(0:局域网;1:北斗;2:串口数传电台);D0:是否需要返回确认包(1:需要;0:不需)
-    ap2gcs_real_udp.plan_id = 0;//采用的航线编号，从1开始，最大为10，0表示没有航线
+    ap2gcs_real_udp.head1                 = 0xaa;
+    ap2gcs_real_udp.head2                 = 0x55;
+    ap2gcs_real_udp.len                   = 76;
+    ap2gcs_real_udp.type                  = COMMAND_AP2GCS_REAL_UDP;
+    ap2gcs_real_udp.vessel                = 1;  //发送数据的船的ID编号，从1开始，最多到100,0为无效船
+    ap2gcs_real_udp.master_ap_link_ack    = 0x90;//D7:主/备自驾仪(1主,0备);D6~4:自驾仪编号(0..7);D3~1:链路编号(0:局域网;1:北斗;2:串口数传电台);D0:是否需要返回确认包(1:需要;0:不需)
+    ap2gcs_real_udp.plan_id               = 0;//采用的航线编号，从1开始，最大为10，0表示没有航线
 
-    ap2gcs_real_udp.cnt = real_udp_cnt;
-    ap2gcs_real_udp.pack_func_flag=0;
-    ap2gcs_real_udp.pack_func_info1 = 0;
-    ap2gcs_real_udp.pack_func_info2 = 0;
-//    ap2gcs_real_udp.lng = gps_data.longitude;
-//    ap2gcs_real_udp.lat = gps_data.latitude;
-    ap2gcs_real_udp.lng = gps_data.longitude * 1e-2;
-    ap2gcs_real_udp.lat = gps_data.latitude * 1e-2;
-    ap2gcs_real_udp.spd = gps_data.velocity;
-    ap2gcs_real_udp.dir_gps=(short)(convert_radian_to_degree(gps_data.course_radian))*100;
-    //ap2gcs_real_udp.dir_heading=(short)gps_data.yaw;
-    ap2gcs_real_udp.dir_heading=(short)(convert_radian_to_degree(gps_data.course_radian))*100;
-    ap2gcs_real_udp.dir_target=global_bool_boatpilot.current_to_target_degree;
-    ap2gcs_real_udp.dir_nav=global_bool_boatpilot.command_course_degree;
+    ap2gcs_real_udp.cnt                   = real_udp_cnt;
+    ap2gcs_real_udp.pack_func_flag        = 0;
+    ap2gcs_real_udp.pack_func_info1       = 0;
+    ap2gcs_real_udp.pack_func_info2       = 0;
+    ap2gcs_real_udp.lng                   = gps_data.longitude * 1e-2;
+    ap2gcs_real_udp.lat                   = gps_data.latitude * 1e-2;
+    ap2gcs_real_udp.spd                   = gps_data.velocity;
+    ap2gcs_real_udp.dir_gps               = (short)(convert_radian_to_degree(gps_data.course_radian))*100;
+    ap2gcs_real_udp.dir_heading           = (short)IMU_data.yaw;
+    ap2gcs_real_udp.dir_heading           = (short)(convert_radian_to_degree(gps_data.course_radian))*100;
+    ap2gcs_real_udp.dir_target            = global_bool_boatpilot.current_to_target_degree;
+    ap2gcs_real_udp.dir_nav               = global_bool_boatpilot.command_course_degree;
 
-    ap2gcs_real_udp.roll=(short)gps_data.roll;
-    ap2gcs_real_udp.pitch=(short)gps_data.pitch;
-    ap2gcs_real_udp.yaw=(short)gps_data.yaw;
+    ap2gcs_real_udp.roll                  = (short)IMU_data.roll;
+    ap2gcs_real_udp.pitch                 = (short)IMU_data.pitch;
+    ap2gcs_real_udp.yaw                   = (short)IMU_data.yaw;
 
-    ap2gcs_real_udp.wp_next = global_bool_boatpilot.wp_next;
-    ap2gcs_real_udp.sail_mode = gcs2ap_all_udp.workmode;
-    ap2gcs_real_udp.form_type = gcs2ap_all_udp.formation_type;
-    ap2gcs_real_udp.pilot_vessel = 0;
+    ap2gcs_real_udp.wp_next               = global_bool_boatpilot.wp_next;
+    ap2gcs_real_udp.sail_mode             = gcs2ap_all_udp.workmode;
+    ap2gcs_real_udp.form_type             = gcs2ap_all_udp.formation_type;
+    ap2gcs_real_udp.pilot_vessel          = 0;
+
+    ap2gcs_real_udp.wp_success_cnt        = global_bool_boatpilot.wp_success_cnt;
 
     memcpy(real, &ap2gcs_real_udp, sizeof (struct AP2GCS_REAL_UDP));
     ret = sizeof (struct AP2GCS_REAL_UDP);
@@ -96,6 +95,12 @@ int decode_gcs2ap_udp()
 	{
 	    global_bool_boatpilot.bool_get_gcs2ap_cmd = FALSE;
 		decode_gcs2ap_cmd_udp(&gcs2ap_all_udp, &gcs2ap_cmd_udp);
+	}
+
+	if(global_bool_boatpilot.bool_get_gcs2ap_waypoint)
+	{
+	    global_bool_boatpilot.bool_get_gcs2ap_waypoint = FALSE;
+	    global_bool_boatpilot.wp_success_cnt ++;
 	}
 
 	return 0;

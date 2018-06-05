@@ -49,20 +49,9 @@
 //#define UART_RADIO          "/dev/ttyUSB0"
 #define UART_RADIO          "/dev/ttyO3"
 
-
-
-
-
 #define __GPS_
-
 #define UART_GPS_UM220         "/dev/ttyO2"
 #define UART_GPS_Y901          "/dev/ttyO1"
-
-//#define GPS_DATA_WAIT_TIME_MS_UM220 3
-//#define MAX_WAIT_TIME_US_Y901   2000    // 目前设置的至少1ms  读取JY901时允许等待的最大时间 波特率是115200的 1ms大概1万个字节
-
-
-
 
 /*
  * 因为从导航姿态模块读回来的gps数据和航向数据都是经过 扩大倍数 转为int整型的，
@@ -111,10 +100,10 @@
 
 //传感器校准
 #define SENSRO_CHECK_ACC         0
-#define SENSRO_CHECK_GYRO      1
-#define SENSRO_CHECK_MAG       2
-#define SENSRO_CHECK_BARO     3
-#define SENSRO_CHECK_RESET     4
+#define SENSRO_CHECK_GYRO        1
+#define SENSRO_CHECK_MAG         2
+#define SENSRO_CHECK_BARO        3
+#define SENSRO_CHECK_RESET       4
 
 //本机测试时使用"127.0.0.1" 勿删除
 //#define AP_LISTEN_UDP_IP           "127.0.0.1"           //自驾仪监听地面站发送来的数据时用的网卡ip地址
@@ -141,6 +130,8 @@
 
 #define TURN_MODE_DIFFSPD 0
 #define TURN_MODE_RUDDER  1
+
+#define PID_DELTA_TIME_MS  10
 
 struct WAY_POINT
 {
@@ -191,12 +182,18 @@ struct T_GLOBAL_BOOL_BOATPILOT
 	int cte_distance_error; // [0.01米]
 
 	unsigned int cnt_test;
+	unsigned char wp_success_cnt;
 
 
     float motor_left ;
     float motor_right;
     float voltage0;
     float voltage1;
+
+    float control_pid_integrator; // 积分量
+    float rudder_ctrl;
+    float pid_p;
+    float pid_i;
 };
 
 /*

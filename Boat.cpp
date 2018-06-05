@@ -244,9 +244,9 @@ void Boat::update_all_external_device_input( void )
     all_external_device_input.speed                 = ((float)gps_data_UM220.velocity) * 0.1;
     all_external_device_input.course                = gps_data_UM220.course_radian;
 
-    all_external_device_input.phi                   = (float)stcAngle.Angle[1]/32768*180;
-    all_external_device_input.theta                 = (float)stcAngle.Angle[0]/32768*180;
-    all_external_device_input.psi                   = (float)stcAngle.Angle[2]/32768*180;
+    all_external_device_input.phi                   = (float)stcAngle.Angle[1] / 32768 * 180;
+    all_external_device_input.theta                 = (float)stcAngle.Angle[0] / 32768 * 180;
+    all_external_device_input.psi                   = (float)stcAngle.Angle[2] / 32768 * 180;
 
 
     all_external_device_input._accel_x              = 0;
@@ -262,21 +262,6 @@ void Boat::update_all_external_device_input( void )
 #endif
 }
 
-void Boat::get_gcs_udp()
-{
-	read_socket_udp_data( fd_socket_generic);
-}
-
-void Boat::get_gcs_radio()
-{
-	read_radio_data();
-}
-
-void Boat::send_ap2gcs_realtime_data_boatlink_by_udp()
-{
-	send_ap2gcs_real_udp();
-}
-
 void Boat::update_GPS()
 {
 	gps_data.latitude        = (int64_t)( all_external_device_input.latitude * GPS_SCALE_LARGE);
@@ -285,12 +270,12 @@ void Boat::update_GPS()
 	gps_data.course_radian   = all_external_device_input.course;
 
 	// JY901
-	gps_data.roll = (int)(all_external_device_input.phi * 1e2);
-	gps_data.pitch = (int)(all_external_device_input.theta * 1e2);
-	gps_data.yaw = (int)(all_external_device_input.psi * 1e2);
+	gps_data.roll            = (int)(all_external_device_input.phi   * 1e2);
+	gps_data.pitch           = (int)(all_external_device_input.theta * 1e2);
+	gps_data.yaw             = (int)(all_external_device_input.psi   * 1e2);
 
-	gps_data.velocity_north = (int)(all_external_device_input.v_north * 1e3);
-	gps_data.velocity_east  = (int)(all_external_device_input.v_east  * 1e3);
+	gps_data.velocity_north  = (int)(all_external_device_input.v_north * 1e3);
+	gps_data.velocity_east   = (int)(all_external_device_input.v_east  * 1e3);
 }
 
 void Boat::update_IMU()
@@ -306,9 +291,21 @@ void Boat::update_IMU()
     IMU_data.roll     = (int)(all_external_device_input.phi   * 1e2);
     IMU_data.pitch    = (int)(all_external_device_input.theta * 1e2);
     IMU_data.yaw      = (int)(all_external_device_input.psi   * 1e2);
+}
 
+void Boat::get_gcs_udp()
+{
+    read_socket_udp_data( fd_socket_generic);
+}
 
+void Boat::get_gcs_radio()
+{
+    read_radio_data();
+}
 
+void Boat::send_ap2gcs_realtime_data_boatlink_by_udp()
+{
+    send_ap2gcs_real_udp();
 }
 
 void Boat::update_mpu6050()
@@ -508,7 +505,6 @@ void Boat::record_log()
         memcpy(boatpilot_log_save, &boatpilot_log, sizeof(boatpilot_log));
         memcpy(&boatpilot_log_save[(int)sizeof(boatpilot_log) + 1], &gcs2ap_all_udp, sizeof(gcs2ap_all_udp));
         save_bytes_cnt = save_data_to_binary_log(fd_boatpilot_log, boatpilot_log_save, (int)sizeof(boatpilot_log) + 1 + (int)sizeof(gcs2ap_all_udp));
-
         //DEBUG_PRINTF("boatpilot_log_save    : save %u bytes \n", save_bytes_cnt);
 
         global_bool_boatpilot.save_boatpilot_log_req = FALSE;
@@ -624,6 +620,10 @@ void Boat::loop_one_second()
     //DEBUG_PRINTF("left motor = %4.2f, right motor = %4.2f \n", global_bool_boatpilot.motor_left, global_bool_boatpilot.motor_right);
 
     //DEBUG_PRINTF("left volatage = %4.2f, right voltage = %4.2f \n", global_bool_boatpilot.voltage0, global_bool_boatpilot.voltage0);
+    DEBUG_PRINTF("control_pid_integrator = %4.2f, rudder_ctrl = %4.2f \n", global_bool_boatpilot.control_pid_integrator, global_bool_boatpilot.rudder_ctrl);
+    DEBUG_PRINTF("pid_p = %4.2f, pid_i = %4.2f \n", global_bool_boatpilot.pid_p, global_bool_boatpilot.pid_i);
+
+
 }
 
 void Boat::write_motors_device_init()

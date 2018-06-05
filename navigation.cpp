@@ -288,6 +288,8 @@ static float get_command_course_radian_NED(struct T_LOCATION *previous_target_lo
     guidance_pid.set_kP(CTE_P);
     guidance_pid.set_kI(CTE_I);
     guidance_pid.set_kD(CTE_D);
+    // 计算cte时用的arctan函数，范围是小于pi/4的，所以积分限幅到10%，也就是0.078
+    guidance_pid.set_imax(0.078);
     cross_track_error_correct_radian = get_cross_track_error_correct_radian_NED_PID(previous_target_loc, current_loc, target_loc, &guidance_pid);
 
     /*

@@ -260,7 +260,8 @@ float get_cross_track_error_correct_radian_NED_PID(struct T_LOCATION *last_targe
 
 	float atan_cte=0.0;
 	atan_cte = 0.5 * atan(CTE_m);// 2/pi*arctan(CTE_m) 限制幅度是pi/4
-	gamma_CTE = pid->get_pid(atan_cte, 20, 1);
+	gamma_CTE = pid->get_pid(atan_cte, PID_DELTA_TIME_MS, 1);
+
 
 	//gamma_CTE_max_radian=convert_degree_to_radian((float)gcs2ap_all_udp.cte_max_degree); // 勿删除 后期这个值要能修改
 	gamma_CTE_max_radian = convert_degree_to_radian(30.0f); // 暂时定为最大CTE矫正量是30度

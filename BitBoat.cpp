@@ -22,8 +22,8 @@
 const BIT_Scheduler::Task Boat::scheduler_tasks[] =
 {
     //真正读取传感器函数
-    { SCHED_TASK(read_device_gps_JY901),                                        1,      MAX_WAIT_TIME_US_Y901 + 10 },
-    { SCHED_TASK(read_device_gps_UM220),                                        1,      MAX_WAIT_TIME_US_UM220 + 10 },
+    { SCHED_TASK(read_device_gps_JY901),                                        1,      MAX_WAIT_TIME_US_Y901  + 2000 },
+    { SCHED_TASK(read_device_gps_UM220),                                        1,      MAX_WAIT_TIME_US_UM220 + 2000 },
     { SCHED_TASK(read_device_IMU_mpu6050),                                     10,      100 },
 
     //真正写入外部设备的函数，比如设置继电器让方向舵切换左右转

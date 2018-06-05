@@ -27,12 +27,15 @@ struct CTRL_PARA ctrlpara;
 struct CTRL_INPUT ctrlinput;
 struct CTRL_OUTPUT ctrloutput;
 
+BIT_PID control_pid;
+
 static int get_ctrlpara();
 static int get_ctrlinput();
 static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput, struct CTRL_INPUT *ptr_ctrlinput, struct CTRL_PARA *ptr_ctrlpara);
 
 static float cal_throttle_control(float command_throttle,float current_throttle, unsigned char change_time);
 static float cal_rudder_control(float command_heading,float current_track_heading,struct T_PID pid);
+static float cal_rudder_control_PID_CLASS(float command_heading,float current_track_heading, BIT_PID &pid);
 
 static float convert_to_pwm(unsigned char min,unsigned char max,unsigned char input );
 static float constrain_pwm(float input_pwm, float min_pwm, float max_pwm);
@@ -186,22 +189,36 @@ static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput,struct CTRL_INPUT *
         final_manual_throttle_before_auto = ptr_ctrlinput->mmotor_onoff_pwm;
         ptr_ctrloutput->mmotor_onoff_pwm = ptr_ctrlinput->mmotor_onoff_pwm;
         ptr_ctrloutput->rudder_pwm = ptr_ctrlinput->rudder_pwm;
+
+        control_pid.reset_I();
+
+        global_bool_boatpilot.control_pid_integrator = control_pid.get_integrator();
+
         break;
     case RTL_MODE:
         //break;
     case AUTO_MODE:
 
         /*1. 计算方向舵输出*/
+
+        //DEBUG_PRINTF("command_course_angle_radian = %f, gps_course_angle_radian = %f \n", ptr_ctrlinput->command_course_angle_radian, ptr_ctrlinput->gps_course_angle_radian);
+#if 0
         pid.p = ctrlpara.rudder_p;
         pid.i = ctrlpara.rudder_i;
         pid.d = ctrlpara.rudder_d;
 
-        //DEBUG_PRINTF("pid.p = %f \n", pid.p);
-        //DEBUG_PRINTF("command_course_angle_radian = %f, gps_course_angle_radian = %f \n", ptr_ctrlinput->command_course_angle_radian, ptr_ctrlinput->gps_course_angle_radian);
 		ptr_ctrloutput->rudder_pwm = cal_rudder_control(ptr_ctrlinput->command_course_angle_radian,\
                                                         ptr_ctrlinput->gps_course_angle_radian,\
                                                         pid);
-
+#else
+		control_pid.set_kP(ctrlpara.rudder_p);
+        control_pid.set_kI(ctrlpara.rudder_i);
+        control_pid.set_kD(ctrlpara.rudder_d);
+		ptr_ctrloutput->rudder_pwm = cal_rudder_control_PID_CLASS(ptr_ctrlinput->command_course_angle_radian,\
+                                                        ptr_ctrlinput->gps_course_angle_radian,\
+                                                        control_pid);
+		global_bool_boatpilot.control_pid_integrator = control_pid.get_integrator();
+#endif
         /*
          * 2. 计算油门量输出
          * 如果巡航速度油门参数不等于0，那么就将油门设置为巡航油门
@@ -268,12 +285,12 @@ static float cal_rudder_control(float command_heading,float current_track_headin
 	error_head_track = wrap_PI(error_head_track);
 
 	/*再由-pi--+pi转化为-1--+1*/
-	error_head_track=error_head_track * M_1_PI; /*M_1_PI = 1/pi*/
+	error_head_track = error_head_track * M_1_PI; /* M_1_PI = 1/pi */
 
 	pid_yaw.set_kP(pid.p);
 	pid_yaw.set_kI(pid.i);
 	pid_yaw.set_kD(pid.d);
-	rudder_ctrl = pid_yaw.get_pid(error_head_track, 20, 1);// 这个是PID控制器的
+	rudder_ctrl = pid_yaw.get_pid(error_head_track, PID_DELTA_TIME_MS, 1);// 这个是PID控制器的
 	//printf("rudder_ctrl PID = %f \n",rudder_ctrl);
 	//rudder_ctrl = boat.pid_yaw.get_pid_finite(error_head_track, 20, 1);// 这个是有限时间控制器的
 	//printf("rudder_ctrl Finite-time = %f \n",rudder_ctrl);
@@ -297,6 +314,65 @@ static float cal_rudder_control(float command_heading,float current_track_headin
 	rudder_ctrl=500*(rudder_ctrl+1)+1000;
 
 	return rudder_ctrl;
+}
+
+/*
+ * Function:       cal_rudder_control
+ * Description:  先把error_head_track这个目标航向和实际航向的误差，化为-1--+1
+ *                        然后get_pid函数，但是这个get_pid函数，仍然需要保证范围在-1--+1
+ *                        最后把get_pid之后的rudder_ctrl，映射到1000-2000或者100-200，这个是针对舵机的pwm值
+ *                        此函数目前输出1000-2000
+ */
+static float cal_rudder_control_PID_CLASS(float command_heading,float current_track_heading, BIT_PID &pid)
+{
+    float rudder_ctrl = 0.0;
+    float error_head_track = 0.0;
+    float full_rudder_threshold=0.5;//180度的一半时，也就是90度，满舵
+
+    error_head_track = command_heading - current_track_heading;
+
+    /*
+     * 因为   command_heading范围为-pi--+pi
+     * current_track_heading范围为-pi--+pi
+     * 二者误差范围为-2*pi--+2*pi
+     * 所以需要改为-pi--+pi
+     * wrap_PI这个函数非常重要，保证无论如何都是从小于180度的方向转舵，转小圈
+     */
+    error_head_track = wrap_PI(error_head_track);
+
+    /*再由-pi--+pi转化为-1--+1*/
+    error_head_track = error_head_track * M_1_PI; /* M_1_PI = 1/pi */
+
+
+    global_bool_boatpilot.pid_p = pid.get_kP();
+    global_bool_boatpilot.pid_i = pid.get_kI();
+
+    /*
+     * error_head_track范围是-1  ~  1 所以我把积分最大设置为百分之10，即0.1，
+     * 所以积分量的最大值按照百分比来算
+     */
+    pid.set_imax(0.1);
+    rudder_ctrl = pid.get_pid(error_head_track, PID_DELTA_TIME_MS, 1); // 这个是PID控制器的
+    global_bool_boatpilot.rudder_ctrl = rudder_ctrl;
+
+    if(rudder_ctrl>full_rudder_threshold)
+    {
+        rudder_ctrl=1.0;//右满舵 也就是pwm给为2000
+    }
+    else if(rudder_ctrl<-full_rudder_threshold)
+    {
+        rudder_ctrl=-1.0;//左满舵 也就是pwm给为1000
+    }
+
+    /*
+     * 由-1--+1转化为1000--2000
+     * x=rudder_ctrl
+     * (x-(-1)) / (1-(-1)) = (y-1000) / (2000-1000)
+     * (x-(-1)) / (2) = (y-1000) / (1000)
+     */
+    rudder_ctrl=500*(rudder_ctrl+1)+1000;
+
+    return rudder_ctrl;
 }
 
 static float cal_throttle_control(float command_throttle,float current_throttle, unsigned char change_time)
