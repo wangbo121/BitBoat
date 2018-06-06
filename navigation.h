@@ -1,9 +1,11 @@
 /*
- * navigation.h
- *
- *  Created on: 2016年5月10日
- *      Author: wangbo
+ *@File     : navigation.h
+ *@Author   : wangbo
+ *@Date     : May 10, 2016
+ *@Copyright: 2018 Beijing Institute of Technology. All rights reserved.
+ *@Warning  : 本内容仅限于北京理工大学复杂工业控制实验室内部传阅-禁止外泄以及用于其他商业目的
  */
+
 
 #ifndef HEADERS_NAVIGATION_H_
 #define HEADERS_NAVIGATION_H_

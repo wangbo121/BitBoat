@@ -1,10 +1,10 @@
 /*
- * BIT_Math.cpp
- *
- *  Created on: Jun 3, 2018
- *      Author: wangbo
+ *@File     : BIT_Math.cpp
+ *@Author   : wangbo
+ *@Date     : Jun 3, 2017
+ *@Copyright: 2018 Beijing Institute of Technology. All right reserved.
+ *@Warning  : 本内容仅限于北京理工大学复杂工业控制实验室内部传阅-禁止外泄以及用于其他商业目的
  */
-
 
 #include "BIT_Math.h"
 

@@ -1,10 +1,10 @@
 /*
- * gps_Y901.h
- *
- *  Created on: Apr 25, 2018
- *      Author: wangbo
+ *@File     : gps_Y901.h
+ *@Author   : wangbo
+ *@Date     : Apr 25, 2018
+ *@Copyright: 2018 Beijing Institute of Technology. All right reserved.
+ *@Warning  : 本内容仅限于北京理工大学复杂工业控制实验室内部传阅-禁止外泄以及用于其他商业目的
  */
-
 #ifndef LIBRARIES_GPS_Y901_H_
 #define LIBRARIES_GPS_Y901_H_
 

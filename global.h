@@ -1,9 +1,12 @@
 /*
- * global.h
- *
- *  Created on: Nov 6, 2017
- *      Author: wangbo
+ *@File     : global.h
+ *@Author   : wangbo
+ *@Date     : Nov 6, 2017
+ *@Copyright: 2018 Beijing Institute of Technology. All rights reserved.
+ *@Warning  : 本内容仅限于北京理工大学复杂工业控制实验室内部传阅-禁止外泄以及用于其他商业目的
  */
+
+
 
 #ifndef GLOBAL_H_
 #define GLOBAL_H_

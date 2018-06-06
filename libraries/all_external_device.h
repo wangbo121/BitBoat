@@ -1,8 +1,9 @@
 /*
- * all_external_device.h
- *
- *  Created on: 2017-9-18
- *      Author: wangbo
+ *@File     : all_external_device.h
+ *@Author   : wangbo
+ *@Date     : Sep 18, 2017
+ *@Copyright: 2018 Beijing Institute of Technology. All rights reserved.
+ *@Warning  : 本内容仅限于北京理工大学复杂工业控制实验室内部传阅-禁止外泄以及用于其他商业目的
  */
 
 #ifndef ALL_EXTERNAL_DEVICE_H_

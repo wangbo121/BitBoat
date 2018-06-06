@@ -1,8 +1,9 @@
 /*
- * Boat.cpp
- *
- *  Created on: Nov 6, 2017
- *      Author: wangbo
+ *@File     : Boat.cpp
+ *@Author   : wangbo
+ *@Date     : Nov 6, 2017
+ *@Copyright: 2018 Beijing Institute of Technology. All right reserved.
+ *@Warning  : 本内容仅限于北京理工大学复杂工业控制实验室内部传阅-禁止外泄以及用于其他商业目的
  */
 
 #include "Boat.h"
@@ -53,6 +54,8 @@ void Boat::setup( void )
         global_bool_boatpilot.wp_next                 = boatpilot_config_udp.current_target_wp_num;
         global_bool_boatpilot.wp_total_num            = boatpilot_config_udp.total_wp_num;
         gcs2ap_all_udp.wp_total_num                   = boatpilot_config_udp.total_wp_num;
+
+        printf("gcs2ap_all_udp.wp_total_num = %d \n", gcs2ap_all_udp.wp_total_num);
     }
 
 #ifdef __RADIO_
@@ -144,13 +147,14 @@ void Boat::setup( void )
      * 仿真时使用
      */
 #if SIMULATE_BOAT
-    //simulate_init();
+    simulate_init();
 #endif
 }
 
 void Boat::simulate_init()
 {
 #if SIMULATE_BOAT
+#if 0
     unsigned int lng_start = 116.31574 * 1e5;
     unsigned int lat_start = 39.95635 * 1e5;
     unsigned char wp_total_num_test = 5;
@@ -168,6 +172,7 @@ void Boat::simulate_init()
         DEBUG_PRINTF("wp_data[%d].lat = %d \n",i,wp_data[i].lat);
     }
     global_bool_boatpilot.wp_total_num = wp_total_num_test;
+#endif
 #endif
 }
 
@@ -510,7 +515,7 @@ void Boat::record_log()
         memcpy(boatpilot_log_save, &boatpilot_log, sizeof(boatpilot_log));
         memcpy(&boatpilot_log_save[(int)sizeof(boatpilot_log) + 1], &gcs2ap_all_udp, sizeof(gcs2ap_all_udp));
         save_bytes_cnt = save_data_to_binary_log(fd_boatpilot_log, boatpilot_log_save, (int)sizeof(boatpilot_log) + 1 + (int)sizeof(gcs2ap_all_udp));
-        //DEBUG_PRINTF("boatpilot_log_save    : save %u bytes \n", save_bytes_cnt);
+        DEBUG_PRINTF("boatpilot_log_save    : save %u bytes \n", save_bytes_cnt);
 
         global_bool_boatpilot.save_boatpilot_log_req = FALSE;
     }
@@ -545,8 +550,10 @@ void Boat::record_config()
     {
         int write_len;
 
-        write_len=write(fd_config, &boatpilot_config_udp, sizeof(struct T_CONFIG));
+        write_len=write(fd_config, &boatpilot_config_udp, sizeof(boatpilot_config_udp));
         printf("config写入了%d个字节的数据\n",write_len);
+
+        printf("boatpilot_config_udp.total_wp_num  = %d \n", boatpilot_config_udp.total_wp_num );
 
         boatpilot_config_udp_previous = boatpilot_config_udp;
         global_bool_boatpilot.save_config_req=FALSE;

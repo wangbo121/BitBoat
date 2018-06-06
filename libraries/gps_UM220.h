@@ -1,8 +1,9 @@
 /*
- * gps_UM220.h
- *
- *  Created on: Jun 1, 2018
- *      Author: wangbo
+ *@File     : gps_UM220.h
+ *@Author   : wangbo
+ *@Date     : Jun 1, 2018
+ *@Copyright: 2018 Beijing Institute of Technology. All rights reserved.
+ *@Warning  : 本内容仅限于北京理工大学复杂工业控制实验室内部传阅-禁止外泄以及用于其他商业目的
  */
 
 #ifndef LIBRARIES_GPS_UM220_H_

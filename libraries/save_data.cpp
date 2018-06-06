@@ -1,10 +1,10 @@
 /*
- * save_data.c
- *
- *  Created on: Jul 1, 2016
- *      Author: wangbo
+ *@File     : save_data.cpp
+ *@Author   : wangbo
+ *@Date     : Jul 1, 2016
+ *@Copyright: 2018 Beijing Institute of Technology. All right reserved.
+ *@Warning  : 本内容仅限于北京理工大学复杂工业控制实验室内部传阅-禁止外泄以及用于其他商业目的
  */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

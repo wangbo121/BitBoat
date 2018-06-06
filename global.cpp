@@ -1,11 +1,10 @@
 /*
- * global.cpp
- *
- *  Created on: 2018-4-3
- *      Author: wangbo
+ *@File     : global.cpp
+ *@Author   : wangbo
+ *@Date     : Apr 3, 2018
+ *@Copyright: 2018 Beijing Institute of Technology. All right reserved.
+ *@Warning  : 本内容仅限于北京理工大学复杂工业控制实验室内部传阅-禁止外泄以及用于其他商业目的
  */
-
-
 #include "global.h"
 
 struct WAY_POINT wp_data[MAX_WAYPOINT_NUM];

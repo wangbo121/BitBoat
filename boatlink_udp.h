@@ -1,9 +1,11 @@
 /*
- * boatlink_udp.h
- *
- *  Created on: 2018-3-6
- *      Author: wangbo
+ *@File     : boatlink_udp.h
+ *@Author   : wangbo
+ *@Date     : Mar 6, 2017
+ *@Copyright: 2018 Beijing Institute of Technology. All rights reserved.
+ *@Warning  : 本内容仅限于北京理工大学复杂工业控制实验室内部传阅-禁止外泄以及用于其他商业目的
  */
+
 
 #ifndef BOATLINK_UDP_H_
 #define BOATLINK_UDP_H_
@@ -200,7 +202,7 @@ struct T_CONFIG_UDP
     unsigned char cte_p;
     unsigned char cte_i;
     unsigned char cte_d;
-    unsigned char rudder_setup_reverse;//8
+    unsigned char rudder_setup_reverse;
     unsigned char thruster_setup_reverse;
     unsigned char cruise_throttle_percent;//[0-100%]巡航油门百分比数
     unsigned char throttle_change_time;//[秒],油门改变百分之10所用的时间
@@ -208,10 +210,13 @@ struct T_CONFIG_UDP
     unsigned char cte_max_degree;//[度],偏航距最大补偿角
     unsigned char rudder_left_pos;
     unsigned char rudder_right_pos;
-    unsigned char rudder_mid_pos;//16
+    unsigned char rudder_mid_pos;
     unsigned char rudder_dead_zone_angle_degree;//[度]方向舵控制闭环时所用的死区角度数
-    unsigned char total_wp_num;//40字节
+    unsigned char total_wp_num;
     unsigned char current_target_wp_num;
+    unsigned char spare0; // 20个字节
+
+
 };
 
 /*

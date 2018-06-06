@@ -1,8 +1,9 @@
 /*
- * utility.h
- *
- *  Created on: 2017-8-1
- *      Author: wangbo
+ *@File     : utility.h
+ *@Author   : wangbo
+ *@Date     : Aug 1, 2017
+ *@Copyright: 2018 Beijing Institute of Technology. All right reserved.
+ *@Warning  : 本内容仅限于北京理工大学复杂工业控制实验室内部传阅-禁止外泄以及用于其他商业目的
  */
 
 #ifndef UTILITY_H_
