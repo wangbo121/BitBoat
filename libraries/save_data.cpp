@@ -89,28 +89,28 @@ int load_data_struct_from_binary(char* file_name,void* data_struct,int data_stru
 
     if((access(file_name,F_OK))==0)
     {
-        printf("文件存在，正在打开！\n");
+        printf("文件 %s 存在，正在打开！\n", file_name);
         fd=open(file_name,O_RDWR |O_CREAT);
 
         if(-1== stat( file_name, &f_stat ) )
         {
-            printf("文件存在，但是不能获取文件状态\n");
+            printf("文件 %s 存在，但是不能获取文件状态. \n", file_name);
 
             return -1;
         }
         else if(f_stat.st_size >= data_struct_size)
         {
-            printf("f_stat.st_size = %ld \n", f_stat.st_size);
+            //printf("f_stat.st_size = %ld \n", f_stat.st_size);
             //载入文件的最后一个数据结构
             lseek(fd,f_stat.st_size-data_struct_size,SEEK_SET);
             read_len = read(fd, data_struct, data_struct_size);
-            printf("文件存在，载入文件%s,载入字节数 = %d \n", file_name,read_len);
+            printf("文件 %s 存在，载入该文件，载入字节数 = %d. \n", file_name, read_len);
 
             return fd;
         }
         else
         {
-            printf("文件存在，但是 %s 文件没有数据，载入数据失败. \n",file_name);
+            printf("文件 %s 存在，但是该文件没有数据，载入数据失败. \n",file_name);
 
             return fd;
         }

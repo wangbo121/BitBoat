@@ -13,11 +13,14 @@
 #define UART_GPS_STOPBITS_Y901 1 //1 stop bit
 #define UART_GPS_PARITY_Y901 0 //no parity
 
-
-
 #define DATA_RECV_BUF_SIZE_Y901     512         // UM220 每次期望读取的字节数
+
 #define DATA_TO_RECV_LEN_Y901       256         // UM220 每次期望读取的字节数
-#define MAX_WAIT_TIME_US_Y901       200    // 读取UM220时允许等待的最大时间[us]  波特率是115200的 1ms大概1万个字节
+//#define DATA_TO_RECV_LEN_Y901       330         // UM220 每次期望读取的字节数
+//#define DATA_TO_RECV_LEN_Y901       2         // UM220 每次期望读取的字节数 2个字节需要72微秒
+
+//#define MAX_WAIT_TIME_US_Y901       200    // 读取UM220时允许等待的最大时间[us]  波特率是115200的 1ms大概1万个字节
+#define MAX_WAIT_TIME_US_Y901       450    // 读取UM220时允许等待的最大时间[us]  波特率是115200的 1ms大概1万个字节
 
 typedef struct
 {

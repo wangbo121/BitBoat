@@ -88,7 +88,7 @@ public:
     void setup();
     void loop();
     void wait_ms(int ms); // 保证每一个tick之间的时间，单位是[ms]
-    void wait_us(int us); // 保证每一个tick之间的时间，单位是[ms]
+    void wait_us(uint32_t us); // 保证每一个tick之间的时间，单位是[ms]
 
 
 private:

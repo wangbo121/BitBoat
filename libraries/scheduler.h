@@ -8,8 +8,6 @@
 #ifndef LIBRARIES_SCHEDULER_H_
 #define LIBRARIES_SCHEDULER_H_
 
-
-
 /*
  * 这是任务调度
  * 在开始的时候要调用scheduler.init()，然后每次循环都调用scheduler.tick()，每次循环时间大概是10ms
@@ -28,7 +26,7 @@ public:
     {
         task_fn_t function;
         uint16_t  rate_hz;
-        uint16_t  max_time_micros;
+        uint16_t  max_time_micros; // 目前用uint16_t表示，也就是最多是65毫秒，如果串口波特率是9600的，这个指的是传输速率，并不是读取速率，读取速率比传输速率要快很多
     };
 
     //调度初始化，指定任务表的地址，明确有多少个任务
@@ -48,7 +46,7 @@ public:
     // return the number of microseconds available for the current task
     uint32_t time_available_usec(void);
 
-    uint32_t get_loop_rate_hz(void);
+    uint16_t get_loop_rate_hz(void);
 
 private:
     // progmem list of tasks to run

@@ -27,7 +27,7 @@ void Boat::setup( void )
     }
     else
     {
-        printf("可以读取航点或者创建航点文件 fd = %d\n",fd_waypoint);
+        printf("可以读取或者创建 %s 文件 fd = %d\n", (char *)WAY_POINT_FILE, fd_waypoint);
     }
 
     /*
@@ -40,7 +40,7 @@ void Boat::setup( void )
     }
     else
     {
-        printf("可以读取配置或者创建配置文件 fd = %d\n",fd_config);
+        printf("可以读取或者创建 %s 文件 fd = %d\n", (char *)CONFIG_FILE, fd_config);
 
         gcs2ap_all_udp.rud_p                          = boatpilot_config_udp.rud_p;
         gcs2ap_all_udp.rud_i                          = boatpilot_config_udp.rud_i;
@@ -52,6 +52,7 @@ void Boat::setup( void )
         gcs2ap_all_udp.arrive_radius                  = boatpilot_config_udp.arrive_radius;
         global_bool_boatpilot.wp_next                 = boatpilot_config_udp.current_target_wp_num;
         global_bool_boatpilot.wp_total_num            = boatpilot_config_udp.total_wp_num;
+        gcs2ap_all_udp.wp_total_num                   = boatpilot_config_udp.total_wp_num;
     }
 
 #ifdef __RADIO_
@@ -120,18 +121,18 @@ void Boat::setup( void )
 	global_bool_boatpilot.turn_mode                =    TURN_MODE_DIFFSPD;
     global_bool_boatpilot.save_boatpilot_log_req   =    TRUE;
 
-    /*
-     * 设置PID控制器的参数 下面的这个pid_yaw还没有开始使用
-     */
-    pid_yaw.set_kP( 2 );
-    pid_yaw.set_kI( 0 );
-    pid_yaw.set_kD( 0 );
-    pid_yaw.set_imax( 0.174 * 3 );//30度
-
-    pid_CTE.set_kP( 2 );
-    pid_CTE.set_kI( 0 );
-    pid_CTE.set_kD( 0 );
-    pid_CTE.set_imax( 0.174 * 3 );//30度
+//    /*
+//     * 设置PID控制器的参数 下面的这个pid_yaw还没有开始使用
+//     */
+//    pid_yaw.set_kP( 2 );
+//    pid_yaw.set_kI( 0 );
+//    pid_yaw.set_kD( 0 );
+//    pid_yaw.set_imax( 0.174 * 3 );//30度
+//
+//    pid_CTE.set_kP( 2 );
+//    pid_CTE.set_kI( 0 );
+//    pid_CTE.set_kD( 0 );
+//    pid_CTE.set_imax( 0.174 * 3 );//30度
 
     /*
      * 初始化导航环节
@@ -143,7 +144,7 @@ void Boat::setup( void )
      * 仿真时使用
      */
 #if SIMULATE_BOAT
-    simulate_init();
+    //simulate_init();
 #endif
 }
 
@@ -186,7 +187,7 @@ void Boat::get_timedata_now()
     datetime_now.minute = (unsigned char)gbl_time_val->tm_min;
     datetime_now.second = (unsigned char)gbl_time_val->tm_sec;
 
-    DEBUG_PRINTF("当前系统时间是:%d年%d月%d日%d时%d分%d秒\n", datetime_now.year, datetime_now.month, datetime_now.day, datetime_now.hour, datetime_now.minute, datetime_now.second);
+    DEBUG_PRINTF("当前系统时间是:%d年%02d月%02d日%02d时%02d分%02d秒\n", datetime_now.year, datetime_now.month, datetime_now.day, datetime_now.hour, datetime_now.minute, datetime_now.second);
 }
 
 void Boat::update_all_external_device_input( void )
@@ -231,6 +232,10 @@ void Boat::update_all_external_device_input( void )
 	all_external_device_input.v_down      = fdm.speedD;
 	all_external_device_input.heading     = fdm.heading;
     all_external_device_input.course      = fdm.heading * 3.14f / 180.0f;
+
+    all_external_device_input.phi                   = (float)stcAngle.Angle[1] / 32768 * 180;
+    all_external_device_input.theta                 = (float)stcAngle.Angle[0] / 32768 * 180;
+    all_external_device_input.psi                   = (float)stcAngle.Angle[2] / 32768 * 180;
 
 
 
@@ -699,7 +704,7 @@ void Boat::wait_ms(int ms)
     delay_ms(ms);
 }
 
-void Boat::wait_us(int us)
+void Boat::wait_us(uint32_t us)
 {
     delay_us(us);
 }

@@ -75,7 +75,6 @@ int get_navigation_parameter()
     navi_para.total_wp_num  = global_bool_boatpilot.wp_total_num;
     navi_para.total_wp_num  = gcs2ap_all_udp.wp_total_num;
 
-
     return 0;
 }
 
@@ -83,7 +82,6 @@ int navigation_loop( void )
 {
     get_navigation_parameter();
 	get_navigation_input();
-	//get_navigation_output(&auto_navigation, wp_data, &gps_data);
 	get_navigation_output(&navi_output, &navi_input, &navi_para);
 
 	return 0;
@@ -144,6 +142,10 @@ static int get_navigation_output(struct T_NAVI_OUTPUT    *ptr_navi_output,\
            ptr_navi_output->current_target_wp_cnt = 0;
         }
 
+        if(ptr_navi_input->ptr_wp_data[ptr_navi_output->current_target_wp_cnt].lng == 0)
+        {
+            break; // 如果航点数组的经度是0 那么就认为航点数组是没有航点的
+        }
 
         /*1. 获取当前目标航点的标号*/
         target_wp_num  =  get_next_wp_num(ptr_navi_input->ptr_wp_data,\

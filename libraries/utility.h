@@ -20,7 +20,7 @@
  * 延时函数，如果更换操作系统需要重新改写
  */
 int delay_ms(int ms);
-int delay_us(int us);
+int delay_us(uint32_t us);
 int sleep_ms(int ms);
 
 /*

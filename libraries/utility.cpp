@@ -28,7 +28,7 @@ int delay_ms(int ms)
 	return 0;
 }
 
-int delay_us(int us)
+int delay_us(uint32_t us)
 {
     struct timeval delay;
     delay.tv_sec = 0;
