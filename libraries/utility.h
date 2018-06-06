@@ -8,23 +8,25 @@
 #ifndef UTILITY_H_
 #define UTILITY_H_
 
+#include <stdint.h>
+
 /*
  * 以下暂时都是在Linux系统下的实现
  * 如果换作其他设备要做相应改变
+ * 在编译链接时需加上 -lrt
  */
-#ifndef LINUX_OS
-#define LINUX_OS
-#endif
 
-#ifdef LINUX_OS
 /*
  * 延时函数，如果更换操作系统需要重新改写
  */
 int delay_ms(int ms);
+int delay_us(int us);
 int sleep_ms(int ms);
 
 /*
- * 获取系统时间，年月日时分秒等
+ * 获取系统时间
+ * 从UTC(coordinated universal time)时间
+ * 1970年1月1日00时00分00秒(也称为Linux系统的Epoch时间)到当前时刻的秒数
  */
 float gettimeofday_s();
 float gettimeofday_ms();
@@ -39,6 +41,16 @@ float diff_gettimeofday_value(float start,float end);
 float clock_gettime_s();//获取系统开启后（主程序开始运行）到当前时刻的时间计数[s]秒
 float clock_gettime_ms();//获取系统开启后（主程序开始运行）到当前时刻的时间计数[ms]毫秒
 float clock_gettime_us(); //获取系统开启后（主程序开始运行）到当前时刻的时间计数[us]微秒
-#endif
+uint64_t clock_us();
 
 #endif /* UTILITY_H_ */
+
+
+
+
+
+
+
+
+
+

@@ -15,29 +15,33 @@
 
 #include "utility.h"
 
-#ifndef LINUX_OS
-#define LINUX_OS
-#endif
-
 /*
  * 精确到毫秒的延时
  */
 int delay_ms(int ms)
 {
-#ifdef LINUX_OS
 	struct timeval delay;
 	delay.tv_sec = 0;
 	delay.tv_usec = ms * 1000;
 	select(0, NULL, NULL, NULL, &delay);
-#endif
+
 	return 0;
+}
+
+int delay_us(int us)
+{
+    struct timeval delay;
+    delay.tv_sec = 0;
+    delay.tv_usec = us;
+    select(0, NULL, NULL, NULL, &delay);
+
+    return 0;
 }
 
 int sleep_ms(int ms)
 {
-#ifdef LINUX_OS
 	usleep(1000*ms);
-#endif
+
 	return 0;
 }
 
@@ -48,41 +52,29 @@ int sleep_ms(int ms)
  */
 float gettimeofday_s()
 {
-#ifdef LINUX_OS
 	struct timeval current_time;
 
 	gettimeofday(&current_time,NULL);
 
 	return (float)(current_time.tv_sec)*1+(float)(current_time.tv_usec)*1e-6;
-#else
-	return 0;
-#endif
 }
 
 float gettimeofday_ms()
 {
-#ifdef LINUX_OS
 	struct timeval current_time;
 
 	gettimeofday(&current_time,NULL);
 
 	return (float)(current_time.tv_sec)*1e3+(float)(current_time.tv_usec)*1e-3;
-#else
-	return 0;
-#endif
 }
 
 float gettimeofday_us()
 {
-#ifdef LINUX_OS
 	struct timeval current_time;
 
 	gettimeofday(&current_time,NULL);
 
 	return (float)(current_time.tv_sec)*1e6+(float)(current_time.tv_usec)*1;
-#else
-	return 0;
-#endif
 }
 
 float diff_gettimeofday_value(float start,float end)
@@ -91,25 +83,16 @@ float diff_gettimeofday_value(float start,float end)
 }
 
 /*
- * 获取以系统启动瞬间为基准的时间
- * long sys_clock_gettime (clockid_t which_clock, struct timespec *tp);
- */
-/*
- *  且在编译链接时需加上 -lrt ;因为在librt中实现了clock_gettime函数。
- *  struct timespec ts;
- *  clock_gettime(CLOCK_MONOTONIC,ts);
+ *  Linux系统，在编译链接时需加上 -lrt
+ *  因为在librt中实现了clock_gettime函数。
  */
 float clock_gettime_s()
 {
-#ifdef LINUX_OS
 	struct timespec current_time;
 
 	clock_gettime(CLOCK_MONOTONIC, &current_time);
 
 	return (float)(current_time.tv_sec)*1+(float)(current_time.tv_nsec)*1e-9;
-#else
-	return 0;
-#endif
 }
 
 float clock_gettime_ms()
@@ -129,3 +112,22 @@ float clock_gettime_us()
 
     return time_s*1e6;
 }
+
+
+uint64_t clock_us()
+{
+    struct timespec current_time;
+
+    clock_gettime(CLOCK_MONOTONIC, &current_time);
+
+    return ((uint64_t)(current_time.tv_sec * 1e9) + (uint64_t)(current_time.tv_nsec)) / 1000;
+}
+
+
+
+
+
+
+
+
+

@@ -8,9 +8,6 @@
 #ifndef LIBRARIES_SCHEDULER_H_
 #define LIBRARIES_SCHEDULER_H_
 
-typedef int wangbo_int;
-
-
 
 
 /*
@@ -46,10 +43,12 @@ public:
      * 时间单位是微秒
      * 这个会在最大允许时间内执行尽可能多的任务
      */
-    void run(uint16_t time_available);
+    void run(uint32_t time_available);
 
     // return the number of microseconds available for the current task
-    uint16_t time_available_usec(void);
+    uint32_t time_available_usec(void);
+
+    uint32_t get_loop_rate_hz(void);
 
 private:
     // progmem list of tasks to run
@@ -69,9 +68,11 @@ private:
     uint16_t _task_time_allowed;
 
     // the time in microseconds when the task started
-    uint32_t _task_time_started;
+    uint64_t _task_time_started;
 
-    uint32_t _loop_rate_hz;
+    uint16_t _loop_rate_hz; // fastest freq is 1000hz
+
+    uint32_t _spare_micros;
 };
 
 #endif /* LIBRARIES_SCHEDULER_H_ */

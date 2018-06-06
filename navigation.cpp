@@ -17,19 +17,12 @@
 #include "navigation.h"
 #include "BIT_Math.h"
 
-//struct T_NAVIGATION auto_navigation;
-
 struct T_NAVI_PARA                   navi_para;
 struct T_NAVI_INPUT                  navi_input;
 struct T_NAVI_OUTPUT                 navi_output;
 
-
 static int get_navigation_parameter();
 static int get_navigation_input();
-static int get_navigation_output(struct T_NAVIGATION *ptr_auto_navigation,\
-                                 struct WAY_POINT *ptr_wp_data,\
-                                 nmea_msg *ptr_gps_data);
-
 static int get_navigation_output(struct T_NAVI_OUTPUT    *ptr_navi_output,\
                                  struct T_NAVI_INPUT     *ptr_navi_input,\
                                  struct T_NAVI_PARA      *ptr_navi_para);

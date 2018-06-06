@@ -620,8 +620,8 @@ void Boat::loop_one_second()
     //DEBUG_PRINTF("left motor = %4.2f, right motor = %4.2f \n", global_bool_boatpilot.motor_left, global_bool_boatpilot.motor_right);
 
     //DEBUG_PRINTF("left volatage = %4.2f, right voltage = %4.2f \n", global_bool_boatpilot.voltage0, global_bool_boatpilot.voltage0);
-    DEBUG_PRINTF("control_pid_integrator = %4.2f, rudder_ctrl = %4.2f \n", global_bool_boatpilot.control_pid_integrator, global_bool_boatpilot.rudder_ctrl);
-    DEBUG_PRINTF("pid_p = %4.2f, pid_i = %4.2f \n", global_bool_boatpilot.pid_p, global_bool_boatpilot.pid_i);
+    //DEBUG_PRINTF("control_pid_integrator = %4.2f, rudder_ctrl = %4.2f \n", global_bool_boatpilot.control_pid_integrator, global_bool_boatpilot.rudder_ctrl);
+    //DEBUG_PRINTF("pid_p = %4.2f, pid_i = %4.2f \n", global_bool_boatpilot.pid_p, global_bool_boatpilot.pid_i);
 
 
 }
@@ -692,6 +692,16 @@ void Boat::start_central_control_computer()
 {
 
 
+}
+
+void Boat::wait_ms(int ms)
+{
+    delay_ms(ms);
+}
+
+void Boat::wait_us(int us)
+{
+    delay_us(us);
 }
 
 void Boat::end_of_task()

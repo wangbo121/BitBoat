@@ -87,6 +87,9 @@ public:
 
     void setup();
     void loop();
+    void wait_ms(int ms); // 保证每一个tick之间的时间，单位是[ms]
+    void wait_us(int us); // 保证每一个tick之间的时间，单位是[ms]
+
 
 private:
     uint8_t     control_mode;
@@ -158,6 +161,8 @@ private:
     void start_central_control_computer();
 
     void write_motors_device_init();
+
+
 
 public:
     /*
