@@ -19,8 +19,10 @@
 #define OUTBUF_SIZE 256
 
 enum BIT_message_ID {
-
+    MSG_INVALID,
     MSG_RealTime,
+    MSG_SET_CMD,
+    MSG_SET_WP,
 
     MSG_MSP_RETRY_DEFERRED // this must be last
 };
@@ -76,14 +78,22 @@ public:
     typedef enum serialState_t
     {
         IDLE,
-        HEADER_START,
-        HEADER_M,
-        HEADER_ARROW,
-        HEADER_SIZE,
-        HEADER_CMD
+        HEADER_AA,
+        HEADER_55,
+        HEADER_LEN1,
+        HEADER_LEN2,
+        HEADER_TYPE,
+        HEADER_VESSEL,
+        HEADER_LINK,
+        HEADER_ID,
+        HEADER_CNT,
+        HEADER_FUNC_FLAG,
+        HEADER_FUNC_INFO1,
+        HEADER_FUNC_INFO2,
     }serialState_t;
 
     uint8_t _checksum;
+    int8_t  _inBuf_temp[INBUF_SIZE];
     int8_t  _inBuf[INBUF_SIZE];
     uint8_t _inBufIndex;
     uint8_t _outBuf[OUTBUF_SIZE];
@@ -91,7 +101,20 @@ public:
     uint8_t _outBufSize;
     uint8_t _cmdMSP;
     uint8_t _offset;
-    uint8_t _dataSize;
+    //uint8_t _dataSize;
+    uint16_t _dataSize;
+
+    uint8_t _type;
+    uint8_t _vessel;
+    uint8_t _link; // master_ap_link_ack
+    uint8_t _id;
+    uint8_t _cnt;
+    uint8_t _func_flag;
+    uint8_t _func_info1;
+    uint8_t _func_info2;
+
+
+
 
     serialState_t   _parserState;
 
