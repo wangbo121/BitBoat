@@ -52,6 +52,11 @@
 
 #include "BIT_Math.h"
 
+#include "GCS.h"
+#include "GCS_UART.h"
+#include "GCS_UDP.h"
+#include "GCS_BeiDou.h"
+
 /*
  * 控制模式的宏定义
  */
