@@ -615,7 +615,7 @@ void Boat::update_navigation_loop()
     global_bool_boatpilot.wp_next                     = navi_output.current_target_wp_cnt;
 }
 
-void Boat::loop_one_second()
+void Boat::loop_1hz()
 {
     //DEBUG_PRINTF("Hello loop_slow\n");
 

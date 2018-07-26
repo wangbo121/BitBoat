@@ -100,7 +100,7 @@ private:
     static void get_timedata_now();//获取当前的时间，包含年月日时分秒的
 
     void loop_fast();
-    static void loop_one_second();
+    static void loop_1hz();
     static void end_of_task();
 
     static void get_gcs_udp(); // 通过udp获取地面站发送给自驾仪的命令

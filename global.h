@@ -44,8 +44,8 @@
 /*
  * 下面是与控制相关的
  */
-#define SIMULATE_BOAT 1
-//#define SIMULATE_BOAT 0
+//#define SIMULATE_BOAT 1
+#define SIMULATE_BOAT 0
 
 #define US_PER_SECOND 1e6  // 1 second == 1e6 micro seconds
 

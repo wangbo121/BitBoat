@@ -41,7 +41,7 @@ const BIT_Scheduler::Task Boat::scheduler_tasks[] =
     { SCHED_TASK(update_navigation_loop),                                      10,      250 },
     { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),                    1,      350 },
 
-    { SCHED_TASK(loop_one_second),                                              1,      200 },
+    { SCHED_TASK(loop_1hz),                                                     1,      200 },
 
     { SCHED_TASK(record_log),                                                   1,      200 },
     { SCHED_TASK(record_wp),                                                    1,      200 },
