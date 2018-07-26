@@ -16,6 +16,8 @@
  *                 "/dev/ttyUSB0","/dev/ttyUSB1","/dev/ttyUSB2","/dev/ttyUSB3","/dev/ttyUSB4","/dev/ttyUSB5"
  */
 
+#define MAX_WAIT_TIME_US_UART  200    // 通过UART获取地面站数据允许等待的最大时间
+
 struct T_UART_DEVICE
 {
     char *uart_name;

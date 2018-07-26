@@ -53,6 +53,7 @@
 
 //#define UART_RADIO          "/dev/ttyUSB0"
 #define UART_RADIO          "/dev/ttyO3"
+#define UART_GCS            "/dev/ttyUSB0"
 
 #define __GPS_
 #define UART_GPS_UM220         "/dev/ttyO2"

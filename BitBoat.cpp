@@ -37,7 +37,8 @@ const BIT_Scheduler::Task Boat::scheduler_tasks[] =
     //自驾仪虚拟地输出数据，把控制量啥的输出到all_external_device_output
     //{ SCHED_TASK(update_external_device),                                    10,      100 },
 
-    { SCHED_TASK(get_gcs_udp),                                                 10,      MAX_WAIT_TIME_US_UDP + 200 },
+    { SCHED_TASK(get_gcs_udp),                                                 10,      MAX_WAIT_TIME_US_UDP  + 200 },
+    { SCHED_TASK(get_gcs_UART),                                                 10,     MAX_WAIT_TIME_US_UART + 200 },
     { SCHED_TASK(update_navigation_loop),                                      10,      250 },
     { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),                    1,      350 },
 

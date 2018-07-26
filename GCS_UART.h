@@ -10,109 +10,69 @@
 
 #include "GCS.h"
 
+#define GCS_UART_BAUD 9600
+#define GCS_UART_DATABITS 8 //8 data bit
+#define GCS_UART_STOPBITS 1 //1 stop bit
+#define GCS_UART_PARITY 0 //no parity
+
 #define INBUF_SIZE 256
 #define OUTBUF_SIZE 256
 
-enum ap_message_msp {
+enum BIT_message_ID {
 
-    MSG_MSP_API_VERSION                = 1,    //out message
-    MSG_MSP_FC_VARIANT                 = 2,    //out message
-    MSG_MSP_FC_VERSION                 = 3,    //out message
-    MSG_MSP_BOARD_INFO                 = 4,    //out message
-    MSG_MSP_BUILD_INFO                 = 5,    //out message
-
-
-
-    MSG_MSP_NAME                       = 10,   //out message          Returns user set board name - betaflight
-    MSG_MSP_SET_NAME                   = 11,   //in message           Sets board name - betaflight
-    MSG_MSP_IDENT                      = 100,
-    MSG_MSP_STATUS,
-    MSG_MSP_RAW_IMU,
-
-    MSP_MSP_MODE_STATUS                = 120,
-    MSG_MSP_RC_NORMAL                  = 121,
-    MSG_MSP_ATTITUDE_RADIANS           = 122,
-
-    MSG_MSP_PID                        = 112,
-    MSG_MSP_SET_PID                    = 202,
-
-    MSG_MSP_SET_MOTOR_NORMAL           = 215,
-    MSG_MSP_SET_ARMED                  = 216,
-
-    MSG_MSP_RAW_GPS                    = 106,
-    MSG_MSP_COMP_GPS,
-    MSG_MSP_ATTITUDE                   = 108,
-
-    MSG_MSP_UID                        = 160,    //out message         Unique device ID
-
-
-    MSG_MSP_ACC_CALIBRATION = 205,
-    MSG_MSP_GYRO_CALIBRATION = 206,
-
-    MSG_MSP_RC                =105, ///
-    MSG_MSP_SET_RC_TUNING_START     = 207,
-    MSG_MSP_SET_RC_TUNING_END = 208,
-    MSG_MSP_RC_RAW            = 110,   //
-
-    MSG_MSP_SET_ESC_CALIBRATE      = 210,
-    MSG_MSP_SET_ESC_CALIBRATE_DONE = 211,
-
+    MSG_RealTime,
 
     MSG_MSP_RETRY_DEFERRED // this must be last
 };
 
-class GCS_MSP : public GCS_Class
+class GCS_UART : public GCS_Class
 {
 public:
-    GCS_MSP();
+    GCS_UART();
     void    update(void);
-    void    data_stream_send(uint16_t freqMin, uint16_t freqMax);
     void    data_stream_send(void);
-    void    send_message(enum ap_message_msp id);
-    void    mavlink_send_message(enum ap_message_msp id);
+    void    send_message(enum BIT_message_ID id);
 
-    ///  for MSP
     void    decode_char(uint8_t c);
-    void    dispatchCommand(void);
-public:
-    //void  handleMessage(mavlink_message_t * msg);
+    void    dispatch_command(void);
 
-    // NOTE! The streams enum below and the
-    // set of stream rates _must_ be
-    // kept in the same order
+public:
+    //这是数据流的列表，也就是说一共有多少个数据流，每个数据流可以只包含一种数据结构，也可以包含多个数据结构包
     enum streams
     {
-        STREAM_MSP_START,
+        STREAM_BIT_START,
 
-        STREAM_MSP_ATTITUDE,
+        STREAM_BIT_RealTime,
 
-        STREAM_MSP_END,
+        STREAM_BIT_END,
 
-        NUM_STREAMS /// for stream_ticks[] and streamRates[]
+        NUM_STREAMS /// for stream_ticks[] and stream_rates[]
     };
-    // see if we should send a stream now. Called at 50Hz
+
+    // 判断是否应该发送data_stream中的某条数据结构
     bool stream_trigger(enum streams stream_num);
 
-    /// this is set of stream rates
-    /// data stream rates 实时数据发送的频率
-    int16_t streamRateMSP_Start;
-    int16_t streamRateMSP_ATTITUDE;
-    int16_t streamRateMSP_End;
+    /// 这是数据流发送频率的列表，需要初始化这些stream_rate_xxx 告诉发送频率
+    // 这里的数据结构必须是int16_t 需要跟stream_trigger函数中的int16_t *stream_rates = &stream_rate_BIT_Start;语句一致
+    int16_t stream_rate_BIT_Start;
+    int16_t stream_rate_BIT_RealTime;
+    int16_t stream_rate_BIT_End;
 
+    // 记录每条数据流已经等待的tick计数
     // number of 50Hz ticks until we next send this stream
     uint8_t stream_ticks[NUM_STREAMS];
 
-    // saveable rate of each stream
-    int16_t  streamRates[NUM_STREAMS];
+    // 每条数据流的发送频率
+    int16_t  stream_rates[NUM_STREAMS];
 
 
 public:
 
+    struct T_UART_DEVICE uart_device;
 
 
-
-public :
-    // 添加msp协议
+public:
+    // 解析地面站发送过来的数据时-采用状态机的模式-下面是状态机的各个状态
     typedef enum serialState_t
     {
         IDLE,
@@ -164,6 +124,9 @@ public:
 
     uint8_t availableBytes(void);
     uint8_t readByte(void);
+
+public:
+    void gcs_init();
 };
 
 

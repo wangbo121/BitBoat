@@ -52,6 +52,7 @@
 
 #include "BIT_Math.h"
 
+#include "uart.h"
 #include "GCS.h"
 #include "GCS_UART.h"
 #include "GCS_UDP.h"
@@ -96,6 +97,9 @@ public:
     void wait_ms(int ms); // 保证每一个tick之间的时间，单位是[ms]
     void wait_us(uint32_t us); // 保证每一个tick之间的时间，单位是[ms]
 
+public:
+    friend class GCS_UART;
+    GCS_UART gcs_UART;
 
 private:
     uint8_t     control_mode;
@@ -107,6 +111,8 @@ private:
     void loop_fast();
     static void loop_1hz();
     static void end_of_task();
+
+    static void get_gcs_UART();
 
     static void get_gcs_udp(); // 通过udp获取地面站发送给自驾仪的命令
     static void get_gcs_radio(); // 通过无线电radio获取地面站发送给自驾仪的命令

@@ -303,6 +303,23 @@ void Boat::update_IMU()
     IMU_data.yaw      = (int)(all_external_device_input.psi   * 1e2);
 }
 
+void Boat::get_gcs_UART()
+{
+    int read_len;
+    static char buf[256];
+
+    if(-1 != (read_len = read_uart_data(boat.gcs_UART.uart_device.uart_name, buf, MAX_WAIT_TIME_US_UART, sizeof(buf)-1)))
+    {
+        if(read_len > 0)
+        {
+            for(int i = 0; i < read_len; i++)
+            {
+                boat.gcs_UART.decode_char(buf[i]);
+            }
+        }
+    }
+}
+
 void Boat::get_gcs_udp()
 {
     read_socket_udp_data( fd_socket_generic);
