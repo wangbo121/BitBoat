@@ -39,7 +39,7 @@ static unsigned int get_next_wp_num(struct WAY_POINT *ptr_wp_data,\
 /*
  * 这个函数是获取期望的船的航向速度与正北的夹角
  */
-static float get_command_course_radian_NED(struct T_LOCATION *previous_target_loc,  struct T_LOCATION *current_loc, \
+static double get_command_course_radian_NED(struct T_LOCATION *previous_target_loc,  struct T_LOCATION *current_loc, \
                                            struct T_LOCATION *target_loc, struct T_GUIDANCE_CONTROLLER *ptr_guidance);
 void navigation_init(void)
 {
@@ -48,15 +48,9 @@ void navigation_init(void)
 	 * 结构体内有不是例如char int等基本结构时，需要分配空间
 	 * char int等基本类型，在声明时已经分配了空间，但是自己定义的结构是没有分配空间的
 	 */
-//    auto_navigation.current_loc            = (struct T_LOCATION *)malloc(sizeof (struct T_LOCATION));
-//	auto_navigation.current_target_loc     = (struct T_LOCATION *)malloc(sizeof (struct T_LOCATION));
-//	auto_navigation.previous_target_loc    = (struct T_LOCATION *)malloc(sizeof (struct T_LOCATION));
-
 	navi_output.current_loc            = (struct T_LOCATION *)malloc(sizeof (struct T_LOCATION));
 	navi_output.current_target_loc     = (struct T_LOCATION *)malloc(sizeof (struct T_LOCATION));
 	navi_output.previous_target_loc    = (struct T_LOCATION *)malloc(sizeof (struct T_LOCATION));
-
-
 
 	navi_para.arrive_radius_low            = 10;
 	navi_para.arrive_radius_high           = 100;
@@ -117,19 +111,22 @@ static int get_navigation_output(struct T_NAVI_OUTPUT    *ptr_navi_output,\
      * 获取位置环的反馈值，gps经纬度坐标
      */
     struct T_LOCATION current_loc;
-    current_loc.lng = (float)(ptr_navi_input->ptr_gps_data->longitude)   * GPS_SCALE;
-    current_loc.lat = (float)(ptr_navi_input->ptr_gps_data->latitude)    * GPS_SCALE;
+    current_loc.lng = (double)(ptr_navi_input->ptr_gps_data->longitude)   * GPS_SCALE;
+    current_loc.lat = (double)(ptr_navi_input->ptr_gps_data->latitude)    * GPS_SCALE;
 
     switch(ptr_navi_para->workmode)
     {
-    case STOP_MODE:
-        break;
     case RC_MODE:
         break;
     case AUTO_MODE:
         switch(ptr_navi_para->auto_workmode)
         {
+        case AUTO_STOP_MODE:
+            return 0;
+            break;
         case AUTO_MISSION_MODE:
+            break;
+        case AUTO_RTL_MODE:
             break;
         case AUTO_GUIDE_MODE:
             break;
@@ -187,27 +184,12 @@ static int get_navigation_output(struct T_NAVI_OUTPUT    *ptr_navi_output,\
         ptr_navi_output->command_course_angle_radian       = guidance_ctrl.output.command_course_radian;
         ptr_navi_output->command_course_angle_degree       = guidance_ctrl.output.command_course_degree;
         break;
-    case RTL_MODE:
-        break;
     default:
         break;
     }
 
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 static unsigned int get_next_wp_num(struct WAY_POINT *ptr_wp_data,\
                                     struct T_LOCATION *current_loc,\
@@ -264,20 +246,20 @@ static unsigned int get_next_wp_num(struct WAY_POINT *ptr_wp_data,\
 /*
  * 这个函数是获取期望的船的航向速度与正北的夹角
  */
-static float get_command_course_radian_NED(struct T_LOCATION *previous_target_loc,  struct T_LOCATION *current_loc, \
+static double get_command_course_radian_NED(struct T_LOCATION *previous_target_loc,  struct T_LOCATION *current_loc, \
                                            struct T_LOCATION *target_loc,           struct T_GUIDANCE_CONTROLLER *ptr_guidance)
 {
-    float current_to_target_radian = 0.0;//当前航点与目标航点方位角的弧度值
-    float command_course_radian = 0.0;//期望航向角heading或者说是yaw
-    float cross_track_error_correct_radian = 0.0;
+    double current_to_target_radian = 0.0;//当前航点与目标航点方位角的弧度值
+    double command_course_radian = 0.0;//期望航向角heading或者说是yaw
+    double cross_track_error_correct_radian = 0.0;
 
     current_to_target_radian = get_bearing_point_2_point_NED(current_loc, target_loc);
     current_to_target_radian = wrap_PI(current_to_target_radian);//从当前位置直接冲向目标航点，从小圈也就是小于180的方向转
 
     static BIT_PID guidance_pid;
-    float CTE_P=0.0;
-    float CTE_I=0.0;
-    float CTE_D=0.0;
+    double CTE_P=0.0;
+    double CTE_I=0.0;
+    double CTE_D=0.0;
 
     CTE_P = ptr_guidance->input.CTE_P;
     CTE_I = ptr_guidance->input.CTE_I;
@@ -296,7 +278,7 @@ static float get_command_course_radian_NED(struct T_LOCATION *previous_target_lo
      */
     //command_heading_radian = wrap_PI(command_heading_radian); // 暂时勿删除，不需要这个wrap_PI函数，用了反而错误 要朝着小圈走
     command_course_radian = current_to_target_radian + cross_track_error_correct_radian;
-    command_course_radian = constrain_value(command_course_radian, -(float)M_PI, (float)M_PI);
+    command_course_radian = (float)constrain_value((float)command_course_radian, -(float)M_PI, (float)M_PI);
 
     /*
      * 把一些计算得到的中间变量送出去

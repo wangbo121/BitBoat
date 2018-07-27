@@ -37,8 +37,9 @@ struct T_GPS_UM220
 //    int longitude;//单位[0.00001度]，扩大了100000倍，范围是[-180-+180度]
 //    int latitude;//单位[0.00001度]，扩大了100000倍，范围是[-180-+180度]
 //
-    int64_t longitude; // 放大了 1e7 倍
-    int64_t latitude; // 放大了 1e7 倍
+    // int32_t 范围 -2147483648~2147483647 对于经度纬度来说是够用的-179.1234567
+    int32_t longitude; // 放大了 1e7 倍
+    int32_t latitude; // 放大了 1e7 倍
 
     int altitude; // 单位[米]
 

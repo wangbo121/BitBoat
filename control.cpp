@@ -97,7 +97,6 @@ int execute_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput)
         //DEBUG_PRINTF("motor_left_pwm_out = %f, motor_right_pwm_out = %f \n", motor_left_pwm_out, motor_right_pwm_out);
         set_throttle_left_right(motor_left_pwm_out, motor_right_pwm_out, DEFAULT_DEVICE_NUM);
 
-
         global_bool_boatpilot.motor_left  = motor_left_pwm_out;
         global_bool_boatpilot.motor_right = motor_right_pwm_out;
 	    break;
@@ -140,7 +139,8 @@ static int get_ctrlpara()
         ctrlpara.mmotor_off_pos     = temp;
     }
 
-    ctrlpara.work_mode = gcs2ap_all_udp.workmode;
+    ctrlpara.workmode      = gcs2ap_all_udp.workmode;
+    ctrlpara.auto_workmode = gcs2ap_all_udp.auto_workmode;;
     //ctrlpara.throttle_change_time = gcs2ap_all_udp.throttle_change_time;
     ctrlpara.throttle_change_time_s = 1; //
 
@@ -172,69 +172,60 @@ static int get_ctrlinput()
 
 static int get_ctrloutput(struct CTRL_OUTPUT *ptr_ctrloutput,struct CTRL_INPUT *ptr_ctrlinput,struct CTRL_PARA *ptr_ctrlpara)
 {
-    struct T_PID pid;
-
-    static unsigned char final_manual_throttle_before_auto = 0;
+    static unsigned char save_RC_throttle = 0;
     float command_throttle;
 
-    switch(ptr_ctrlpara->work_mode)
+    switch(ptr_ctrlpara->workmode)
     {
-    case STOP_MODE:
-        //推进器停止，方向舵停止
-        set_motor_off();
-        ptr_ctrloutput->mmotor_onoff_pwm =1000;
-        ptr_ctrloutput->rudder_pwm =1500;
-        break;
     case RC_MODE:
-        //printf("进入手动驾驶\n");
-        final_manual_throttle_before_auto = ptr_ctrlinput->mmotor_onoff_pwm;
+        save_RC_throttle = ptr_ctrlinput->mmotor_onoff_pwm;
         ptr_ctrloutput->mmotor_onoff_pwm = ptr_ctrlinput->mmotor_onoff_pwm;
         ptr_ctrloutput->rudder_pwm = ptr_ctrlinput->rudder_pwm;
-
         control_pid.reset_I();
-
         global_bool_boatpilot.control_pid_integrator = control_pid.get_integrator();
-
         break;
-    case RTL_MODE:
-        //break;
     case AUTO_MODE:
-
-        /*1. 计算方向舵输出*/
-
-        //DEBUG_PRINTF("command_course_angle_radian = %f, gps_course_angle_radian = %f \n", ptr_ctrlinput->command_course_angle_radian, ptr_ctrlinput->gps_course_angle_radian);
-#if 0
-        pid.p = ctrlpara.rudder_p;
-        pid.i = ctrlpara.rudder_i;
-        pid.d = ctrlpara.rudder_d;
-
-		ptr_ctrloutput->rudder_pwm = cal_rudder_control(ptr_ctrlinput->command_course_angle_radian,\
-                                                        ptr_ctrlinput->gps_course_angle_radian,\
-                                                        pid);
-#else
-		control_pid.set_kP(ctrlpara.rudder_p);
-        control_pid.set_kI(ctrlpara.rudder_i);
-        control_pid.set_kD(ctrlpara.rudder_d);
-		ptr_ctrloutput->rudder_pwm = cal_rudder_control_PID_CLASS(ptr_ctrlinput->command_course_angle_radian,\
-                                                        ptr_ctrlinput->gps_course_angle_radian,\
-                                                        control_pid);
-		global_bool_boatpilot.control_pid_integrator = control_pid.get_integrator();
-#endif
-        /*
-         * 2. 计算油门量输出
-         * 如果巡航速度油门参数不等于0，那么就将油门设置为巡航油门
-         * 如果巡航油门等于0了，那么将油门设置为 手动切到自动时瞬间的油门
-         */
-        if (ptr_ctrlpara->cruise_throttle!=0)
+        switch(ptr_ctrlpara->auto_workmode)
         {
-            /*cruise_throttle是百分比*/
-            command_throttle                 = 1000.0 + 1000 * (float)(ptr_ctrlpara->cruise_throttle) * 0.01;
-            /*控制油门的改变速率*/
-            ptr_ctrloutput->mmotor_onoff_pwm = cal_throttle_control(command_throttle, ptr_ctrloutput->mmotor_onoff_pwm, ptr_ctrlpara->throttle_change_time_s);
-        }
-        else
-        {
-            ptr_ctrloutput->mmotor_onoff_pwm = final_manual_throttle_before_auto;
+        case AUTO_STOP_MODE:
+            //推进器停止，方向舵停止
+            set_motor_off();
+            ptr_ctrloutput->mmotor_onoff_pwm =1000;
+            ptr_ctrloutput->rudder_pwm =1500;
+            break;
+        case AUTO_MISSION_MODE:
+            /*1. 计算方向舵输出*/
+            control_pid.set_kP(ctrlpara.rudder_p);
+            control_pid.set_kI(ctrlpara.rudder_i);
+            control_pid.set_kD(ctrlpara.rudder_d);
+            ptr_ctrloutput->rudder_pwm = cal_rudder_control_PID_CLASS(ptr_ctrlinput->command_course_angle_radian,\
+                                                            ptr_ctrlinput->gps_course_angle_radian,\
+                                                            control_pid);
+            global_bool_boatpilot.control_pid_integrator = control_pid.get_integrator();
+
+            /*
+             * 2. 计算油门量输出
+             * 如果巡航速度油门参数不等于0，那么就将油门设置为巡航油门
+             * 如果巡航油门等于0了，那么将油门设置为 手动切到自动时瞬间的油门
+             */
+            if (ptr_ctrlpara->cruise_throttle!=0)
+            {
+                /*cruise_throttle是百分比*/
+                command_throttle                 = 1000.0 + 1000 * (float)(ptr_ctrlpara->cruise_throttle) * 0.01;
+                /*控制油门的改变速率*/
+                ptr_ctrloutput->mmotor_onoff_pwm = cal_throttle_control(command_throttle, ptr_ctrloutput->mmotor_onoff_pwm, ptr_ctrlpara->throttle_change_time_s);
+            }
+            else
+            {
+                ptr_ctrloutput->mmotor_onoff_pwm = save_RC_throttle;
+            }
+            break;
+        case AUTO_RTL_MODE:
+            break;
+        case AUTO_GUIDE_MODE:
+            break;
+        case AUTO_LOITER_MODE:
+            break;
         }
         break;
     default:

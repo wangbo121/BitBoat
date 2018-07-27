@@ -12,35 +12,24 @@ Boat boat;
 
 void Boat::setup( void )
 {
-
-    /*
-     * 创建要保存的二进制日志文件boatpilot_log
-     */
+    // 创建要保存的二进制日志文件boatpilot_log
     fd_boatpilot_log = create_log_file( (char *)BOATPILOT_LOG_FILE );
 
-    /*
-     * 载入航点文件waypoint
-     */
+    // 如果存有航点文件-则载入航点文件waypoint
     fd_waypoint     = load_data_struct_from_binary( (char *)WAY_POINT_FILE, &wp_data, sizeof(wp_data));
-    if(fd_waypoint  == -1)
-    {
+    if(fd_waypoint  == -1){
         printf("无法创建航点文件\n");
     }
-    else
-    {
+    else{
         printf("可以读取或者创建 %s 文件 fd = %d\n", (char *)WAY_POINT_FILE, fd_waypoint);
     }
 
-    /*
-     * 载入配置文件config
-     */
+    // 如果存有配置文件-则载入配置文件config
     fd_config      = load_data_struct_from_binary( (char *)CONFIG_FILE, &boatpilot_config_udp, sizeof(boatpilot_config_udp) );
-    if(fd_config   == -1)
-    {
+    if(fd_config   == -1){
         printf("无法创建配置文件\n");
     }
-    else
-    {
+    else{
         printf("可以读取或者创建 %s 文件 fd = %d\n", (char *)CONFIG_FILE, fd_config);
 
         gcs2ap_all_udp.rud_p                          = boatpilot_config_udp.rud_p;
@@ -55,7 +44,7 @@ void Boat::setup( void )
         global_bool_boatpilot.wp_total_num            = boatpilot_config_udp.total_wp_num;
         gcs2ap_all_udp.wp_total_num                   = boatpilot_config_udp.total_wp_num;
 
-        printf("gcs2ap_all_udp.wp_total_num = %d \n", gcs2ap_all_udp.wp_total_num);
+        DEBUG_PRINTF("gcs2ap_all_udp.wp_total_num = %d \n", gcs2ap_all_udp.wp_total_num);
     }
 
 #ifdef __RADIO_
@@ -79,74 +68,48 @@ void Boat::setup( void )
     II2C_init();
     write_motors_device_init(); // motor的通信用iic
 
-    /* **********************************************************************************************************
-     * 作为分界线
-     * 以上都是硬件初始化
-     * 下面的是驾驶仪内部软件初始化
+    /* *******************************************************************
+     * ********************************
+     * 作为分界线 * 以上都是硬件初始化 * 下面的是驾驶仪内部软件初始化
      */
-
 
     /*
-     * 初始化自驾仪控制量输入以及参数的初始值，
-     * 下面所有的设置都是从地面站获取后使用
-     * 尤其注意初始的方向舵和油门量值
-     * 控制量的限幅参数
+     * 下面所有的设置都应该是从地面站获取后使用-但是自驾仪系统启动时
+     * -地面站有可能还没有启动-所以我先设置了一些默认的初始值
      */
-    gcs2ap_all_udp.cmd.pilot_manual                 =   1; // 默认通过驾驶仪
     gcs2ap_all_udp.cmd.throttle                     =   0;
     gcs2ap_all_udp.cmd.rudder                       =   127;
-
     gcs2ap_all_udp.rud_p                            =   20;//rud_p单位是[0.1]所以一开始要赋值大一些
     gcs2ap_all_udp.rud_i                            =   0;
     gcs2ap_all_udp.rud_d                            =   0;
     gcs2ap_all_udp.cte_p                            =   20;
     gcs2ap_all_udp.cte_i                            =   0;
     gcs2ap_all_udp.cte_d                            =   0;
-
 	gcs2ap_all_udp.arrive_radius                    =   10;//单位是[10米]，初始到达半径设置为100米
     gcs2ap_all_udp.cruise_throttle_percent          =   50;//初始巡航油门设置为百分之50
-
-    gcs2ap_all_udp.workmode                         = RC_MODE;
-
+    gcs2ap_all_udp.workmode                         =   RC_MODE;
 	gcs2ap_all_udp.mmotor_off_pos                   =   0;
 	gcs2ap_all_udp.mmotor_on_pos                    =   255;
 	gcs2ap_all_udp.rudder_left_pos                  =   0;
 	gcs2ap_all_udp.rudder_right_pos                 =   255;
 	gcs2ap_all_udp.rudder_mid_pos                   =   127;
 
-
     /*
      * 下面是全局变量global_bool_boatpilot的初始化
-     * global_bool_boatpilot和gcs2ap_all_udp的区别在于后者是从地面站发送过来的参数，
+     * global_bool_boatpilot和gcs2ap_all_udp的区别在于后者是从地面站发送过来的参数
      * 而global_bool_boatpilot是驾驶仪内部需要的全局计算量
-     * 同时，一些标志量也用global_bool_boatpilot中的bool表示
+     * 一些标志量也用global_bool_boatpilot中的bool表示
      */
-	global_bool_boatpilot.turn_mode                =    TURN_MODE_DIFFSPD;
-    global_bool_boatpilot.save_boatpilot_log_req   =    TRUE;
+	global_bool_boatpilot.turn_mode                 =    TURN_MODE_DIFFSPD;
+    global_bool_boatpilot.save_boatpilot_log_req    =    TRUE;
 
-//    /*
-//     * 设置PID控制器的参数 下面的这个pid_yaw还没有开始使用
-//     */
-//    pid_yaw.set_kP( 2 );
-//    pid_yaw.set_kI( 0 );
-//    pid_yaw.set_kD( 0 );
-//    pid_yaw.set_imax( 0.174 * 3 );//30度
-//
-//    pid_CTE.set_kP( 2 );
-//    pid_CTE.set_kI( 0 );
-//    pid_CTE.set_kD( 0 );
-//    pid_CTE.set_imax( 0.174 * 3 );//30度
-
-    /*
-     * 初始化导航环节
-     */
     navigation_init();
 
-
+#if SIMULATE_BOAT
     /* **************************************************************************************
+     * *********************************
      * 仿真时使用
      */
-#if SIMULATE_BOAT
     simulate_init();
 #endif
 }
@@ -248,8 +211,8 @@ void Boat::update_all_external_device_input( void )
 	/*
 	 * 20180601 下面是更新使用真实的外部设备
 	 */
-	all_external_device_input.latitude              = ((float)gps_data_UM220.latitude)  * GPS_SCALE;
-    all_external_device_input.longitude             = ((float)gps_data_UM220.longitude) * GPS_SCALE;
+	all_external_device_input.latitude              = ((double)gps_data_UM220.latitude)  * GPS_SCALE;
+    all_external_device_input.longitude             = ((double)gps_data_UM220.longitude) * GPS_SCALE;
     all_external_device_input.altitude              = gps_data_UM220.altitude;
     all_external_device_input.speed                 = ((float)gps_data_UM220.velocity) * 0.1;
     all_external_device_input.course                = gps_data_UM220.course_radian;
@@ -274,8 +237,8 @@ void Boat::update_all_external_device_input( void )
 
 void Boat::update_GPS()
 {
-	gps_data.latitude        = (int64_t)( all_external_device_input.latitude * GPS_SCALE_LARGE);
-	gps_data.longitude       = (int64_t)(all_external_device_input.longitude * GPS_SCALE_LARGE);
+	gps_data.latitude        = (int32_t)( all_external_device_input.latitude * GPS_SCALE_LARGE);
+	gps_data.longitude       = (int32_t)(all_external_device_input.longitude * GPS_SCALE_LARGE);
 
 	gps_data.course_radian   = all_external_device_input.course;
 

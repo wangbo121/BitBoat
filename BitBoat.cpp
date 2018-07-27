@@ -38,7 +38,7 @@ const BIT_Scheduler::Task Boat::scheduler_tasks[] =
     //{ SCHED_TASK(update_external_device),                                    10,      100 },
 
     { SCHED_TASK(get_gcs_udp),                                                 10,      MAX_WAIT_TIME_US_UDP  + 200 },
-    { SCHED_TASK(get_gcs_UART),                                                 10,     MAX_WAIT_TIME_US_UART + 200 },
+    { SCHED_TASK(get_gcs_UART),                                                10,     MAX_WAIT_TIME_US_UART + 200 },
     { SCHED_TASK(update_navigation_loop),                                      10,      250 },
     { SCHED_TASK(send_ap2gcs_realtime_data_boatlink_by_udp),                    1,      350 },
 
@@ -87,7 +87,7 @@ void Boat::loop( void )
      * 如果在单片机中，则使用某一个定时器来触发这个loop这个函数，或者利用gettimeofday_ms函数把最小时间差缩短为1ms，那么每次tick至少就是1ms
      * clock_us() - timer 表示从loop开始到scheduler.run之前瞬间已经使用的时间
      */
-    uint32_t loop_us = (uint32_t)(US_PER_SECOND / scheduler.get_loop_rate_hz()); // uint16 65535
+    uint32_t loop_us = (uint32_t)(US_PER_SECOND / scheduler.get_loop_rate_hz());
     uint32_t time_available = loop_us - (uint32_t)( (uint64_t)clock_us() - (uint64_t)timer );
 
     //DEBUG_PRINTF("loop_fast   : time_available = %d \n", time_available);

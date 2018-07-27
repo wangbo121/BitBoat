@@ -28,17 +28,18 @@ typedef struct
      * 这个结构中的数据范围是由控制精度需求决定的
      * 比如导航控制精度是厘米级别的，那么经纬度至少需要放大1e7倍以上，所以采用了int64_t结构
      * int类型能表示的数据范围有限
+     * int32_t的范围如下，能够包含经纬度的信息，最大是180 1234567 七次方就已经到厘米级别了
+     * -2147483648~2147483647
      */
-//    int longitude; // 单位[1e-7度]，扩大了1e7倍，范围是[-180 ~ +180度]
-//    int latitude;  // 单位[1e-7度]，扩大了1e7倍，范围是[-90 ~ +90度]
-    int64_t longitude; // 单位[1e-7度]，扩大了1e7倍，范围是[-180 ~ +180度]
-    int64_t latitude;  // 单位[1e-7度]，扩大了1e7倍，范围是[-90 ~ +90度]
-	int altitude;  // 单位[米]，扩大了100倍
+    int32_t longitude; // 单位[1e-7度]，扩大了1e7倍，范围是[-180 ~ +180度]
+    int32_t latitude;  // 单位[1e-7度]，扩大了1e7倍，范围是[-90 ~ +90度]
 
+	int altitude;  // 单位[米]，扩大了100倍
     unsigned int velocity;//单位[0.001米/秒]，扩大了1000倍
 
     //int course_radian; // 单位[0.01弧度]，范围是[-pi ~ +pi]，course angle值得是前进方向也就是航迹与正北的夹角*/
-    float course_radian;/*单位[弧度]，没有放大，范围是[-pi-+pi]，course angle值得是前进方向也就是航迹与正北的夹角*/
+    //float course_radian;/*单位[弧度]，没有放大，范围是[-pi-+pi]，course angle值得是前进方向也就是航迹与正北的夹角*/
+    double course_radian;/*单位[弧度]，没有放大，范围是[-pi-+pi]，course angle值得是前进方向也就是航迹与正北的夹角*/
 
 	nmea_utc_time utc;
     int velocity_north;//单位[0.001米/秒]，扩大了1000倍

@@ -17,13 +17,10 @@
 #include "global.h"
 #include "uart.h"
 
-
-
 #define Knot_2_Meter 0.51444// 速度转换 节 到 米每秒
 #define DEG2RAD 0.017444
 
 static struct T_UART_DEVICE uart_device_gps;
-
 
 struct T_GPS_UM220 gps_data_UM220; // 当外部程序需要读取UM220设备时 从这个结构中获取数据
 static struct T_GPS_UM220 gpsx;   // 静态变量 内部计算时使用
@@ -90,7 +87,7 @@ int write_gps_data_UM220()
 #define POSITION_SYS_GPS_BD    2
 int read_gps_data_UM220()
 {
-    //uint8_t positioning_system = 0; // 定位系统
+    //uint8_t positioning_system = 0; // 定位系统 GPS 单独定位
     uint8_t positioning_system = 2; // 定位系统 GPS 和 北斗双定位
 
     switch(positioning_system)
@@ -559,7 +556,7 @@ static void nmea_GNRMC_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf)
 
     int64_t tmp_d, tmp_m;
 
-    if ((p = (unsigned char*)strstr((const char *)buf, "GNRMC")) != NULL) // 单独gps 勿删除
+    if ((p = (unsigned char*)strstr((const char *)buf, "GNRMC")) != NULL)
     {
         posx = nmea_comma_pos(p, 1);
         if (posx != 0xff)
@@ -595,11 +592,11 @@ static void nmea_GNRMC_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf)
         }
         if( gpsx->nshemi == 'S')
         {
-            gpsx->latitude = - (int64_t)((float)tmp_d * 0.01) + ((float)tmp_m * GPS_MINUTE_TO_DEGREE);
+            gpsx->latitude = - (int64_t)((double)tmp_d * 0.01) + ((double)tmp_m * GPS_MINUTE_TO_DEGREE);
         }
         else
         {
-            gpsx->latitude = (int64_t)((float)tmp_d * 0.01) + ((float)tmp_m * GPS_MINUTE_TO_DEGREE);
+            gpsx->latitude = (int64_t)((double)tmp_d * 0.01) + ((double)tmp_m * GPS_MINUTE_TO_DEGREE);
         }
 
         posx = nmea_comma_pos(p, 5);
@@ -619,11 +616,11 @@ static void nmea_GNRMC_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf)
         }
         if( gpsx->ewhemi == 'W')
         {
-            gpsx->longitude = - (int64_t)((float)tmp_d * 0.01) + ((float)tmp_m * 0.01666667);
+            gpsx->longitude = - (int64_t)((double)tmp_d * 0.01) + ((double)tmp_m * 0.01666667);
         }
         else
         {
-            gpsx->longitude = (int64_t)((float)tmp_d * 0.01) + ((float)tmp_m * 0.01666667);
+            gpsx->longitude = (int64_t)((double)tmp_d * 0.01) + ((double)tmp_m * 0.01666667);
         }
 
         posx = nmea_comma_pos(p, 7);
@@ -631,7 +628,7 @@ static void nmea_GNRMC_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf)
         {
           temp = nmea_str2num(p + posx, &dx);
           temp_require = convert_to_require(temp, dx, 1); // 扩大10倍
-          gpsx->velocity = (unsigned int)((float)temp_require * Knot_2_Meter);
+          gpsx->velocity = (unsigned int)((double)temp_require * Knot_2_Meter);
         }
 
         posx = nmea_comma_pos(p, 8);
@@ -648,7 +645,7 @@ static void nmea_GNRMC_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf)
             {
                 temp_require_int = (int64_t)temp_require;
             }
-            gpsx->course_radian = (float)temp_require_int * 0.01 * DEG2RAD;
+            gpsx->course_radian = (double)temp_require_int * 0.01 * DEG2RAD;
         }
 
         posx = nmea_comma_pos(p, 9);
@@ -664,13 +661,7 @@ static void nmea_GNRMC_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf)
 
 static void nmea_GNVTG_analysis(struct T_GPS_UM220 *gpsx, unsigned char *buf)
 {
-//    unsigned char *p, dx,posx;
-//    unsigned int temp;
-//
-//    if ((p = (unsigned char*)strstr((const char *)buf, "$GNVTG")) != NULL)
-//    {
-//
-//    }
+
 }
 
 

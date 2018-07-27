@@ -11,6 +11,8 @@
 #ifndef GLOBAL_H_
 #define GLOBAL_H_
 
+#include <stdint.h>
+
 /*
  * 简单打印调试信息
  */
@@ -64,7 +66,8 @@
  * 但是实际使用的是真实的浮点型，所以有下面的转换
  */
 #define GPS_SCALE 1e-7      // gps的经度已经是[1e-7度]
-#define WP_SCALE  1e-5      // wp航点的经度目前是[1e-5度]
+//#define WP_SCALE  1e-5      // wp航点的经度目前是[1e-5度]
+#define WP_SCALE  1e-7      // wp航点的经度目前是[1e-5度]
 #define GPS_SCALE_LARGE 1e7 // 放大1e7倍
 
 #define DEG_TO_RAD (M_PI / 180.0f)
@@ -81,23 +84,37 @@
  * 但是sail_mode这8个模式对应的是RC_MODE还是AUTO_MODE是可以重新映射的
  */
 #define SAIL_MODE_0         0 //遥控
-#define SAIL_MODE_1         1 //自驾
-#define SAIL_MODE_2         2 //停止
-#define SAIL_MODE_3         3 //返航
-#define SAIL_MODE_4         4 //guide
-#define SAIL_MODE_5         5 //逗留
+#define SAIL_MODE_1         3 //自驾
+#define SAIL_MODE_2         5 //停止
+#define SAIL_MODE_3         7 //返航
+#define SAIL_MODE_4         9 //guide
+#define SAIL_MODE_5         11 //逗留
 
 #define RC_MODE             0
 #define AUTO_MODE           1
-#define STOP_MODE           2
-#define RTL_MODE            3
+//#define STOP_MODE           2
+//#define RTL_MODE            3
 
 /*
  * 在AUTO_MODE模式下又有不同的自驾模式
  */
-#define AUTO_MISSION_MODE       0
-#define AUTO_GUIDE_MODE         1
-#define AUTO_LOITER_MODE        2
+//#define AUTO_MISSION_MODE       0
+//#define AUTO_RTL_MODE           1
+//#define AUTO_LOITER_MODE        2
+//#define AUTO_STOP_MODE          3
+//#define AUTO_GUIDE_MODE         4
+
+enum T_AUTO_MODE
+{
+     AUTO_MISSION_MODE       = 0,
+     AUTO_RTL_MODE           = 1,
+     AUTO_LOITER_MODE        = 2,
+     AUTO_STOP_MODE          = 3,
+     AUTO_GUIDE_MODE         = 4
+};
+
+
+
 
 //FORMATION_是无人船编队的方式，0:单独 1:领导跟随 2:分布式
 #define FORMATION_SOLO                               0
@@ -151,8 +168,10 @@ struct WAY_POINT
      * 但是目前地面站的是1e-5倍，后面要改地面站的
      * 进一步也要修改GPS_LOCATION_SCALE
      */
-    unsigned int lng; // 航点包里面的经度 单位根据地面站传过来的航点数据包而定 目前地面站传过来的经度单位是[1e-5度]
-    unsigned int lat; // 航点包里面的经度 单位根据地面站传过来的航点数据包而定 目前地面站传过来的经度单位是[1e-5度]
+    //unsigned int lng; // 航点包里面的经度 单位根据地面站传过来的航点数据包而定 目前地面站传过来的经度单位是[1e-5度]
+    //unsigned int lat; // 航点包里面的经度 单位根据地面站传过来的航点数据包而定 目前地面站传过来的经度单位是[1e-5度]
+    int32_t lng; // 航点包里面的经度 单位根据地面站传过来的航点数据包而定
+    int32_t lat; // 航点包里面的经度 单位根据地面站传过来的航点数据包而定
 };
 
 struct T_GLOBAL_BOOL_BOATPILOT
@@ -254,6 +273,7 @@ extern T_DATETIME datetime_now;//当前的日期和时间，精确到秒。在�
 #define BOATPILOT_LOG_FILE      "boatpilot.log"
 #define WAY_POINT_FILE          "waypoint.log"
 #define CONFIG_FILE             "config.log"
+
 extern int fd_gps_log;
 extern int fd_boatpilot_log;
 extern int fd_waypoint;
@@ -263,7 +283,5 @@ extern int fd_socket_generic;
 
 extern struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
 extern struct T_BIT_LOG                boatpilot_log;
-//extern struct T_CONFIG                 boatpilot_config_previous;
-//extern struct T_CONFIG                 boatpilot_config;
 
 #endif /* GLOBAL_H_ */

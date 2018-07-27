@@ -250,7 +250,8 @@ int decode_udp_data(char *buf, int len)
 			checksum += c;
 			if ( i_len >= LEN_BYTE_NUM)
 			{
-				_pack_recv_real_len = _pack_recv_len[1] * pow(2,4) + _pack_recv_len[0];
+				//_pack_recv_real_len = _pack_recv_len[1] * pow(2,4) + _pack_recv_len[0];
+			    _pack_recv_real_len = _pack_recv_len[1] * pow(2,8) + _pack_recv_len[0];
 				//printf("udp收到的有效数据长度为=%d\n", _pack_recv_real_len);
 				udp_recv_state = UDP_RECV_DATA;
 				i_len=0;

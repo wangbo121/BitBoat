@@ -20,14 +20,17 @@ typedef struct TYPE_All_EXTERNAL_DEVICE_INPUT
     /*
      * 无论实际外部设备的数据是否是放大或者缩小后的
      * 这个结构中的数据都是具有实际物理意义的，并且保存的是国际单位，如果有正负的那就带正负号
-     * 比如速度是      米每秒
-     *    加速度是     米每二次方秒
-     *    高度是       米
+     * 比如
+     *    速度       米每秒
+     *    加速度     米每二次方秒
+     *    高度       米
      */
 
 	//gps
-	float longitude;//度
-	float latitude;//度
+    // float加上小数点的有效数字只有7位或者8位-用来表示经度纬度是不够的-比如116.12345678的有效数字远远超过7位
+    // double的有效数字是15位或者16位
+	double longitude;//度
+	double latitude;//度
 	float altitude;//米
 	float course; // 弧度 速度方向
 	float speed; // north east down 合成的速度 单位是米每秒

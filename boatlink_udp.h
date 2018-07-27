@@ -29,8 +29,10 @@ struct AP2GCS_REAL_UDP
     unsigned char pack_func_info1;//接收到的命令包计数
     unsigned char pack_func_info2;//接收到的航点包计数                                       //到此12个字节
 
-    unsigned int lng;//[度*0.00001]，GPS经度坐标，整型，精确到米
-    unsigned int lat;//[度*0.00001]，GPS纬度坐标，整型，精确到米                      //到此20个字节
+//    unsigned int lng;//[度*0.00001]，GPS经度坐标，整型，精确到米
+//    unsigned int lat;//[度*0.00001]，GPS纬度坐标，整型，精确到米                      //到此20个字节
+    int32_t lng;//[度*0.0000001]，GPS经度坐标，整型，10^-7 精确到厘米
+    int32_t lat;//[度*0.0000001]，GPS纬度坐标，整型，10^-7 精确到厘米                      //到此20个字节
     unsigned short spd;//[Knot*0.01]，实时航速
     short dir_gps;//[度*0.01]，地速航向，GPS航向
     short dir_heading;//[度*0.01]，机头朝向
@@ -69,7 +71,7 @@ struct GCS2AP_CMD_UDP
 {
 	unsigned char head1;
 	unsigned char head2;
-	unsigned short len;//注意这个是short型，到此4个字节
+	unsigned short len;// !!!! 注意这个是short型，到此4个字节
 	unsigned char type;
 	unsigned char vessel_ID;
 	unsigned char master_ap_link_ack;
@@ -79,16 +81,34 @@ struct GCS2AP_CMD_UDP
 	unsigned char func_info1;
 	unsigned char func_info2;//到此12个字节
 
-	unsigned char pilot_manual;// 控制信号是通过驾驶仪还是直接输出到执行器，这里控制的是个继电器，会有一个开关切换，保证信号直接输出到执行器，不通过驾驶仪，按道理这个应该总是1，也就是通过驾驶仪
+	unsigned char system_calib;   //12.  0x01:acc和gyro校准, 0x02:mag校准, 0x03:baro校准，0x04:重启
+	unsigned char actutor_calib;//13.推进器正反向设置, D1:左侧,D0:右侧. 1:反向,0:正向
+	unsigned char actutor_balance_coef;//14. 左右推进器推力比调整系数,左:右[50~200]%,超出为异常，可默认为100
+	unsigned char navigation_mode;//15.导航模式,0:船头导航;1:航迹导航. 在船没有建立速度和航速方向时，使用姿态或磁航向传感器建立船头方向
+
+	unsigned char sail_mode;//16:航行模式.D7~D4备用; D3~D1: 自驾类型: 001:巡航;010:返航;011:驻航;100:停车; D0:遥控/自驾切换,D0:0:遥控,1:自驾
 	unsigned char throttle;
 	unsigned char rudder;
 	unsigned char fwdbwd;
 
+	unsigned char cruise_throttle_percent;//20:[0,100][%]巡航油门百分比数
+    unsigned char throttle_change_time;//21:[秒],油门改变百分之10所用的时间
+    unsigned char arrive_radius;//22:[米],到达半径
+    unsigned char cte_max_degree;//23:[度],偏航距最大补偿角
+    unsigned char diffspd_lim;//24:[%]差速调整限幅,0-100,即:50表示单侧最大增50%,最小50%
+    unsigned char spare_para1;//25
+    unsigned char spare_para2;//26
+    unsigned char spare_para3;//27
+    unsigned char spare_para4;//28
+    unsigned char spare_para5;//29
+    unsigned char spare_para6;//30
+    unsigned char spare_para7;//31
+
 	unsigned char controller_type;
-	unsigned char ctrl_para_1;
+	unsigned char ctrl_para_1;//33.当控制器类型为0(PID)时，此参数为yaw_p
 	unsigned char ctrl_para_2;
 	unsigned char ctrl_para_3;
-	unsigned char ctrl_para_4;
+	unsigned char ctrl_para_4;//36.当控制器类型为0(PID)时，此参数为cte_p
 	unsigned char ctrl_para_5;
 	unsigned char ctrl_para_6;
 	unsigned char ctrl_para_7;
@@ -97,29 +117,25 @@ struct GCS2AP_CMD_UDP
 	unsigned char ctrl_para_10;
 	unsigned char ctrl_para_11;
 	unsigned char ctrl_para_12;
-	unsigned char sail_mode;
-	unsigned char wp_next;
-	unsigned char sensor_correct;//到此32个字节
+	unsigned char ctl_para_13;//45.
+	unsigned char ctl_para_14;//46.
+	unsigned char ctl_para_15;//47.
 
-	unsigned char pilot_vessel;
-	unsigned char spare0;
-	unsigned char spare1;
-	unsigned char spare2;//到此36
+    unsigned char change_next_wp;//48 0表示wp_next无效，1表示请求修改下一航点
+    unsigned char wp_next;//49.   下一个航点编号
+    unsigned char multi_mode;//50. D6-4是form_type,0:独立航行，1：领导跟随，2分布式一致性编队。
+    unsigned char pilot_vessel;//51.  领航船编号
 
-	unsigned int spare3;
-	unsigned int spare4;
-	unsigned int spare5;
-	unsigned int spare6;
-	unsigned int spare7;
-	unsigned int spare8;
-	unsigned int spare9;
-	unsigned int spare10;
-	unsigned int spare11;// 到此72个字节
+    int32_t spare_int_0;//52~55
+    int32_t spare_int_1;//56~59
+    int32_t spare_int_2;//60~63
+    int32_t spare_int_3;//64~67
+    int32_t spare_int_4;//68~71
 
-	unsigned char check_spare0;
-	unsigned char check_spare1;
-	unsigned char check1;
-	unsigned char check2;// 到此76个字节
+    unsigned char spare5;//72
+    unsigned char spare6;//73
+    unsigned char check1;//74
+    unsigned char check2;//75
 };
 
 struct GCS2AP_ALL_UDP
