@@ -57,6 +57,10 @@ void Boat::setup( void )
     gps_uart_init_Y901();
 #endif
 
+#ifdef _GCS_UART_RADIO_
+    gcs_UART.gcs_init();
+#endif
+
     /*
      * 有1个网卡是用来监听地面站向自驾仪发送数据的
      * 与此同时，发送也是通过这个网卡向地面站回传实时数据
@@ -268,6 +272,9 @@ void Boat::update_IMU()
 
 void Boat::get_gcs_UART()
 {
+#ifndef _UART_GCS_RADIO_
+    return ;
+#endif
     int read_len;
     static char buf[256];
 
@@ -321,6 +328,7 @@ void Boat::update_sim_water_craft()
 
 void Boat::read_device_gps_JY901()
 {
+    // 目前JY901用来读取IMU等数据-没有GPS位置信息
     read_gps_data_Y901();
 }
 
@@ -503,7 +511,6 @@ void Boat::record_log()
 
 void Boat::record_config()
 {
-
     boatpilot_config_udp.workmode                   = gcs2ap_all_udp.workmode;
     boatpilot_config_udp.rud_p                      = gcs2ap_all_udp.rud_p;
     boatpilot_config_udp.rud_i                      = gcs2ap_all_udp.rud_i;
@@ -513,9 +520,7 @@ void Boat::record_config()
     boatpilot_config_udp.cte_d                      = gcs2ap_all_udp.cte_d;
     boatpilot_config_udp.cruise_throttle_percent    = gcs2ap_all_udp.cruise_throttle_percent;
     boatpilot_config_udp.arrive_radius              = gcs2ap_all_udp.arrive_radius;
-
     boatpilot_config_udp.total_wp_num               = gcs2ap_all_udp.wp_total_num;
-
 
     if(memcmp(&boatpilot_config_udp_previous, &boatpilot_config_udp,sizeof(boatpilot_config_udp))==0)
     {

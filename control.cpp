@@ -142,7 +142,7 @@ static int get_ctrlpara()
     ctrlpara.workmode      = gcs2ap_all_udp.workmode;
     ctrlpara.auto_workmode = gcs2ap_all_udp.auto_workmode;;
     //ctrlpara.throttle_change_time = gcs2ap_all_udp.throttle_change_time;
-    ctrlpara.throttle_change_time_s = 1; //
+    ctrlpara.throttle_change_time_s = 100; //
 
 	return 0;
 }
@@ -372,7 +372,8 @@ static float cal_throttle_control(float command_throttle,float current_throttle,
 	static float current_time    = 0.0;
 	static float last_time       = 0.0;
 
-	current_time = clock_gettime_s();
+	//current_time = clock_gettime_s();
+	current_time = clock_gettime_ms();
 
 	/*
 	 * 改变百分之10油门量所需要的时间，单位是秒

@@ -55,7 +55,10 @@
 
 //#define UART_RADIO          "/dev/ttyUSB0"
 #define UART_RADIO          "/dev/ttyO3"
+
+//#define _UART_GCS_RADIO_
 #define UART_GCS            "/dev/ttyUSB0"
+
 
 #define __GPS_
 #define UART_GPS_UM220         "/dev/ttyO2"
@@ -66,7 +69,6 @@
  * 但是实际使用的是真实的浮点型，所以有下面的转换
  */
 #define GPS_SCALE 1e-7      // gps的经度已经是[1e-7度]
-//#define WP_SCALE  1e-5      // wp航点的经度目前是[1e-5度]
 #define WP_SCALE  1e-7      // wp航点的经度目前是[1e-5度]
 #define GPS_SCALE_LARGE 1e7 // 放大1e7倍
 
@@ -90,8 +92,13 @@
 #define SAIL_MODE_4         9 //guide
 #define SAIL_MODE_5         11 //逗留
 
-#define RC_MODE             0
-#define AUTO_MODE           1
+//#define RC_MODE             0
+//#define AUTO_MODE           1
+enum T_WORKMODE
+{
+    RC_MODE              =  0,
+    AUTO_MODE            =  1
+};
 //#define STOP_MODE           2
 //#define RTL_MODE            3
 
@@ -104,7 +111,7 @@
 //#define AUTO_STOP_MODE          3
 //#define AUTO_GUIDE_MODE         4
 
-enum T_AUTO_MODE
+enum T_AUTO_WORKMODE
 {
      AUTO_MISSION_MODE       = 0,
      AUTO_RTL_MODE           = 1,
@@ -113,7 +120,7 @@ enum T_AUTO_MODE
      AUTO_GUIDE_MODE         = 4
 };
 
-
+#define THIS_BOAT_ID 0
 
 
 //FORMATION_是无人船编队的方式，0:单独 1:领导跟随 2:分布式
@@ -136,7 +143,8 @@ enum T_AUTO_MODE
 
 #define AP_LISTEN_UDP_IP          "192.168.0.15"           //自驾仪监听地面站发送来的数据时用的网卡ip地址
 #define AP_LISTEN_UDP_PORT                  1100           //自驾仪监听地面站发送来的数据时用的端口号
-#define AP_SENDTO_UDP_IP          "192.168.0.10"           //自驾仪向对方发送数据时，对方的socket或者网卡对应的ip地址
+//#define AP_SENDTO_UDP_IP          "192.168.0.10"           //自驾仪向对方发送数据时，对方的socket或者网卡对应的ip地址
+#define AP_SENDTO_UDP_IP          "192.168.0.100"           //自驾仪向对方发送数据时，对方的socket或者网卡对应的ip地址
 #define AP_SENDTO_UDP_PORT                  1000           //自驾仪向对方发送数据时，对方的socket或者网卡对应的端口号
 
 #define CONTROLLER_TYPE_PID      0
@@ -208,7 +216,6 @@ struct T_GLOBAL_BOOL_BOATPILOT
 
 	unsigned int cnt_test;
 	unsigned char wp_success_cnt;
-
 
     float motor_left ;
     float motor_right;
